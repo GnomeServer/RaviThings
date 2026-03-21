@@ -4,10 +4,10 @@ import sqlite3
 from dataclasses import dataclass, field
 from backend.setup_fts import search_fts5
 from backend.graph_engine import GraphEngine
+from backend.ollama_client import OllamaClient
 
 try:
     import chromadb
-    from sentence_transformers import SentenceTransformer
     CHROMA_AVAILABLE = True
 except ImportError:
     CHROMA_AVAILABLE = False
@@ -42,17 +42,17 @@ class HybridRetriever:
         db_path: str,
         graph_engine: GraphEngine | None = None,
         chroma_path: str | None = None,
+        ollama: OllamaClient | None = None,
     ):
         self.db_path = db_path
         self.graph_engine = graph_engine
         self.chroma_collection = None
-        self.embed_model = None
+        self.ollama = ollama
 
         if chroma_path and CHROMA_AVAILABLE:
             client = chromadb.PersistentClient(path=chroma_path)
             try:
                 self.chroma_collection = client.get_collection("doe_contracts")
-                self.embed_model = SentenceTransformer("all-MiniLM-L6-v2")
             except Exception:
                 pass
 
@@ -71,10 +71,10 @@ class HybridRetriever:
         return {row["contract_transaction_unique_key"]: dict(row) for row in rows}
 
     def search_vector(self, query: str, limit: int = 20) -> list[str]:
-        """Semantic search via ChromaDB. Returns ranked contract keys."""
-        if not self.chroma_collection or not self.embed_model:
+        """Semantic search via ChromaDB using Ollama embeddings. Returns ranked contract keys."""
+        if not self.chroma_collection or not self.ollama:
             return []
-        embedding = self.embed_model.encode(query).tolist()
+        embedding = self.ollama.embed_sync([query])[0]
         results = self.chroma_collection.query(
             query_embeddings=[embedding], n_results=limit
         )

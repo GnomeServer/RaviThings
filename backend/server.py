@@ -89,20 +89,15 @@ def create_app() -> FastAPI:
         if db_path and os.path.exists(db_path):
             ensure_fts5(db_path)
 
-        # Load embedding model (shared between ChromaDB retriever and graph engine)
-        embed_model = None
-        try:
-            from sentence_transformers import SentenceTransformer
-            embed_model = SentenceTransformer('all-MiniLM-L6-v2')
-        except Exception:
-            pass
+        # Create Ollama client first — used for chat, embeddings, and graph search
+        state["ollama"] = OllamaClient(base_url=ollama_host, model=ollama_model)
 
         if graph_path and os.path.exists(graph_path):
-            state["graph"] = GraphEngine(graph_path, embed_model=embed_model)
+            # Use Ollama for graph node embeddings (no SentenceTransformer/HuggingFace needed)
+            state["graph"] = GraphEngine(graph_path, embed_fn=state["ollama"].embed_sync)
         else:
             state["graph"] = None
 
-        state["ollama"] = OllamaClient(base_url=ollama_host, model=ollama_model)
         state["brave"] = BraveSearchClient()  # reads BRAVE_SEARCH_API_KEY from env
 
         chroma = chroma_path if chroma_path and os.path.exists(chroma_path) else None
@@ -110,6 +105,7 @@ def create_app() -> FastAPI:
             db_path=db_path,
             graph_engine=state["graph"],
             chroma_path=chroma,
+            ollama=state["ollama"],
         )
 
         state["recipe"] = RecipeEngine(

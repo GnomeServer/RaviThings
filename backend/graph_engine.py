@@ -1,18 +1,26 @@
 """Runtime graph engine: load, traverse, query the knowledge graph."""
 import numpy as np
 import igraph as ig
+from typing import Callable
+
 
 class GraphEngine:
-    def __init__(self, pkl_path: str, embed_model=None):
+    def __init__(self, pkl_path: str, embed_fn: Callable[[list[str]], list[list[float]]] | None = None):
+        """Load graph and optionally build semantic search index.
+
+        Args:
+            pkl_path: Path to igraph pickle file.
+            embed_fn: A callable that takes a list of strings and returns a list of float vectors.
+                      Can be OllamaClient.embed_sync or SentenceTransformer.encode.
+        """
         self.graph = ig.Graph.Read_Pickle(pkl_path)
         self._name_index: dict[str, int] = {
             v["name"]: v.index for v in self.graph.vs
         }
-        # Pre-compute label embeddings for semantic node search
-        self._embed_model = embed_model
+        self._embed_fn = embed_fn
         self._label_embeddings: np.ndarray | None = None
         self._label_to_idx: list[int] = []
-        if embed_model is not None:
+        if embed_fn is not None:
             self._build_label_index()
 
     def _build_label_index(self):
@@ -24,10 +32,18 @@ class GraphEngine:
             if label:
                 labels.append(f"{v['type']}: {label}")
                 indices.append(v.index)
-        if labels and self._embed_model:
-            self._label_embeddings = self._embed_model.encode(
-                labels, show_progress_bar=False, normalize_embeddings=True
-            )
+        if labels and self._embed_fn:
+            # Batch in chunks of 100 to avoid overloading Ollama
+            all_embeddings = []
+            for i in range(0, len(labels), 100):
+                batch = labels[i:i + 100]
+                batch_embeddings = self._embed_fn(batch)
+                all_embeddings.extend(batch_embeddings)
+            self._label_embeddings = np.array(all_embeddings, dtype=np.float32)
+            # L2-normalize for cosine similarity via dot product
+            norms = np.linalg.norm(self._label_embeddings, axis=1, keepdims=True)
+            norms[norms == 0] = 1
+            self._label_embeddings = self._label_embeddings / norms
             self._label_to_idx = indices
 
     @property
@@ -95,16 +111,19 @@ class GraphEngine:
         """Search nodes by semantic similarity using embeddings.
         Falls back to substring match if no embedding model is loaded."""
         # Semantic search if embeddings are available
-        if self._embed_model is not None and self._label_embeddings is not None:
+        if self._embed_fn is not None and self._label_embeddings is not None:
             return self._search_nodes_semantic(query, limit, min_similarity)
         # Fallback: substring match
         return self._search_nodes_substring(query, limit)
 
     def _search_nodes_semantic(self, query: str, limit: int, min_similarity: float) -> list[dict]:
         """Find nodes whose labels are semantically similar to the query."""
-        query_embedding = self._embed_model.encode(
-            [query], show_progress_bar=False, normalize_embeddings=True
-        )
+        raw = self._embed_fn([query])
+        query_embedding = np.array(raw, dtype=np.float32)
+        # L2-normalize
+        norm = np.linalg.norm(query_embedding)
+        if norm > 0:
+            query_embedding = query_embedding / norm
         # Cosine similarity (embeddings are L2-normalized, so dot product = cosine)
         similarities = (self._label_embeddings @ query_embedding.T).flatten()
         # Get top-K above threshold
