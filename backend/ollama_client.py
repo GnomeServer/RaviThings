@@ -4,9 +4,10 @@ from typing import AsyncGenerator
 import httpx
 
 class OllamaClient:
-    def __init__(self, base_url: str = "http://localhost:11434", model: str = "dolphin3"):
+    def __init__(self, base_url: str = "http://localhost:11434", model: str = "dolphin3", embed_model: str = "nomic-embed-text"):
         self.base_url = base_url.rstrip("/")
         self.model = model
+        self.embed_model = embed_model
 
     async def chat_stream(self, messages: list[dict]) -> AsyncGenerator[str, None]:
         """Stream chat tokens from Ollama. Yields content strings."""
@@ -42,11 +43,11 @@ class OllamaClient:
             return resp.json()["message"]["content"]
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
-        """Compute embeddings via Ollama /api/embed. Returns list of float vectors."""
+        """Compute embeddings via Ollama /api/embed using the dedicated embed model."""
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.post(
                 f"{self.base_url}/api/embed",
-                json={"model": self.model, "input": texts},
+                json={"model": self.embed_model, "input": texts},
             )
             resp.raise_for_status()
             return resp.json()["embeddings"]
@@ -56,7 +57,7 @@ class OllamaClient:
         import httpx as httpx_sync
         resp = httpx_sync.post(
             f"{self.base_url}/api/embed",
-            json={"model": self.model, "input": texts},
+            json={"model": self.embed_model, "input": texts},
             timeout=60.0,
         )
         resp.raise_for_status()
