@@ -1,0 +1,34 @@
+# Data files (large)
+data/
+*.csv
+*.zip
+doe_contracts.db
+chroma_db/
+graph.pkl
+graph_meta.json
+topics.db
+
+# Environment
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Frontend build artifacts
+frontend/node_modules/
+frontend/build/
+frontend/.svelte-kit/
+
+# IDE
+.vscode/
+.idea/
+
+# Superpowers brainstorm sessions
+.superpowers/
+
+# OS
+.DS_Store
+
+# Test artifacts
+test_*.py
+!tests/test_*.py

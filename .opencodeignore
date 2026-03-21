@@ -1,0 +1,9 @@
+data/
+chroma_db/
+FY*.zip
+*.log
+node_modules/
+.git/
+*.db
+*.db-journal
+*.sqlite

@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./doe_contracts.db:/data/doe_contracts.db:ro
+      - ./chroma_db:/data/chroma_db:ro
+      - ./graph.pkl:/data/graph.pkl:ro
+      - ./topics.db:/data/topics.db
+    environment:
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-dolphin3}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

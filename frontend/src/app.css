@@ -1,0 +1,217 @@
+/* DOE Contract GraphRAG — Dark Theme */
+
+:root {
+	/* Backgrounds */
+	--bg-base: #0a0e1a;
+	--bg-panel: #111827;
+	--bg-panel-alt: #16213e;
+	--bg-surface: #1e293b;
+	--bg-hover: #253148;
+
+	/* Text */
+	--text-primary: #e2e8f0;
+	--text-secondary: #94a3b8;
+	--text-muted: #64748b;
+
+	/* Accent colors */
+	--accent-blue: #1d4ed8;
+	--accent-blue-light: #3b82f6;
+	--accent-purple: #7c3aed;
+	--accent-purple-light: #a78bfa;
+	--accent-green: #059669;
+	--accent-green-light: #34d399;
+	--accent-orange: #ea580c;
+	--accent-orange-light: #fb923c;
+
+	/* Borders */
+	--border-color: #1e293b;
+	--border-accent: #334155;
+
+	/* Graph node colors */
+	--node-recipient: #3b82f6;
+	--node-topic: #a78bfa;
+	--node-psc: #fb923c;
+	--node-naics: #34d399;
+
+	/* Spacing */
+	--toolbar-height: 48px;
+
+	/* Fonts */
+	--font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	--font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html,
+body {
+	height: 100%;
+	width: 100%;
+	overflow: hidden;
+	font-family: var(--font-sans);
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--text-primary);
+	background-color: var(--bg-base);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--bg-panel);
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--border-accent);
+	border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--text-muted);
+}
+
+/* Utility classes */
+.mono {
+	font-family: var(--font-mono);
+}
+
+.text-muted {
+	color: var(--text-muted);
+}
+
+.text-secondary {
+	color: var(--text-secondary);
+}
+
+/* Badge styles */
+.badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 9999px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.badge-vector {
+	background-color: rgba(29, 78, 216, 0.2);
+	color: var(--accent-blue-light);
+	border: 1px solid rgba(29, 78, 216, 0.3);
+}
+
+.badge-keyword {
+	background-color: rgba(5, 150, 105, 0.2);
+	color: var(--accent-green-light);
+	border: 1px solid rgba(5, 150, 105, 0.3);
+}
+
+.badge-graph {
+	background-color: rgba(124, 58, 237, 0.2);
+	color: var(--accent-purple-light);
+	border: 1px solid rgba(124, 58, 237, 0.3);
+}
+
+.badge-web {
+	background-color: rgba(56, 189, 248, 0.2);
+	color: #7dd3fc;
+	border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* Button styles */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 6px 14px;
+	border: 1px solid var(--border-accent);
+	border-radius: 6px;
+	background: var(--bg-surface);
+	color: var(--text-primary);
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.btn:hover {
+	background: var(--bg-hover);
+	border-color: var(--text-muted);
+}
+
+.btn-primary {
+	background: var(--accent-blue);
+	border-color: var(--accent-blue);
+	color: white;
+}
+
+.btn-primary:hover {
+	background: var(--accent-blue-light);
+	border-color: var(--accent-blue-light);
+}
+
+.btn-accent {
+	background: var(--accent-purple);
+	border-color: var(--accent-purple);
+	color: white;
+}
+
+.btn-accent:hover {
+	background: var(--accent-purple-light);
+	border-color: var(--accent-purple-light);
+}
+
+/* Input styles */
+input[type='text'],
+textarea {
+	background: var(--bg-surface);
+	border: 1px solid var(--border-accent);
+	border-radius: 6px;
+	padding: 8px 12px;
+	color: var(--text-primary);
+	font-size: 14px;
+	font-family: var(--font-sans);
+	outline: none;
+	transition: border-color 0.15s ease;
+}
+
+input[type='text']:focus,
+textarea:focus {
+	border-color: var(--accent-blue);
+}
+
+input[type='text']::placeholder,
+textarea::placeholder {
+	color: var(--text-muted);
+}
+
+/* Dollar formatting */
+.dollars {
+	font-family: var(--font-mono);
+	color: var(--accent-green-light);
+}
+
+/* Glow effect for highlighted graph elements */
+.glow-purple {
+	filter: drop-shadow(0 0 6px rgba(124, 58, 237, 0.6));
+}
+
+.glow-blue {
+	filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.6));
+}

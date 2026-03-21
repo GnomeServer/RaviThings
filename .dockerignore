@@ -1,0 +1,13 @@
+data/
+chroma_db/
+doe_contracts.db
+*.pkl
+*.db
+node_modules/
+frontend/build/
+frontend/node_modules/
+__pycache__/
+.git/
+.superpowers/
+FY*.zip
+FY*.csv
