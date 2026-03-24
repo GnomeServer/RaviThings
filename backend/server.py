@@ -308,9 +308,11 @@ def create_app() -> FastAPI:
                 full_response_parts.append(token)
                 yield {"event": "token", "data": json.dumps({"content": token})}
 
-            # 4. Process schematic extraction (only for "how to make" queries)
-            if _is_schematic_query(user_msg):
-                has_existing = req.schematic and req.schematic.get("title")
+            # 4. Process schematic extraction
+            # Create new schematic for "how to make" queries, OR update existing schematic on any follow-up
+            has_existing = req.schematic and req.schematic.get("title")
+            should_extract = _is_schematic_query(user_msg) or has_existing
+            if should_extract:
                 status_msg = "Updating process schematic..." if has_existing else "Extracting process schematic..."
                 yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": status_msg})}
                 try:
