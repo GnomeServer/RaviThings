@@ -11,14 +11,14 @@ class HermesClient:
     """Async client for the Hermes-4-405B reasoning model.
 
     Hermes-4-405B is accessed via an OpenAI-compatible API at
-    https://api.nousresearch.com/v1.  The API key is read from the
+    https://inference-api.nousresearch.com/v1.  The API key is read from the
     ``NOUS_API_KEY`` environment variable when not supplied explicitly.
     """
 
     def __init__(self, api_key: str | None = None):
         self.api_key = api_key or os.environ.get("NOUS_API_KEY", "")
-        self.base_url = "https://api.nousresearch.com/v1"
-        self.model = "hermes-4-405b"
+        self.base_url = "https://inference-api.nousresearch.com/v1"
+        self.model = "Hermes-4-405B"
 
     # ------------------------------------------------------------------
     # Non-streaming chat completion
