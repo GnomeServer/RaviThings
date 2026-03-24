@@ -52,6 +52,24 @@ class DeepAnalysisPipeline:
         self.mercury = mercury
         self.brave = brave
 
+    # ------------------------------------------------------------------
+    # Helpers — log event factory & total contract count
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _log_event(level: str, message: str) -> dict:
+        """Create a log SSE event dict."""
+        return {"event": "log", "data": {"level": level, "message": message}}
+
+    def _get_total_contract_count(self) -> int:
+        """Return the total number of rows in the contracts table."""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            row = conn.execute("SELECT COUNT(*) FROM contracts").fetchone()
+            return row[0] if row else 0
+        finally:
+            conn.close()
+
     # ======================================================================
     # Public entry point
     # ======================================================================
@@ -67,6 +85,9 @@ class DeepAnalysisPipeline:
         """
         conversation_history = conversation_history or []
 
+        # Fetch total contract count once at the start for log messages
+        total_contract_count = self._get_total_contract_count()
+
         # ------------------------------------------------------------------
         # Step 1 — SCOPE
         # ------------------------------------------------------------------
@@ -74,12 +95,51 @@ class DeepAnalysisPipeline:
             "event": "status",
             "data": {"stage": "scope", "message": "Identifying relevant search scope..."},
         }
+        yield self._log_event("info", "Analyzing query to identify relevant search scope...")
 
         scope = await self._step_scope(query)
+
+        # Emit detailed log about what the scope step found
+        search_terms = scope.get("search_terms", [])
+        if search_terms:
+            yield self._log_event(
+                "detail",
+                f"Search terms: {', '.join(search_terms[:10])}{'...' if len(search_terms) > 10 else ''}",
+            )
+        psc_kw = scope.get("psc_keywords", [])
+        if psc_kw:
+            yield self._log_event(
+                "detail",
+                f"Target PSC codes: {', '.join(psc_kw[:8])}{'...' if len(psc_kw) > 8 else ''}",
+            )
+        recipients = scope.get("recipients", [])
+        if recipients:
+            yield self._log_event(
+                "detail",
+                f"Target recipients: {', '.join(recipients[:8])}{'...' if len(recipients) > 8 else ''}",
+            )
+        naics_kw = scope.get("naics_keywords", [])
+        if naics_kw:
+            yield self._log_event(
+                "detail",
+                f"NAICS keywords: {', '.join(naics_kw[:8])}{'...' if len(naics_kw) > 8 else ''}",
+            )
 
         # ------------------------------------------------------------------
         # Step 2 — FILTER
         # ------------------------------------------------------------------
+        all_terms = (
+            scope.get("psc_keywords", [])
+            + scope.get("naics_keywords", [])
+            + scope.get("recipients", [])
+            + scope.get("search_terms", [])
+        )
+        num_filter_conditions = sum(1 for t in all_terms if t.strip())
+        yield self._log_event(
+            "info",
+            f"Querying {total_contract_count:,} contracts with {num_filter_conditions} filter conditions...",
+        )
+
         candidates = self._step_filter(scope)
 
         yield {
@@ -90,6 +150,10 @@ class DeepAnalysisPipeline:
                 "count": len(candidates),
             },
         }
+        yield self._log_event(
+            "success",
+            f"Found {len(candidates):,} candidate contracts matching scope",
+        )
 
         # ------------------------------------------------------------------
         # Step 3 — SCORE
@@ -97,9 +161,13 @@ class DeepAnalysisPipeline:
         scored = []
         batch_size = 30
         total_batches = (len(candidates) + batch_size - 1) // batch_size
+        running_relevant = 0
 
         for batch_idx in range(total_batches):
             batch_num = batch_idx + 1
+            start = batch_idx * batch_size
+            end = min(start + batch_size, len(candidates))
+
             yield {
                 "event": "status",
                 "data": {
@@ -109,15 +177,48 @@ class DeepAnalysisPipeline:
                     "total": total_batches,
                 },
             }
+            yield self._log_event(
+                "info",
+                f"Scoring batch {batch_num}/{total_batches} (contracts {start + 1}-{end})...",
+            )
 
-            start = batch_idx * batch_size
-            batch = candidates[start : start + batch_size]
+            batch = candidates[start:end]
             batch_scored = await self._step_score_batch(query, batch)
             scored.extend(batch_scored)
+
+            # Emit per-batch detail
+            batch_relevant = [s for s in batch_scored if s["score"] >= 5]
+            batch_not_relevant = len(batch_scored) - len(batch_relevant)
+            running_relevant += len(batch_relevant)
+            top_find = ""
+            if batch_relevant:
+                best = max(batch_relevant, key=lambda s: s["score"])
+                desc_short = (best.get("description") or "")[:60]
+                top_find = f" Top find: '{desc_short}...' (score: {best['score']})"
+            yield self._log_event(
+                "detail",
+                f"Batch {batch_num}: {len(batch_relevant)} relevant, {batch_not_relevant} not relevant.{top_find}",
+            )
+
+            # Every 10 batches, emit a progress summary
+            if batch_num % 10 == 0 or batch_num == total_batches:
+                scored_so_far = batch_num * batch_size
+                scored_so_far = min(scored_so_far, len(candidates))
+                pct = (running_relevant / scored_so_far * 100) if scored_so_far else 0
+                yield self._log_event(
+                    "info",
+                    f"Progress: {scored_so_far:,}/{len(candidates):,} scored, "
+                    f"{running_relevant} relevant so far ({pct:.1f}%)",
+                )
 
         # Keep only contracts scoring >= 5, sort descending
         relevant = [s for s in scored if s["score"] >= 5]
         relevant.sort(key=lambda s: s["score"], reverse=True)
+
+        yield self._log_event(
+            "success",
+            f"Scoring complete: {len(relevant):,} relevant contracts out of {len(candidates):,}",
+        )
 
         # ------------------------------------------------------------------
         # Step 4 — DISTILL
@@ -131,8 +232,22 @@ class DeepAnalysisPipeline:
                 "message": f"Distilling evidence from {len(top_contracts)} contracts...",
             },
         }
+        yield self._log_event(
+            "info",
+            f"Distilling evidence from {len(top_contracts)} relevant contracts...",
+        )
+        yield self._log_event(
+            "detail",
+            "Organizing by process steps identified in contract descriptions...",
+        )
 
         evidence = await self._step_distill(query, top_contracts)
+
+        evidence_lines = len(evidence.splitlines()) if evidence else 0
+        yield self._log_event(
+            "success",
+            f"Extracted {evidence_lines} lines of structured evidence",
+        )
 
         # ------------------------------------------------------------------
         # Step 5 — SYNTHESIZE
@@ -142,30 +257,51 @@ class DeepAnalysisPipeline:
             "data": {"stage": "synthesize", "message": "Synthesizing final answer..."},
         }
 
+        # Decide which model to use and log it
+        using_mercury = self.mercury and self.mercury.is_available()
+        if using_mercury:
+            yield self._log_event(
+                "info",
+                "Synthesizing answer using Mercury2 (128K context)...",
+            )
+        else:
+            yield self._log_event(
+                "warn",
+                "Mercury2 not available, using Dolphin3 for synthesis",
+            )
+
         # Optional web context
         web_context = ""
         if self.brave and self.brave.is_available():
+            yield self._log_event("detail", "Fetching supplemental web context via Brave Search...")
             try:
                 web_context = await self.brave.search_for_context(query, count=5)
+                if web_context:
+                    yield self._log_event("detail", "Web context retrieved successfully")
             except Exception:
-                pass
+                yield self._log_event("warn", "Web search failed, proceeding without web context")
 
         full_response = ""
-        async for token in self._step_synthesize(
+        async for event in self._step_synthesize(
             query, evidence, web_context, conversation_history
         ):
-            full_response += token
-            yield {"event": "token", "data": {"content": token}}
+            if event.get("event") == "token":
+                full_response += event["data"]["content"]
+            yield event
 
         # ------------------------------------------------------------------
         # Done
         # ------------------------------------------------------------------
+        yield self._log_event(
+            "success",
+            f"Analysis complete: {len(relevant):,} relevant contracts, {evidence_lines} evidence lines",
+        )
         yield {
             "event": "done",
             "data": {
                 "contracts_reviewed": len(candidates),
                 "contracts_relevant": len(relevant),
-                "evidence_lines": len(evidence.splitlines()) if evidence else 0,
+                "evidence_lines": evidence_lines,
             },
         }
 
@@ -356,9 +492,10 @@ class DeepAnalysisPipeline:
         evidence: str,
         web_context: str,
         conversation_history: list[dict],
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[dict, None]:
         """Stream the final synthesized answer.
 
+        Yields SSE event dicts — either token events or log events.
         Uses Mercury2 when available, with automatic refusal detection and
         Dolphin3 fallback.
         """
@@ -397,13 +534,21 @@ class DeepAnalysisPipeline:
             try:
                 async for token in self.mercury.chat_stream(messages):
                     response_text += token
-                    yield token
+                    yield {"event": "token", "data": {"content": token}}
 
                 # Check for refusal
                 if _is_refusal(response_text):
+                    yield self._log_event(
+                        "warn",
+                        "Mercury2 declined query, reformulating via Dolphin3...",
+                    )
                     # Attempt reformulation via Dolphin3
                     reformulated = await self._reformulate_query(query)
                     if reformulated and reformulated != query:
+                        yield self._log_event(
+                            "detail",
+                            f"Reformulated: '{reformulated[:120]}{'...' if len(reformulated) > 120 else ''}'",
+                        )
                         # Rebuild user message with reformulated query
                         retry_user_msg = {
                             "role": "user",
@@ -418,7 +563,7 @@ class DeepAnalysisPipeline:
                         try:
                             async for token in self.mercury.chat_stream(retry_messages):
                                 retry_text += token
-                                yield token
+                                yield {"event": "token", "data": {"content": token}}
 
                             if not _is_refusal(retry_text):
                                 return  # Success on retry
@@ -426,20 +571,27 @@ class DeepAnalysisPipeline:
                             pass
 
                     # Retry also refused or failed — fall through to Dolphin3
-                    yield "\n\n---\n*Switching to local model for synthesis...*\n\n"
+                    yield self._log_event(
+                        "warn",
+                        "Mercury2 retry failed, falling back to Dolphin3...",
+                    )
+                    yield {"event": "token", "data": {"content": "\n\n---\n*Switching to local model for synthesis...*\n\n"}}
                     async for token in self.ollama.chat_stream(messages):
-                        yield token
+                        yield {"event": "token", "data": {"content": token}}
                     return
 
                 # Mercury succeeded without refusal
                 return
             except Exception:
                 # Mercury failed entirely — fall through to Dolphin3
-                pass
+                yield self._log_event(
+                    "warn",
+                    "Mercury2 connection failed, falling back to Dolphin3...",
+                )
 
         # Dolphin3 fallback (or primary when Mercury is unavailable)
         async for token in self.ollama.chat_stream(messages):
-            yield token
+            yield {"event": "token", "data": {"content": token}}
 
     # ------------------------------------------------------------------
     # Helpers

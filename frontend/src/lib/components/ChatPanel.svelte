@@ -19,6 +19,35 @@
 	let pipelineStatus = $state<{ stage: string; message: string; progress?: number; total?: number } | null>(null);
 	let deepAnalysisCounts = $state<{ reviewed: number; relevant: number } | null>(null);
 
+	// Activity log state for deep analysis
+	interface LogEntry {
+		timestamp: string;
+		level: string;
+		message: string;
+	}
+	let activityLogs = $state<LogEntry[]>([]);
+	let activityLogExpanded = $state(true);
+	let activityLogContainer: HTMLDivElement | undefined = $state();
+	let deepAnalysisStartTime: number | null = $state(null);
+	let deepAnalysisDone = $state(false);
+
+	function formatElapsed(startTime: number): string {
+		const elapsed = Math.floor((Date.now() - startTime) / 1000);
+		const mins = Math.floor(elapsed / 60);
+		const secs = elapsed % 60;
+		return `${mins}:${secs.toString().padStart(2, '0')}`;
+	}
+
+	function scrollLogToBottom() {
+		if (activityLogContainer && !deepAnalysisDone) {
+			requestAnimationFrame(() => {
+				if (activityLogContainer) {
+					activityLogContainer.scrollTop = activityLogContainer.scrollHeight;
+				}
+			});
+		}
+	}
+
 	function scrollToBottom() {
 		if (messagesContainer) {
 			// Use requestAnimationFrame for a smooth scroll after DOM update
@@ -160,6 +189,20 @@
 				recipePhase = 'synthesize';
 				break;
 			}
+			case 'log': {
+				const data = event.data as { level: string; message: string };
+				if (!deepAnalysisStartTime) {
+					deepAnalysisStartTime = Date.now();
+				}
+				const entry: LogEntry = {
+					timestamp: formatElapsed(deepAnalysisStartTime),
+					level: data.level,
+					message: data.message
+				};
+				activityLogs = [...activityLogs, entry];
+				scrollLogToBottom();
+				break;
+			}
 			case 'process_schematic': {
 				const data = event.data as any;
 				if (data && (data.title || data.steps)) {
@@ -184,6 +227,7 @@
 						relevant: data.contracts_relevant
 					};
 				}
+				deepAnalysisDone = true;
 				currentAbortController = null;
 				recipePhase = null;
 				recipeRounds = [];
@@ -205,6 +249,10 @@
 		inputValue = '';
 		contracts = [];
 		deepAnalysisCounts = null;
+		activityLogs = [];
+		deepAnalysisStartTime = null;
+		deepAnalysisDone = false;
+		activityLogExpanded = true;
 		chatStore.addUserMessage(text);
 		chatStore.startAssistantMessage();
 
@@ -356,6 +404,37 @@
 			{#if pipelineStatus.stage === 'scoring' && pipelineStatus.total}
 				<div class="scoring-progress-bar">
 					<div class="scoring-progress-fill" style="width: {Math.round(((pipelineStatus.progress ?? 0) / pipelineStatus.total) * 100)}%"></div>
+				</div>
+			{/if}
+		</div>
+	{/if}
+
+	{#if activityLogs.length > 0}
+		<div class="activity-log-panel">
+			<button class="activity-log-toggle" onclick={() => activityLogExpanded = !activityLogExpanded}>
+				<span class="activity-log-toggle-icon">{activityLogExpanded ? '\u25BC' : '\u25B6'}</span>
+				<span class="activity-log-toggle-label">Activity Log</span>
+				<span class="activity-log-count">{activityLogs.length}</span>
+				{#if !deepAnalysisDone}
+					<span class="activity-log-live"></span>
+				{/if}
+			</button>
+			{#if activityLogExpanded}
+				<div class="activity-log-entries" bind:this={activityLogContainer}>
+					{#each activityLogs as entry}
+						<div class="activity-log-entry">
+							<span class="log-timestamp">{entry.timestamp}</span>
+							<span class="log-level log-level-{entry.level}">
+								{#if entry.level === 'info'}INF
+								{:else if entry.level === 'detail'}DTL
+								{:else if entry.level === 'success'}OK
+								{:else if entry.level === 'warn'}WRN
+								{:else}{entry.level.toUpperCase().slice(0, 3)}
+								{/if}
+							</span>
+							<span class="log-message">{entry.message}</span>
+						</div>
+					{/each}
 				</div>
 			{/if}
 		</div>
@@ -767,5 +846,126 @@
 		background: #d97706;
 		border-radius: 2px;
 		transition: width 0.3s ease;
+	}
+
+	/* Activity log panel */
+	.activity-log-panel {
+		flex-shrink: 0;
+		border-top: 1px solid rgba(100, 100, 120, 0.3);
+		background: rgba(0, 0, 0, 0.25);
+	}
+
+	.activity-log-toggle {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		width: 100%;
+		padding: 5px 16px;
+		background: rgba(0, 0, 0, 0.15);
+		border: none;
+		border-bottom: 1px solid rgba(100, 100, 120, 0.2);
+		color: var(--text-secondary);
+		font-size: 11px;
+		font-weight: 600;
+		cursor: pointer;
+		text-align: left;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.activity-log-toggle:hover {
+		background: rgba(100, 100, 120, 0.15);
+	}
+
+	.activity-log-toggle-icon {
+		font-size: 9px;
+		color: var(--text-muted);
+	}
+
+	.activity-log-toggle-label {
+		flex: 1;
+	}
+
+	.activity-log-count {
+		font-size: 10px;
+		font-weight: 600;
+		color: var(--text-muted);
+		background: rgba(100, 100, 120, 0.2);
+		padding: 1px 6px;
+		border-radius: 9999px;
+	}
+
+	.activity-log-live {
+		display: inline-block;
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: #22c55e;
+		animation: pulse 1.5s ease-in-out infinite;
+	}
+
+	.activity-log-entries {
+		max-height: 200px;
+		overflow-y: auto;
+		padding: 4px 0;
+		scroll-behavior: smooth;
+	}
+
+	.activity-log-entry {
+		display: flex;
+		align-items: flex-start;
+		gap: 8px;
+		padding: 2px 16px;
+		font-family: var(--font-mono, 'SF Mono', 'Fira Code', 'Fira Mono', monospace);
+		font-size: 11px;
+		line-height: 1.4;
+	}
+
+	.activity-log-entry:hover {
+		background: rgba(100, 100, 120, 0.08);
+	}
+
+	.log-timestamp {
+		flex-shrink: 0;
+		color: var(--text-muted);
+		min-width: 36px;
+		text-align: right;
+		opacity: 0.6;
+	}
+
+	.log-level {
+		flex-shrink: 0;
+		font-weight: 700;
+		font-size: 10px;
+		min-width: 28px;
+		text-align: center;
+		padding: 0 2px;
+		border-radius: 3px;
+	}
+
+	.log-level-info {
+		color: #60a5fa;
+		background: rgba(96, 165, 250, 0.1);
+	}
+
+	.log-level-detail {
+		color: #9ca3af;
+		background: rgba(156, 163, 175, 0.1);
+	}
+
+	.log-level-success {
+		color: #34d399;
+		background: rgba(52, 211, 153, 0.1);
+	}
+
+	.log-level-warn {
+		color: #fbbf24;
+		background: rgba(251, 191, 36, 0.1);
+	}
+
+	.log-message {
+		color: var(--text-primary);
+		word-break: break-word;
+		opacity: 0.9;
 	}
 </style>
