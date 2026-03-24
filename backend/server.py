@@ -339,10 +339,15 @@ def create_app() -> FastAPI:
             has_existing = req.schematic and req.schematic.get("title")
             should_extract = _is_schematic_query(user_msg) or has_existing
             if should_extract:
-                status_msg = "Updating process schematic..." if has_existing else "Extracting process schematic..."
+                is_update = bool(has_existing)
+                status_msg = "Updating process schematic..." if is_update else "Extracting process schematic..."
                 yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": status_msg})}
                 try:
                     full_response_text = "".join(full_response_parts)
+
+                    # Log: building context
+                    yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "Building schematic context from contracts, web, and response..."})}
+
                     # Feed the extraction ALL context: contracts + web + LLM response
                     new_info = (
                         "DOE CONTRACT DATA:\n" + "\n".join(contract_lines) + "\n\n"
@@ -350,7 +355,7 @@ def create_app() -> FastAPI:
                         + "NEW INFORMATION FROM LATEST ANSWER:\n" + full_response_text
                     )
 
-                    if has_existing:
+                    if is_update:
                         # UPDATE existing schematic — enrich, don't replace
                         prompt = (
                             _SCHEMATIC_UPDATE_PROMPT
@@ -361,8 +366,31 @@ def create_app() -> FastAPI:
                         # CREATE new schematic from scratch
                         prompt = _SCHEMATIC_CREATE_PROMPT + new_info
 
-                    # Use local Dolphin3 for schematic extraction — fast structured JSON
-                    raw_schematic = await ollama.generate(prompt)
+                    # Choose model: updates need large context (existing schematic + new info),
+                    # creation is small enough for local Dolphin3
+                    hermes_available = hermes and hermes.is_available()
+                    if is_update and hermes_available:
+                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "Enriching schematic with Hermes-4 (131K context)..."})}
+                        schematic_msgs = [{"role": "user", "content": prompt}]
+                        try:
+                            raw_schematic = await hermes.chat(schematic_msgs)
+                        except Exception:
+                            yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "Hermes-4 unavailable, using Dolphin3..."})}
+                            # Truncate for Dolphin3's context window
+                            if len(prompt) > 7000:
+                                prompt = prompt[:7000] + "\n\n[...truncated for context window]"
+                            raw_schematic = await ollama.generate(prompt)
+                    else:
+                        model_name = "Dolphin3" if not is_update else "Dolphin3 (compact mode)"
+                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": f"Generating schematic JSON with {model_name}..."})}
+                        if is_update and len(prompt) > 7000:
+                            prompt = prompt[:7000] + "\n\n[...truncated for context window]"
+                        raw_schematic = await ollama.generate(prompt)
+
+                    # Strip <think> reasoning traces (Hermes-4) before JSON extraction
+                    raw_schematic = _strip_think_traces(raw_schematic)
+
+                    yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "Parsing schematic JSON..."})}
 
                     # LLMs often return JSON with extra text — extract between first { and last }
                     start = raw_schematic.find("{")
@@ -372,12 +400,21 @@ def create_app() -> FastAPI:
                     else:
                         schematic_data = json.loads(raw_schematic)
 
-                    yield {
-                        "event": "process_schematic",
-                        "data": json.dumps(schematic_data),
-                    }
+                    # Validate it has at least a title or steps
+                    if schematic_data.get("title") or schematic_data.get("steps"):
+                        yield {
+                            "event": "process_schematic",
+                            "data": json.dumps(schematic_data),
+                        }
+                        n_steps = len(schematic_data.get("steps", []))
+                        n_inputs = len(schematic_data.get("inputs", []))
+                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": f"Schematic {'updated' if is_update else 'created'}: {n_steps} steps, {n_inputs} inputs"})}
+                    else:
+                        yield {"event": "status", "data": json.dumps({"stage": "schematic_failed", "message": "Generated schematic was empty"})}
+                except json.JSONDecodeError:
+                    yield {"event": "status", "data": json.dumps({"stage": "schematic_failed", "message": "Could not parse schematic JSON from model response"})}
                 except Exception as e:
-                    yield {"event": "status", "data": json.dumps({"stage": "schematic_failed", "message": f"Could not extract schematic: {type(e).__name__}"})}
+                    yield {"event": "status", "data": json.dumps({"stage": "schematic_failed", "message": f"Schematic extraction failed: {type(e).__name__}: {e}"})}
 
             # 5. Graph highlight
             yield {

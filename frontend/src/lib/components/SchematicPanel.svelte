@@ -148,9 +148,9 @@
 
 	const PLACEHOLDER_RE = /^\$\d*x?m$/i;
 
-	function isReal(value: string | undefined | null): boolean {
-		if (!value) return false;
-		const v = value.trim();
+	function isReal(value: unknown): boolean {
+		if (value == null) return false;
+		const v = String(value).trim();
 		if (v === '') return false;
 		if (v.toLowerCase() === 'unknown') return false;
 		if (PLACEHOLDER_RE.test(v)) return false;
