@@ -319,19 +319,20 @@ def create_app() -> FastAPI:
             #    Use Hermes-4 when available, fall back to local Dolphin3
             full_response_parts: list[str] = []
             use_hermes = hermes and hermes.is_available()
-            try:
-                if use_hermes:
+            fell_back = False
+            if use_hermes:
+                try:
                     async for token in hermes.chat_stream(augmented):
                         full_response_parts.append(token)
                         yield {"event": "token", "data": json.dumps({"content": token})}
-                else:
-                    raise RuntimeError("Hermes not available")
-            except Exception:
-                if use_hermes and not full_response_parts:
-                    # Hermes failed before producing output — fall back to Dolphin3
-                    async for token in ollama.chat_stream(augmented):
-                        full_response_parts.append(token)
-                        yield {"event": "token", "data": json.dumps({"content": token})}
+                except Exception:
+                    if not full_response_parts:
+                        fell_back = True  # will use Dolphin3 below
+            if not use_hermes or fell_back:
+                # Dolphin3: primary (no Hermes key) or fallback (Hermes failed)
+                async for token in ollama.chat_stream(augmented):
+                    full_response_parts.append(token)
+                    yield {"event": "token", "data": json.dumps({"content": token})}
 
             # 4. Process schematic extraction
             # Create new schematic for "how to make" queries, OR update existing schematic on any follow-up
