@@ -203,6 +203,7 @@ def create_app() -> FastAPI:
     async def chat(req: ChatRequest):
         retriever = state["retriever"]
         ollama = state["ollama"]
+        hermes = state.get("mercury")
 
         # Extract last user message for retrieval
         user_msg = next(
@@ -306,10 +307,22 @@ def create_app() -> FastAPI:
             augmented = [system_msg] + prior_messages + [evidence_msg]
 
             # 3. Stream LLM response (collect full text for potential schematic extraction)
+            #    Use Hermes-4 when available, fall back to local Dolphin3
             full_response_parts: list[str] = []
-            async for token in ollama.chat_stream(augmented):
-                full_response_parts.append(token)
-                yield {"event": "token", "data": json.dumps({"content": token})}
+            use_hermes = hermes and hermes.is_available()
+            try:
+                if use_hermes:
+                    async for token in hermes.chat_stream(augmented):
+                        full_response_parts.append(token)
+                        yield {"event": "token", "data": json.dumps({"content": token})}
+                else:
+                    raise RuntimeError("Hermes not available")
+            except Exception:
+                if use_hermes and not full_response_parts:
+                    # Hermes failed before producing output — fall back to Dolphin3
+                    async for token in ollama.chat_stream(augmented):
+                        full_response_parts.append(token)
+                        yield {"event": "token", "data": json.dumps({"content": token})}
 
             # 4. Process schematic extraction
             # Create new schematic for "how to make" queries, OR update existing schematic on any follow-up
@@ -336,7 +349,14 @@ def create_app() -> FastAPI:
                         # CREATE new schematic from scratch
                         prompt = _SCHEMATIC_CREATE_PROMPT + new_info
 
-                    raw_schematic = await ollama.generate(prompt)
+                    schematic_msgs = [{"role": "user", "content": prompt}]
+                    if use_hermes:
+                        try:
+                            raw_schematic = await hermes.chat(schematic_msgs)
+                        except Exception:
+                            raw_schematic = await ollama.generate(prompt)
+                    else:
+                        raw_schematic = await ollama.generate(prompt)
 
                     # LLMs often return JSON with extra text — extract between first { and last }
                     start = raw_schematic.find("{")
