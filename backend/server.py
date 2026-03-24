@@ -16,7 +16,7 @@ from backend.ollama_client import OllamaClient
 from backend.recipe_engine import RecipeEngine
 from backend.setup_fts import ensure_fts5
 from backend.brave_search import BraveSearchClient
-from backend.mercury_client import MercuryClient
+from backend.mercury_client import HermesClient
 from backend.deep_analysis import DeepAnalysisPipeline
 
 # Keywords that indicate a "how to make" question warranting schematic extraction
@@ -101,7 +101,7 @@ def create_app() -> FastAPI:
             state["graph"] = None
 
         state["brave"] = BraveSearchClient()  # reads BRAVE_SEARCH_API_KEY from env
-        state["mercury"] = MercuryClient()  # reads INCEPTION_API_KEY from env
+        state["mercury"] = HermesClient()  # reads NOUS_API_KEY from env
 
         chroma = chroma_path if chroma_path and os.path.exists(chroma_path) else None
         state["retriever"] = HybridRetriever(

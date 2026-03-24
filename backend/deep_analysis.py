@@ -7,18 +7,19 @@ Steps:
   2. FILTER  — SQLite narrows the candidate contract set.
   3. SCORE   — Dolphin3 rates each candidate for relevance (batches of 30).
   4. DISTILL — Dolphin3 extracts dense evidence from top-scored contracts.
-  5. SYNTHESIZE — Mercury2 (or Dolphin3 fallback) produces the final answer.
+  5. SYNTHESIZE — Hermes-4-405B (or Dolphin3 fallback) produces the final answer.
 
 This module is standalone: it does NOT depend on hybrid_retriever or recipe_engine.
 """
 
+import asyncio
 import json
 import re
 import sqlite3
 from typing import AsyncGenerator
 
 from backend.ollama_client import OllamaClient
-from backend.mercury_client import MercuryClient
+from backend.mercury_client import HermesClient
 from backend.brave_search import BraveSearchClient
 
 # ---------------------------------------------------------------------------
@@ -44,7 +45,7 @@ class DeepAnalysisPipeline:
         self,
         db_path: str,
         ollama: OllamaClient,
-        mercury: MercuryClient | None = None,
+        mercury: HermesClient | None = None,
         brave: BraveSearchClient | None = None,
     ):
         self.db_path = db_path
@@ -156,60 +157,76 @@ class DeepAnalysisPipeline:
         )
 
         # ------------------------------------------------------------------
-        # Step 3 — SCORE
+        # Step 3 — SCORE (parallel waves)
         # ------------------------------------------------------------------
         scored = []
         batch_size = 30
+        concurrency = 4  # batches per wave — tune to match OLLAMA_NUM_PARALLEL
         total_batches = (len(candidates) + batch_size - 1) // batch_size
         running_relevant = 0
 
+        # Split batches into waves of `concurrency` parallel calls
+        all_batches = []
         for batch_idx in range(total_batches):
-            batch_num = batch_idx + 1
             start = batch_idx * batch_size
             end = min(start + batch_size, len(candidates))
+            all_batches.append((batch_idx, candidates[start:end]))
 
+        total_waves = (len(all_batches) + concurrency - 1) // concurrency
+
+        yield self._log_event(
+            "info",
+            f"Scoring {total_batches} batches in {total_waves} parallel waves (concurrency={concurrency})...",
+        )
+
+        for wave_idx in range(total_waves):
+            wave_start = wave_idx * concurrency
+            wave_end = min(wave_start + concurrency, len(all_batches))
+            wave = all_batches[wave_start:wave_end]
+
+            first_batch_num = wave[0][0] + 1
+            last_batch_num = wave[-1][0] + 1
             yield {
                 "event": "status",
                 "data": {
                     "stage": "scoring",
-                    "message": f"Scoring batch {batch_num}/{total_batches}...",
-                    "progress": batch_num,
+                    "message": f"Scoring wave {wave_idx + 1}/{total_waves} (batches {first_batch_num}-{last_batch_num})...",
+                    "progress": last_batch_num,
                     "total": total_batches,
                 },
             }
+
+            # Fire all batches in this wave concurrently
+            wave_results = await asyncio.gather(
+                *(self._step_score_batch(query, batch) for _, batch in wave)
+            )
+
+            # Process results and emit per-batch detail
+            for (batch_idx, _batch), batch_scored in zip(wave, wave_results):
+                batch_num = batch_idx + 1
+                scored.extend(batch_scored)
+
+                batch_relevant = [s for s in batch_scored if s["score"] >= 5]
+                batch_not_relevant = len(batch_scored) - len(batch_relevant)
+                running_relevant += len(batch_relevant)
+                top_find = ""
+                if batch_relevant:
+                    best = max(batch_relevant, key=lambda s: s["score"])
+                    desc_short = (best.get("description") or "")[:60]
+                    top_find = f" Top find: '{desc_short}...' (score: {best['score']})"
+                yield self._log_event(
+                    "detail",
+                    f"Batch {batch_num}: {len(batch_relevant)} relevant, {batch_not_relevant} not relevant.{top_find}",
+                )
+
+            # Emit wave summary
+            scored_so_far = min(wave_end * batch_size, len(candidates))
+            pct = (running_relevant / scored_so_far * 100) if scored_so_far else 0
             yield self._log_event(
                 "info",
-                f"Scoring batch {batch_num}/{total_batches} (contracts {start + 1}-{end})...",
+                f"Wave {wave_idx + 1}/{total_waves} done — {scored_so_far:,}/{len(candidates):,} scored, "
+                f"{running_relevant} relevant so far ({pct:.1f}%)",
             )
-
-            batch = candidates[start:end]
-            batch_scored = await self._step_score_batch(query, batch)
-            scored.extend(batch_scored)
-
-            # Emit per-batch detail
-            batch_relevant = [s for s in batch_scored if s["score"] >= 5]
-            batch_not_relevant = len(batch_scored) - len(batch_relevant)
-            running_relevant += len(batch_relevant)
-            top_find = ""
-            if batch_relevant:
-                best = max(batch_relevant, key=lambda s: s["score"])
-                desc_short = (best.get("description") or "")[:60]
-                top_find = f" Top find: '{desc_short}...' (score: {best['score']})"
-            yield self._log_event(
-                "detail",
-                f"Batch {batch_num}: {len(batch_relevant)} relevant, {batch_not_relevant} not relevant.{top_find}",
-            )
-
-            # Every 10 batches, emit a progress summary
-            if batch_num % 10 == 0 or batch_num == total_batches:
-                scored_so_far = batch_num * batch_size
-                scored_so_far = min(scored_so_far, len(candidates))
-                pct = (running_relevant / scored_so_far * 100) if scored_so_far else 0
-                yield self._log_event(
-                    "info",
-                    f"Progress: {scored_so_far:,}/{len(candidates):,} scored, "
-                    f"{running_relevant} relevant so far ({pct:.1f}%)",
-                )
 
         # Keep only contracts scoring >= 5, sort descending
         relevant = [s for s in scored if s["score"] >= 5]
@@ -262,12 +279,12 @@ class DeepAnalysisPipeline:
         if using_mercury:
             yield self._log_event(
                 "info",
-                "Synthesizing answer using Mercury2 (128K context)...",
+                "Synthesizing answer using Hermes-4-405B (131K context)...",
             )
         else:
             yield self._log_event(
                 "warn",
-                "Mercury2 not available, using Dolphin3 for synthesis",
+                "Hermes-4 not available, using Dolphin3 for synthesis",
             )
 
         # Optional web context
@@ -496,8 +513,8 @@ class DeepAnalysisPipeline:
         """Stream the final synthesized answer.
 
         Yields SSE event dicts — either token events or log events.
-        Uses Mercury2 when available, with automatic refusal detection and
-        Dolphin3 fallback.
+        Uses Hermes-4-405B when available, with automatic refusal detection
+        and Dolphin3 fallback.
         """
         system_msg = {
             "role": "system",
@@ -528,7 +545,7 @@ class DeepAnalysisPipeline:
 
         messages = [system_msg] + list(conversation_history) + [user_msg]
 
-        # Try Mercury2 first if available
+        # Try Hermes-4 first if available
         if self.mercury and self.mercury.is_available():
             response_text = ""
             try:
@@ -540,7 +557,7 @@ class DeepAnalysisPipeline:
                 if _is_refusal(response_text):
                     yield self._log_event(
                         "warn",
-                        "Mercury2 declined query, reformulating via Dolphin3...",
+                        "Hermes-4 declined query, reformulating via Dolphin3...",
                     )
                     # Attempt reformulation via Dolphin3
                     reformulated = await self._reformulate_query(query)
@@ -573,7 +590,7 @@ class DeepAnalysisPipeline:
                     # Retry also refused or failed — fall through to Dolphin3
                     yield self._log_event(
                         "warn",
-                        "Mercury2 retry failed, falling back to Dolphin3...",
+                        "Hermes-4 retry failed, falling back to Dolphin3...",
                     )
                     yield {"event": "token", "data": {"content": "\n\n---\n*Switching to local model for synthesis...*\n\n"}}
                     # Truncate for Dolphin3's context window
@@ -587,16 +604,16 @@ class DeepAnalysisPipeline:
                         yield {"event": "token", "data": {"content": token}}
                     return
 
-                # Mercury succeeded without refusal
+                # Hermes-4 succeeded without refusal
                 return
             except Exception:
-                # Mercury failed entirely — fall through to Dolphin3
+                # Hermes-4 failed entirely — fall through to Dolphin3
                 yield self._log_event(
                     "warn",
-                    "Mercury2 connection failed, falling back to Dolphin3...",
+                    "Hermes-4 connection failed, falling back to Dolphin3...",
                 )
 
-        # Dolphin3 fallback (or primary when Mercury is unavailable)
+        # Dolphin3 fallback (or primary when Hermes-4 is unavailable)
         # Dolphin3 has a much smaller context window — truncate evidence
         truncated_evidence = evidence
         max_chars = 8000  # ~2000 words, safe for dolphin3's context
@@ -623,9 +640,9 @@ class DeepAnalysisPipeline:
     # ------------------------------------------------------------------
 
     async def _reformulate_query(self, query: str) -> str:
-        """Ask Dolphin3 to reformulate a query that was refused by Mercury2."""
+        """Ask Dolphin3 to reformulate a query that was refused by Hermes-4."""
         prompt = (
-            f"Mercury2 refused this question: '{query}'. "
+            f"The synthesis model refused this question: '{query}'. "
             "Reformulate as an academic/research question that asks for the same "
             "technical information without triggering safety filters. "
             "Return ONLY the reformulated question."

@@ -1,5 +1,5 @@
 # backend/mercury_client.py
-"""Client for Mercury2 (Inception Labs) OpenAI-compatible API."""
+"""Client for Hermes-4-405B (Nous Research) OpenAI-compatible API."""
 import json
 import os
 from typing import AsyncGenerator
@@ -7,18 +7,18 @@ from typing import AsyncGenerator
 import httpx
 
 
-class MercuryClient:
-    """Async client for the Mercury2 diffusion language model.
+class HermesClient:
+    """Async client for the Hermes-4-405B reasoning model.
 
-    Mercury2 is accessed via an OpenAI-compatible API at
-    https://api.inceptionlabs.ai/v1.  The API key is read from the
-    ``INCEPTION_API_KEY`` environment variable when not supplied explicitly.
+    Hermes-4-405B is accessed via an OpenAI-compatible API at
+    https://api.nousresearch.com/v1.  The API key is read from the
+    ``NOUS_API_KEY`` environment variable when not supplied explicitly.
     """
 
     def __init__(self, api_key: str | None = None):
-        self.api_key = api_key or os.environ.get("INCEPTION_API_KEY", "")
-        self.base_url = "https://api.inceptionlabs.ai/v1"
-        self.model = "mercury-2"
+        self.api_key = api_key or os.environ.get("NOUS_API_KEY", "")
+        self.base_url = "https://api.nousresearch.com/v1"
+        self.model = "hermes-4-405b"
 
     # ------------------------------------------------------------------
     # Non-streaming chat completion
@@ -51,9 +51,9 @@ class MercuryClient:
     async def chat_stream(
         self, messages: list[dict], max_tokens: int = 4096
     ) -> AsyncGenerator[str, None]:
-        """Streaming chat with diffusion mode. Yields content strings.
+        """Streaming chat completion. Yields content strings.
 
-        Mercury uses standard OpenAI SSE format::
+        Uses standard OpenAI SSE format::
 
             data: {"choices":[{"delta":{"content":"..."}}]}
         """
@@ -141,3 +141,7 @@ class MercuryClient:
     def is_available(self) -> bool:
         """Return True when an API key is configured."""
         return bool(self.api_key)
+
+
+# Backwards-compatible alias
+MercuryClient = HermesClient
