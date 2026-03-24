@@ -352,25 +352,17 @@ def create_app() -> FastAPI:
 
                     if has_existing:
                         # UPDATE existing schematic — enrich, don't replace
-                        prompt = _SCHEMATIC_UPDATE_PROMPT.format(
-                            existing_schematic=json.dumps(req.schematic, indent=2),
-                            user_question=user_msg,
+                        prompt = (
+                            _SCHEMATIC_UPDATE_PROMPT
+                            .replace("{existing_schematic}", json.dumps(req.schematic, indent=2))
+                            .replace("{user_question}", user_msg)
                         ) + new_info
                     else:
                         # CREATE new schematic from scratch
                         prompt = _SCHEMATIC_CREATE_PROMPT + new_info
 
-                    schematic_msgs = [{"role": "user", "content": prompt}]
-                    if use_hermes:
-                        try:
-                            raw_schematic = await hermes.chat(schematic_msgs)
-                        except Exception:
-                            raw_schematic = await ollama.generate(prompt)
-                    else:
-                        raw_schematic = await ollama.generate(prompt)
-
-                    # Strip <think> reasoning traces (Hermes-4) before JSON extraction
-                    raw_schematic = _strip_think_traces(raw_schematic)
+                    # Use local Dolphin3 for schematic extraction — fast structured JSON
+                    raw_schematic = await ollama.generate(prompt)
 
                     # LLMs often return JSON with extra text — extract between first { and last }
                     start = raw_schematic.find("{")
