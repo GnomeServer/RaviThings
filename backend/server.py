@@ -366,24 +366,22 @@ def create_app() -> FastAPI:
                         # CREATE new schematic from scratch
                         prompt = _SCHEMATIC_CREATE_PROMPT + new_info
 
-                    # Choose model: updates need large context (existing schematic + new info),
-                    # creation is small enough for local Dolphin3
+                    # Use Hermes-4 for all schematic work (better JSON, 131K context)
                     hermes_available = hermes and hermes.is_available()
-                    if is_update and hermes_available:
-                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "Enriching schematic with Hermes-4 (131K context)..."})}
+                    if hermes_available:
+                        action = "Enriching" if is_update else "Generating"
+                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": f"{action} schematic with Hermes-4..."})}
                         schematic_msgs = [{"role": "user", "content": prompt}]
                         try:
                             raw_schematic = await hermes.chat(schematic_msgs)
                         except Exception:
                             yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "Hermes-4 unavailable, using Dolphin3..."})}
-                            # Truncate for Dolphin3's context window
                             if len(prompt) > 7000:
                                 prompt = prompt[:7000] + "\n\n[...truncated for context window]"
                             raw_schematic = await ollama.generate(prompt)
                     else:
-                        model_name = "Dolphin3" if not is_update else "Dolphin3 (compact mode)"
-                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": f"Generating schematic JSON with {model_name}..."})}
-                        if is_update and len(prompt) > 7000:
+                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "Generating schematic with Dolphin3..."})}
+                        if len(prompt) > 7000:
                             prompt = prompt[:7000] + "\n\n[...truncated for context window]"
                         raw_schematic = await ollama.generate(prompt)
 
