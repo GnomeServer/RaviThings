@@ -576,7 +576,14 @@ class DeepAnalysisPipeline:
                         "Mercury2 retry failed, falling back to Dolphin3...",
                     )
                     yield {"event": "token", "data": {"content": "\n\n---\n*Switching to local model for synthesis...*\n\n"}}
-                    async for token in self.ollama.chat_stream(messages):
+                    # Truncate for Dolphin3's context window
+                    trunc_ev = evidence[:8000] if len(evidence) > 8000 else evidence
+                    fallback_user = {
+                        "role": "user",
+                        "content": f"### EVIDENCE:\n{trunc_ev}\n\n### QUESTION:\n{query}",
+                    }
+                    fallback_msgs = [system_msg] + list(conversation_history[-4:]) + [fallback_user]
+                    async for token in self.ollama.chat_stream(fallback_msgs):
                         yield {"event": "token", "data": {"content": token}}
                     return
 
@@ -590,7 +597,25 @@ class DeepAnalysisPipeline:
                 )
 
         # Dolphin3 fallback (or primary when Mercury is unavailable)
-        async for token in self.ollama.chat_stream(messages):
+        # Dolphin3 has a much smaller context window — truncate evidence
+        truncated_evidence = evidence
+        max_chars = 8000  # ~2000 words, safe for dolphin3's context
+        if len(evidence) > max_chars:
+            truncated_evidence = evidence[:max_chars] + f"\n\n[...truncated from {len(evidence)} chars to fit local model context]"
+            yield self._log_event("detail", f"Truncating evidence from {len(evidence)} to {max_chars} chars for Dolphin3 context window")
+
+        truncated_user_msg = {
+            "role": "user",
+            "content": (
+                f"### DISTILLED EVIDENCE FROM DOE CONTRACTS:\n{truncated_evidence}\n"
+                + (f"\n### TECHNICAL RESEARCH FROM THE WEB:\n{web_context}\n" if web_context else "")
+                + f"\n### RESEARCH QUESTION:\n{query}"
+            ),
+        }
+        dolphin_messages = [system_msg] + list(conversation_history[-4:]) + [truncated_user_msg]  # Limit history too
+
+        yield self._log_event("info", "Generating response with Dolphin3...")
+        async for token in self.ollama.chat_stream(dolphin_messages):
             yield {"event": "token", "data": {"content": token}}
 
     # ------------------------------------------------------------------
