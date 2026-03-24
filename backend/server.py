@@ -49,6 +49,7 @@ You have an EXISTING process schematic (shown below as JSON). The user asked a f
 3. ENRICH existing entries: add more detail to descriptions, add equipment, add suppliers, update parameters with more specific values.
 4. NEVER remove existing data unless it's clearly wrong.
 5. Preserve all existing id values so connections aren't broken.
+6. Pay special attention to the USER'S QUESTION below — focus enrichment on the step or area they asked about.
 
 Return the COMPLETE updated schematic as valid JSON (not just the changes).
 
@@ -58,12 +59,20 @@ JSON SCHEMA:
 EXISTING SCHEMATIC:
 {existing_schematic}
 
+USER'S QUESTION:
+{user_question}
+
 """
 
 
 def _is_schematic_query(text: str) -> bool:
     """Return True if the user message looks like a 'how to make' question."""
     return bool(_SCHEMATIC_KEYWORDS.search(text))
+
+
+def _strip_think_traces(text: str) -> str:
+    """Remove <think>...</think> reasoning traces from Hermes-4 responses."""
+    return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
 
 def create_app() -> FastAPI:
@@ -343,7 +352,8 @@ def create_app() -> FastAPI:
                     if has_existing:
                         # UPDATE existing schematic — enrich, don't replace
                         prompt = _SCHEMATIC_UPDATE_PROMPT.format(
-                            existing_schematic=json.dumps(req.schematic, indent=2)
+                            existing_schematic=json.dumps(req.schematic, indent=2),
+                            user_question=user_msg,
                         ) + new_info
                     else:
                         # CREATE new schematic from scratch
@@ -357,6 +367,9 @@ def create_app() -> FastAPI:
                             raw_schematic = await ollama.generate(prompt)
                     else:
                         raw_schematic = await ollama.generate(prompt)
+
+                    # Strip <think> reasoning traces (Hermes-4) before JSON extraction
+                    raw_schematic = _strip_think_traces(raw_schematic)
 
                     # LLMs often return JSON with extra text — extract between first { and last }
                     start = raw_schematic.find("{")
