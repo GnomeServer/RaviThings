@@ -16,6 +16,8 @@ from backend.ollama_client import OllamaClient
 from backend.recipe_engine import RecipeEngine
 from backend.setup_fts import ensure_fts5
 from backend.brave_search import BraveSearchClient
+from backend.mercury_client import MercuryClient
+from backend.deep_analysis import DeepAnalysisPipeline
 
 # Keywords that indicate a "how to make" question warranting schematic extraction
 _SCHEMATIC_KEYWORDS = re.compile(
@@ -99,6 +101,7 @@ def create_app() -> FastAPI:
             state["graph"] = None
 
         state["brave"] = BraveSearchClient()  # reads BRAVE_SEARCH_API_KEY from env
+        state["mercury"] = MercuryClient()  # reads INCEPTION_API_KEY from env
 
         chroma = chroma_path if chroma_path and os.path.exists(chroma_path) else None
         state["retriever"] = HybridRetriever(
@@ -403,6 +406,43 @@ def create_app() -> FastAPI:
                 db_path, topics_db, ollama, req.batch_size, req.limit
             ):
                 yield {"event": event["event"], "data": json.dumps(event["data"])}
+
+        return EventSourceResponse(event_stream())
+
+    # --- Deep Analysis Chat (SSE) ---
+    class DeepChatRequest(BaseModel):
+        messages: list[dict]
+
+    @app.post("/api/deep-chat")
+    async def deep_chat(req: DeepChatRequest):
+        ollama = state["ollama"]
+        mercury = state.get("mercury")
+        brave = state.get("brave")
+
+        pipeline = DeepAnalysisPipeline(
+            db_path=db_path,
+            ollama=ollama,
+            mercury=mercury if mercury and mercury.is_available() else None,
+            brave=brave,
+        )
+
+        # Extract conversation history (all but the last user message)
+        conversation_history = [
+            m for m in req.messages[:-1]
+            if m.get("role") in ("user", "assistant") and m.get("content")
+        ]
+
+        # Last user message is the query
+        user_msg = next(
+            (m["content"] for m in reversed(req.messages) if m["role"] == "user"), ""
+        )
+
+        async def event_stream():
+            async for event in pipeline.analyze(user_msg, conversation_history):
+                yield {
+                    "event": event["event"],
+                    "data": json.dumps(event["data"]),
+                }
 
         return EventSourceResponse(event_stream())
 

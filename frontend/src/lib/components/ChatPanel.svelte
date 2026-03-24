@@ -13,10 +13,11 @@
 	let messagesContainer: HTMLDivElement | undefined = $state();
 	let currentAbortController: AbortController | null = $state(null);
 	let contracts = $state<ContractResult[]>([]);
-	let isDeepResearch = $state(false);
+	let chatMode = $state<'quick' | 'deep'>('quick');
 	let recipePhase = $state<string | null>(null);
 	let recipeRounds = $state<Array<{ round: number; contracts: number; topics: number; newTopics: number }>>([]);
-	let pipelineStatus = $state<{ stage: string; message: string } | null>(null);
+	let pipelineStatus = $state<{ stage: string; message: string; progress?: number; total?: number } | null>(null);
+	let deepAnalysisCounts = $state<{ reviewed: number; relevant: number } | null>(null);
 
 	function scrollToBottom() {
 		if (messagesContainer) {
@@ -52,8 +53,18 @@
 	function handleSSEEvent(event: SSEEvent) {
 		switch (event.event) {
 			case 'status': {
-				const data = event.data as { stage: string; message: string };
-				pipelineStatus = data;
+				const data = event.data as { stage: string; message: string; progress?: number; total?: number };
+				if (data.stage === 'scoring' && data.progress != null && data.total != null) {
+					const pct = data.total > 0 ? Math.round((data.progress / data.total) * 100) : 0;
+					pipelineStatus = {
+						stage: data.stage,
+						message: `Scoring contracts: ${data.progress}/${data.total} (${pct}%)`,
+						progress: data.progress,
+						total: data.total
+					};
+				} else {
+					pipelineStatus = data;
+				}
 				if (data.stage === 'done') {
 					setTimeout(() => { pipelineStatus = null; }, 2000);
 				}
@@ -160,11 +171,19 @@
 				const data = event.data as {
 					total_contracts?: number;
 					total_dollars?: number;
+					contracts_reviewed?: number;
+					contracts_relevant?: number;
 				};
 				chatStore.finishStream({
 					totalContracts: data.total_contracts,
 					totalDollars: data.total_dollars
 				});
+				if (data.contracts_reviewed != null && data.contracts_relevant != null) {
+					deepAnalysisCounts = {
+						reviewed: data.contracts_reviewed,
+						relevant: data.contracts_relevant
+					};
+				}
 				currentAbortController = null;
 				recipePhase = null;
 				recipeRounds = [];
@@ -185,10 +204,11 @@
 
 		inputValue = '';
 		contracts = [];
+		deepAnalysisCounts = null;
 		chatStore.addUserMessage(text);
 		chatStore.startAssistantMessage();
 
-		const endpoint = isDeepResearch ? '/api/recipe' : '/api/chat';
+		const endpoint = chatMode === 'deep' ? '/api/deep-chat' : '/api/chat';
 
 		const messagesPayload = chatStore.messages
 			.filter((m) => !m.isStreaming)
@@ -330,9 +350,14 @@
 	</div>
 
 	{#if pipelineStatus}
-		<div class="status-bar" class:status-done={pipelineStatus.stage === 'done'} class:status-error={pipelineStatus.stage === 'schematic_failed'}>
-			<span class="status-spinner" class:status-spinner-done={pipelineStatus.stage === 'done'}></span>
+		<div class="status-bar" class:status-done={pipelineStatus.stage === 'done'} class:status-error={pipelineStatus.stage === 'schematic_failed'} class:status-deep={chatMode === 'deep' && pipelineStatus.stage !== 'done'}>
+			<span class="status-spinner" class:status-spinner-done={pipelineStatus.stage === 'done'} class:status-spinner-deep={chatMode === 'deep' && pipelineStatus.stage !== 'done'}></span>
 			<span class="status-text">{pipelineStatus.message}</span>
+			{#if pipelineStatus.stage === 'scoring' && pipelineStatus.total}
+				<div class="scoring-progress-bar">
+					<div class="scoring-progress-fill" style="width: {Math.round(((pipelineStatus.progress ?? 0) / pipelineStatus.total) * 100)}%"></div>
+				</div>
+			{/if}
 		</div>
 	{/if}
 
@@ -365,14 +390,23 @@
 			{/if}
 		</div>
 		<div class="input-options">
-			<label class="deep-research-toggle">
-				<input
-					type="checkbox"
-					bind:checked={isDeepResearch}
+			<div class="mode-toggle" class:mode-toggle-disabled={chatStore.isStreaming}>
+				<button
+					class="mode-btn"
+					class:mode-btn-active-quick={chatMode === 'quick'}
 					disabled={chatStore.isStreaming}
-				/>
-				<span class="deep-research-label">Deep Research</span>
-			</label>
+					onclick={() => chatMode = 'quick'}
+				>Quick</button>
+				<button
+					class="mode-btn"
+					class:mode-btn-active-deep={chatMode === 'deep'}
+					disabled={chatStore.isStreaming}
+					onclick={() => chatMode = 'deep'}
+				>Deep Analysis</button>
+			</div>
+			{#if chatMode === 'deep'}
+				<span class="deep-warning">~3-5 min</span>
+			{/if}
 		</div>
 	</div>
 </section>
@@ -648,28 +682,90 @@
 		gap: 12px;
 	}
 
-	.deep-research-toggle {
+	/* Mode toggle */
+	.mode-toggle {
 		display: flex;
-		align-items: center;
-		gap: 6px;
-		cursor: pointer;
-		user-select: none;
+		border-radius: 6px;
+		overflow: hidden;
+		border: 1px solid var(--border-accent);
 	}
 
-	.deep-research-toggle input[type='checkbox'] {
-		accent-color: var(--accent-purple);
-		cursor: pointer;
+	.mode-toggle-disabled {
+		opacity: 0.5;
+		pointer-events: none;
 	}
 
-	.deep-research-label {
+	.mode-btn {
+		padding: 3px 12px;
 		font-size: 11px;
-		color: var(--text-muted);
-		font-weight: 500;
+		font-weight: 600;
 		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		letter-spacing: 0.04em;
+		background: var(--bg-surface);
+		color: var(--text-muted);
+		border: none;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		white-space: nowrap;
 	}
 
-	.deep-research-toggle:has(input:checked) .deep-research-label {
-		color: var(--accent-purple-light);
+	.mode-btn:not(:last-child) {
+		border-right: 1px solid var(--border-accent);
+	}
+
+	.mode-btn:hover:not(:disabled) {
+		background: var(--bg-hover);
+		color: var(--text-secondary);
+	}
+
+	.mode-btn-active-quick {
+		background: rgba(29, 78, 216, 0.25);
+		color: var(--accent-blue-light);
+	}
+
+	.mode-btn-active-deep {
+		background: rgba(217, 119, 6, 0.2);
+		color: #fbbf24;
+	}
+
+	.deep-warning {
+		font-size: 10px;
+		font-weight: 600;
+		color: #d97706;
+		background: rgba(217, 119, 6, 0.12);
+		padding: 2px 8px;
+		border-radius: 9999px;
+		border: 1px solid rgba(217, 119, 6, 0.3);
+		letter-spacing: 0.02em;
+	}
+
+	/* Deep analysis status bar variant */
+	.status-deep {
+		background: rgba(217, 119, 6, 0.1);
+		border-top-color: rgba(217, 119, 6, 0.3);
+		color: #fbbf24;
+	}
+
+	.status-spinner-deep {
+		border-color: rgba(217, 119, 6, 0.3);
+		border-top-color: #fbbf24;
+	}
+
+	/* Scoring progress bar */
+	.scoring-progress-bar {
+		flex: 1;
+		max-width: 120px;
+		height: 4px;
+		background: rgba(217, 119, 6, 0.2);
+		border-radius: 2px;
+		overflow: hidden;
+		margin-left: 8px;
+	}
+
+	.scoring-progress-fill {
+		height: 100%;
+		background: #d97706;
+		border-radius: 2px;
+		transition: width 0.3s ease;
 	}
 </style>
