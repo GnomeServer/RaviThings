@@ -46,12 +46,15 @@ JSON SCHEMA:
 _SCHEMATIC_UPDATE_PROMPT = """\
 You have an EXISTING process schematic (shown below as JSON). The user asked a follow-up question and got a new answer with more detail. UPDATE the existing schematic by:
 
-1. KEEP all existing steps, inputs, and outputs that are still relevant.
-2. ADD new information: fill in missing parameters, add new inputs/steps/outputs discovered.
-3. ENRICH existing entries: add more detail to descriptions, add equipment, add suppliers, update parameters with more specific values.
-4. NEVER remove existing data unless it's clearly wrong.
-5. Preserve all existing id values so connections aren't broken.
-6. Pay special attention to the USER'S QUESTION below — focus enrichment on the step or area they asked about.
+1. The EXISTING SCHEMATIC below is the MASTER. Start from it. NEVER discard or replace it.
+2. KEEP ALL existing steps, inputs, and outputs — every single one.
+3. ADD new sub-steps, inputs, outputs, contractors, parameters, or equipment discovered.
+4. If the user asked about ONE specific step, ENRICH that step's description, parameters, equipment, and contractors. Do NOT replace the entire schematic with a schematic about only that step.
+5. NEVER remove existing data unless clearly wrong.
+6. Preserve all existing id values so connections aren't broken.
+7. Pay special attention to the USER'S QUESTION below — focus enrichment on the step or area they asked about.
+
+CRITICAL: The output must contain ALL steps from the existing schematic PLUS any new ones. If the existing schematic has 7 steps, the output must have at least 7 steps.
 
 Return the COMPLETE updated schematic as valid JSON (not just the changes).
 

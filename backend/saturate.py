@@ -41,12 +41,15 @@ JSON SCHEMA:
 _SATURATE_UPDATE_PROMPT = """\
 You have an EXISTING process schematic (shown below as JSON). New evidence has been gathered. UPDATE the existing schematic by:
 
-1. KEEP all existing steps, inputs, and outputs.
-2. ADD new steps, inputs, outputs, contractors, parameters, or equipment discovered in the new evidence.
-3. ENRICH existing entries: add more detail, update parameters with more specific values.
-4. NEVER remove existing data unless clearly wrong.
-5. Preserve all existing id values so connections aren't broken.
-6. For contractor_details: add any newly discovered contractors. Update significance_pct values based on the complete picture.
+1. The EXISTING SCHEMATIC below is the MASTER. Start from it. NEVER discard or replace it.
+2. KEEP ALL existing steps, inputs, and outputs — every single one.
+3. ADD new sub-steps, inputs, outputs, contractors, parameters, or equipment discovered in the new evidence.
+4. If the new evidence provides detail about ONE specific step, ENRICH that step's description, parameters, equipment, and contractors. Do NOT replace the entire schematic with a schematic about only that step.
+5. NEVER remove existing data unless clearly wrong.
+6. Preserve all existing id values so connections aren't broken.
+7. For contractor_details: add any newly discovered contractors. Update significance_pct values based on the complete picture.
+
+CRITICAL: The output must contain ALL steps from the existing schematic PLUS any new ones. If the existing schematic has 7 steps, the output must have at least 7 steps.
 
 Return the COMPLETE updated schematic as valid JSON (not just the changes).
 
