@@ -18,6 +18,7 @@ from backend.setup_fts import ensure_fts5
 from backend.brave_search import BraveSearchClient
 from backend.mercury_client import HermesClient
 from backend.deep_analysis import DeepAnalysisPipeline
+from backend.saturate import SaturationPipeline
 
 # Keywords that indicate a "how to make" question warranting schematic extraction
 _SCHEMATIC_KEYWORDS = re.compile(
@@ -501,6 +502,38 @@ def create_app() -> FastAPI:
 
         async def event_stream():
             async for event in pipeline.analyze(user_msg, conversation_history):
+                yield {
+                    "event": event["event"],
+                    "data": json.dumps(event["data"]),
+                }
+
+        return EventSourceResponse(event_stream())
+
+    # --- Saturate Chat (SSE) ---
+    class SaturateChatRequest(BaseModel):
+        messages: list[dict]
+        max_passes: int | None = None  # None = no limit, run until converged
+
+    @app.post("/api/saturate-chat")
+    async def saturate_chat(req: SaturateChatRequest):
+        ollama = state["ollama"]
+        mercury = state.get("mercury")
+        brave = state.get("brave")
+        retriever = state["retriever"]
+
+        pipeline = SaturationPipeline(
+            retriever=retriever,
+            ollama=ollama,
+            hermes=mercury if mercury and mercury.is_available() else None,
+            brave=brave,
+        )
+
+        user_msg = next(
+            (m["content"] for m in reversed(req.messages) if m["role"] == "user"), ""
+        )
+
+        async def event_stream():
+            async for event in pipeline.saturate(user_msg, max_passes=req.max_passes):
                 yield {
                     "event": event["event"],
                     "data": json.dumps(event["data"]),
