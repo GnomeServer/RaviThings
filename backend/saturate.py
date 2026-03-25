@@ -309,6 +309,7 @@ class SaturationPipeline:
         accumulated_schematic: dict | None = None
         seen_contract_keys: set[str] = set()
         consecutive_zero = 0
+        total_zero_passes = 0
         pass_num = 0
         cumulative_new = 0
         all_responses: list[str] = []
@@ -454,24 +455,22 @@ class SaturationPipeline:
             })
 
             # Check for explicit "no new information" signal — skip extraction
-            # but still count toward convergence via structural diff (0 new entities)
+            # and count toward convergence. We track total zero-gain passes
+            # (not just consecutive) to handle LLM oscillation.
             if "NO NEW INFORMATION" in response_text.upper() and pass_num > 1:
+                total_zero_passes += 1
+                consecutive_zero += 1
                 yield self._evt("status", {
                     "stage": "saturate_generate",
-                    "message": f"Pass {pass_num} — Model reports no new information",
+                    "message": f"Pass {pass_num} — Model reports no new information (zero-gain: {total_zero_passes} total, {consecutive_zero} consecutive)",
                 })
-                # Count as zero-gain pass (structural diff would also be 0)
-                consecutive_zero += 1
-                if consecutive_zero >= 2:
+                # Stop if 2 consecutive OR 3 total zero-gain passes
+                if consecutive_zero >= 2 or total_zero_passes >= 3:
                     yield self._evt("status", {
                         "stage": "saturate_converged",
-                        "message": f"Pass {pass_num} — {consecutive_zero} consecutive passes with no new entities. Knowledge saturated.",
+                        "message": f"Pass {pass_num} — Knowledge saturated ({total_zero_passes} zero-gain passes total).",
                     })
                     break
-                yield self._evt("status", {
-                    "stage": "saturate_converging",
-                    "message": f"Pass {pass_num} — No new entities ({consecutive_zero}/2 consecutive zero-gain passes)",
-                })
                 continue
 
             # ---- EXTRACT/UPDATE SCHEMATIC ----
@@ -574,16 +573,17 @@ class SaturationPipeline:
             # Convergence check — based on structural diff, not LLM opinion
             if diff["total_new"] == 0:
                 consecutive_zero += 1
-                if consecutive_zero >= 2:
+                total_zero_passes += 1
+                if consecutive_zero >= 2 or total_zero_passes >= 3:
                     yield self._evt("status", {
                         "stage": "saturate_converged",
-                        "message": f"Pass {pass_num} — {consecutive_zero} consecutive passes with no new entities. Knowledge saturated.",
+                        "message": f"Pass {pass_num} — Knowledge saturated ({total_zero_passes} zero-gain passes total).",
                     })
                     break
                 else:
                     yield self._evt("status", {
                         "stage": "saturate_converging",
-                        "message": f"Pass {pass_num} — No new entities ({consecutive_zero}/2 consecutive zero-gain passes)",
+                        "message": f"Pass {pass_num} — No new entities (zero-gain: {total_zero_passes} total, {consecutive_zero} consecutive)",
                     })
             else:
                 consecutive_zero = 0
