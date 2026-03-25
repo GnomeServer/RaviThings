@@ -38,26 +38,36 @@ RULES:
 JSON SCHEMA:
 """ + _SCHEMATIC_JSON_SCHEMA + "\n\n"
 
-_SATURATE_UPDATE_PROMPT = """\
-You have an EXISTING process schematic (shown below as JSON). New evidence has been gathered. UPDATE the existing schematic by:
+_SATURATE_DELTA_PROMPT = """\
+You are analyzing new evidence about a manufacturing process. An existing schematic already covers these steps:
 
-1. The EXISTING SCHEMATIC below is the MASTER. Start from it. NEVER discard or replace it.
-2. KEEP ALL existing steps, inputs, and outputs — every single one.
-3. ADD new sub-steps, inputs, outputs, contractors, parameters, or equipment discovered in the new evidence.
-4. If the new evidence provides detail about ONE specific step, ENRICH that step's description, parameters, equipment, and contractors. Do NOT replace the entire schematic with a schematic about only that step.
-5. NEVER remove existing data unless clearly wrong.
-6. Preserve all existing id values so connections aren't broken.
-7. For contractor_details: add any newly discovered contractors. Update significance_pct values based on the complete picture.
+EXISTING STEPS (do NOT repeat these — only provide NEW information):
+{existing_step_names}
 
-CRITICAL: The output must contain ALL steps from the existing schematic PLUS any new ones. If the existing schematic has 7 steps, the output must have at least 7 steps.
+Based on the new evidence below, extract ONLY:
+1. NEW process steps not already in the list above
+2. NEW parameters, equipment, or contractor details for existing steps (reference them by name)
+3. NEW inputs or outputs not already captured
 
-Return the COMPLETE updated schematic as valid JSON (not just the changes).
+Return a JSON object with this structure:
+{{
+  "new_steps": [same schema as steps array],
+  "new_inputs": [same schema as inputs array],
+  "new_outputs": [same schema as outputs array],
+  "enrichments": [
+    {{
+      "step_name": "name of existing step to enrich",
+      "add_parameters": {{"key": "value"}},
+      "add_equipment": ["new equipment"],
+      "add_contractors": [{{"name": "...", "role": "...", "contract_value": 0, "significance_pct": 0}}],
+      "append_description": "additional detail to append"
+    }}
+  ]
+}}
 
-JSON SCHEMA:
-""" + _SCHEMATIC_JSON_SCHEMA + """
+If there is nothing new to add, return: {{"new_steps":[],"new_inputs":[],"new_outputs":[],"enrichments":[]}}
 
-EXISTING SCHEMATIC:
-{existing_schematic}
+Return ONLY valid JSON.
 
 """
 
@@ -138,6 +148,120 @@ def _structural_diff(old: dict | None, new: dict | None) -> dict:
         "total_new": (len(new_steps) + len(new_inputs) + len(new_outputs)
                       + len(new_contractors) + len(new_params) + len(new_equip)),
     }
+
+
+def _merge_schematic(base: dict, delta: dict) -> tuple[dict, dict]:
+    """Merge a delta into the base schematic. Returns (merged, diff_counts).
+
+    The base schematic is NEVER reduced — only additions and enrichments.
+    """
+    merged = json.loads(json.dumps(base))  # deep copy
+
+    counts = {"new_steps": 0, "new_inputs": 0, "new_outputs": 0,
+              "new_contractors": 0, "new_params": 0, "new_equipment": 0}
+
+    # Build lookup of existing steps by name (case-insensitive)
+    step_by_name: dict[str, dict] = {}
+    for s in merged.get("steps", []):
+        step_by_name[s.get("name", "").lower()] = s
+
+    existing_input_names = {i.get("name", "").lower() for i in merged.get("inputs", [])}
+    existing_output_names = {o.get("name", "").lower() for o in merged.get("outputs", [])}
+
+    # 1. Add new steps
+    for new_step in delta.get("new_steps", []):
+        name = new_step.get("name", "").lower()
+        if name and name not in step_by_name:
+            # Assign a new id if missing
+            if not new_step.get("id"):
+                idx = len(merged.get("steps", [])) + 1
+                new_step["id"] = f"step{idx}"
+            merged.setdefault("steps", []).append(new_step)
+            step_by_name[name] = new_step
+            counts["new_steps"] += 1
+
+    # 2. Add new inputs
+    for new_input in delta.get("new_inputs", []):
+        name = new_input.get("name", "").lower()
+        if name and name not in existing_input_names:
+            if not new_input.get("id"):
+                idx = len(merged.get("inputs", [])) + 1
+                new_input["id"] = f"in{idx}"
+            merged.setdefault("inputs", []).append(new_input)
+            existing_input_names.add(name)
+            counts["new_inputs"] += 1
+
+    # 3. Add new outputs
+    for new_output in delta.get("new_outputs", []):
+        name = new_output.get("name", "").lower()
+        if name and name not in existing_output_names:
+            if not new_output.get("id"):
+                idx = len(merged.get("outputs", [])) + 1
+                new_output["id"] = f"out{idx}"
+            merged.setdefault("outputs", []).append(new_output)
+            existing_output_names.add(name)
+            counts["new_outputs"] += 1
+
+    # 4. Apply enrichments to existing steps
+    for enrichment in delta.get("enrichments", []):
+        step_name = enrichment.get("step_name", "").lower()
+        target = step_by_name.get(step_name)
+        if not target:
+            # Try fuzzy match — find step whose name contains the enrichment name
+            for sname, step in step_by_name.items():
+                if step_name in sname or sname in step_name:
+                    target = step
+                    break
+        if not target:
+            continue
+
+        # Add parameters
+        add_params = enrichment.get("add_parameters", {})
+        if add_params and isinstance(add_params, dict):
+            existing_params = target.setdefault("parameters", {})
+            for k, v in add_params.items():
+                if k not in existing_params:
+                    existing_params[k] = str(v)
+                    counts["new_params"] += 1
+
+        # Add equipment
+        add_equip = enrichment.get("add_equipment", [])
+        if add_equip:
+            existing_equip = target.setdefault("equipment", [])
+            existing_equip_lower = {e.lower() for e in existing_equip}
+            for e in add_equip:
+                if e.lower() not in existing_equip_lower:
+                    existing_equip.append(e)
+                    existing_equip_lower.add(e.lower())
+                    counts["new_equipment"] += 1
+
+        # Add contractors
+        add_contractors = enrichment.get("add_contractors", [])
+        if add_contractors:
+            existing_cd = target.setdefault("contractor_details", [])
+            existing_names = {c.get("name", "").lower() for c in existing_cd}
+            # Also check flat doe_contractors list
+            existing_dc = target.setdefault("doe_contractors", [])
+            existing_names.update(c.lower() for c in existing_dc)
+            for c in add_contractors:
+                cname = c.get("name", "").lower()
+                if cname and cname not in existing_names:
+                    existing_cd.append(c)
+                    if c.get("name") and c["name"] not in existing_dc:
+                        existing_dc.append(c["name"])
+                    existing_names.add(cname)
+                    counts["new_contractors"] += 1
+
+        # Append description
+        append_desc = enrichment.get("append_description", "")
+        if append_desc and append_desc.strip():
+            existing_desc = target.get("description", "")
+            # Don't duplicate — check if this content is already there
+            if append_desc.strip().lower() not in existing_desc.lower():
+                target["description"] = (existing_desc + " " + append_desc.strip()).strip()
+
+    counts["total_new"] = sum(counts.values())
+    return merged, counts
 
 
 def _extract_json(raw: str) -> dict | None:
@@ -341,11 +465,6 @@ class SaturationPipeline:
                 continue
 
             # ---- EXTRACT/UPDATE SCHEMATIC ----
-            yield self._evt("status", {
-                "stage": "saturate_schematic",
-                "message": f"Pass {pass_num} — {'Updating' if accumulated_schematic else 'Extracting'} schematic...",
-            })
-
             new_info = (
                 "DOE CONTRACT DATA:\n" + "\n".join(contract_lines) + "\n\n"
                 + (f"WEB RESEARCH:\n{web_context}\n\n" if web_context else "")
@@ -353,14 +472,28 @@ class SaturationPipeline:
             )
 
             if accumulated_schematic:
+                # DELTA approach: ask LLM for additions ONLY, then merge in code
+                yield self._evt("status", {
+                    "stage": "saturate_schematic",
+                    "message": f"Pass {pass_num} — Extracting new additions (delta mode)...",
+                })
+
+                step_names = ", ".join(
+                    s.get("name", "?") for s in accumulated_schematic.get("steps", [])
+                )
                 prompt = (
-                    _SATURATE_UPDATE_PROMPT
-                    .replace("{existing_schematic}", json.dumps(accumulated_schematic, indent=2))
+                    _SATURATE_DELTA_PROMPT
+                    .replace("{existing_step_names}", step_names)
                 ) + new_info
             else:
+                # First pass: create full schematic
+                yield self._evt("status", {
+                    "stage": "saturate_schematic",
+                    "message": f"Pass {pass_num} — Extracting initial schematic...",
+                })
                 prompt = _SATURATE_CREATE_PROMPT + new_info
 
-            # Use Hermes for schematic extraction (large context)
+            # Use Hermes for extraction (large context)
             raw_schematic = None
             if use_hermes and not fell_back:
                 try:
@@ -371,22 +504,31 @@ class SaturationPipeline:
                     pass
 
             if raw_schematic is None:
-                # Truncate for Dolphin3
                 if len(prompt) > 7000:
                     prompt = prompt[:7000] + "\n\n[...truncated]"
                 raw_schematic = await self.ollama.generate(prompt)
 
-            new_schematic = _extract_json(raw_schematic)
+            parsed = _extract_json(raw_schematic)
 
-            if new_schematic is None:
+            if parsed is None:
                 yield self._evt("status", {
                     "stage": "saturate_schematic",
-                    "message": f"Pass {pass_num} — Could not parse schematic JSON, retrying next pass",
+                    "message": f"Pass {pass_num} — Could not parse JSON, retrying next pass",
                 })
                 continue
 
-            # ---- STRUCTURAL DIFF ----
-            diff = _structural_diff(accumulated_schematic, new_schematic)
+            # ---- MERGE OR SET ----
+            if accumulated_schematic:
+                # Merge delta into existing — schematic can only grow, never shrink
+                yield self._evt("status", {
+                    "stage": "saturate_schematic",
+                    "message": f"Pass {pass_num} — Merging additions into existing schematic...",
+                })
+                new_schematic, diff = _merge_schematic(accumulated_schematic, parsed)
+            else:
+                # First pass — the parsed result IS the schematic
+                new_schematic = parsed
+                diff = _structural_diff(None, new_schematic)
 
             yield self._evt("status", {
                 "stage": "saturate_diff",

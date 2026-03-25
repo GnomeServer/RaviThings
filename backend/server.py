@@ -18,7 +18,7 @@ from backend.setup_fts import ensure_fts5
 from backend.brave_search import BraveSearchClient
 from backend.mercury_client import HermesClient
 from backend.deep_analysis import DeepAnalysisPipeline
-from backend.saturate import SaturationPipeline
+from backend.saturate import SaturationPipeline, _merge_schematic, _SATURATE_DELTA_PROMPT
 
 # Keywords that indicate a "how to make" question warranting schematic extraction
 _SCHEMATIC_KEYWORDS = re.compile(
@@ -361,11 +361,13 @@ def create_app() -> FastAPI:
                     )
 
                     if is_update:
-                        # UPDATE existing schematic — enrich, don't replace
+                        # DELTA approach: ask LLM for additions only, merge in code
+                        step_names = ", ".join(
+                            s.get("name", "?") for s in req.schematic.get("steps", [])
+                        )
                         prompt = (
-                            _SCHEMATIC_UPDATE_PROMPT
-                            .replace("{existing_schematic}", json.dumps(req.schematic, indent=2))
-                            .replace("{user_question}", user_msg)
+                            _SATURATE_DELTA_PROMPT
+                            .replace("{existing_step_names}", step_names)
                         ) + new_info
                     else:
                         # CREATE new schematic from scratch
@@ -374,7 +376,7 @@ def create_app() -> FastAPI:
                     # Use Hermes-4 for all schematic work (better JSON, 131K context)
                     hermes_available = hermes and hermes.is_available()
                     if hermes_available:
-                        action = "Enriching" if is_update else "Generating"
+                        action = "Extracting additions for" if is_update else "Generating"
                         yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": f"{action} schematic with Hermes-4..."})}
                         schematic_msgs = [{"role": "user", "content": prompt}]
                         try:
@@ -402,6 +404,13 @@ def create_app() -> FastAPI:
                         schematic_data = json.loads(raw_schematic[start:end + 1])
                     else:
                         schematic_data = json.loads(raw_schematic)
+
+                    # For updates: merge delta into existing schematic in code
+                    if is_update:
+                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "Merging additions into existing schematic..."})}
+                        schematic_data, merge_counts = _merge_schematic(req.schematic, schematic_data)
+                        n_new = merge_counts.get("total_new", 0)
+                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": f"Merged {n_new} new entities into schematic"})}
 
                     # Validate it has at least a title or steps
                     if schematic_data.get("title") or schematic_data.get("steps"):
