@@ -453,15 +453,25 @@ class SaturationPipeline:
                 "message": f"Pass {pass_num} — Response complete: {word_count} words",
             })
 
-            # Check for explicit "no new information" signal
+            # Check for explicit "no new information" signal — skip extraction
+            # but still count toward convergence via structural diff (0 new entities)
             if "NO NEW INFORMATION" in response_text.upper() and pass_num > 1:
                 yield self._evt("status", {
-                    "stage": "saturate_converged",
-                    "message": f"Pass {pass_num} — Model reports no new information. Saturated.",
+                    "stage": "saturate_generate",
+                    "message": f"Pass {pass_num} — Model reports no new information",
                 })
+                # Count as zero-gain pass (structural diff would also be 0)
                 consecutive_zero += 1
                 if consecutive_zero >= 2:
+                    yield self._evt("status", {
+                        "stage": "saturate_converged",
+                        "message": f"Pass {pass_num} — {consecutive_zero} consecutive passes with no new entities. Knowledge saturated.",
+                    })
                     break
+                yield self._evt("status", {
+                    "stage": "saturate_converging",
+                    "message": f"Pass {pass_num} — No new entities ({consecutive_zero}/2 consecutive zero-gain passes)",
+                })
                 continue
 
             # ---- EXTRACT/UPDATE SCHEMATIC ----
@@ -561,18 +571,20 @@ class SaturationPipeline:
                 ),
             })
 
-            # Convergence check
+            # Convergence check — based on structural diff, not LLM opinion
             if diff["total_new"] == 0:
                 consecutive_zero += 1
-                yield self._evt("status", {
-                    "stage": "saturate_converging",
-                    "message": (
-                        f"Pass {pass_num} — No new entities found "
-                        f"({consecutive_zero}/2 consecutive zero-gain passes)"
-                    ),
-                })
                 if consecutive_zero >= 2:
+                    yield self._evt("status", {
+                        "stage": "saturate_converged",
+                        "message": f"Pass {pass_num} — {consecutive_zero} consecutive passes with no new entities. Knowledge saturated.",
+                    })
                     break
+                else:
+                    yield self._evt("status", {
+                        "stage": "saturate_converging",
+                        "message": f"Pass {pass_num} — No new entities ({consecutive_zero}/2 consecutive zero-gain passes)",
+                    })
             else:
                 consecutive_zero = 0
 
