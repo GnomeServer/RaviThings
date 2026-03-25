@@ -25,7 +25,7 @@ _SCHEMATIC_KEYWORDS = re.compile(
     re.IGNORECASE,
 )
 
-_SCHEMATIC_JSON_SCHEMA = '{"title":"string","inputs":[{"id":"in1","name":"Chemical name (formula)","type":"raw_material|precursor|equipment|energy","sources":{"commercial":["Real supplier names"],"diy":"How to synthesize this yourself"},"feeds_into":["step1"]}],"steps":[{"id":"step1","name":"Process step name","description":"Detailed description of what happens in this step","parameters":{"key":"value with real numbers"},"equipment":["Specific equipment needed"],"inputs_from":["in1"],"outputs_to":["step2"],"doe_contractors":["Real lab names from contracts"],"investment":"Real dollar amount or unknown"}],"outputs":[{"id":"out1","name":"Product name","description":"Detailed description of the output product and its properties","type":"intermediate|final","receives_from":["step1"]}]}'
+_SCHEMATIC_JSON_SCHEMA = '{"title":"string","inputs":[{"id":"in1","name":"Chemical name (formula)","type":"raw_material|precursor|equipment|energy","sources":{"commercial":["Real supplier names"],"diy":"How to synthesize this yourself"},"feeds_into":["step1"]}],"steps":[{"id":"step1","name":"Process step name","description":"Detailed description of what happens in this step","parameters":{"key":"value with real numbers"},"equipment":["Specific equipment needed"],"inputs_from":["in1"],"outputs_to":["step2"],"doe_contractors":["Real lab names from contracts"],"investment":"Real dollar amount or unknown","contractor_details":[{"name":"Real contractor/lab name","role":"Specific contribution to this step","contract_value":12400000,"significance_pct":42.3}],"step_total_capital":29400000}],"outputs":[{"id":"out1","name":"Product name","description":"Detailed description of the output product and its properties","type":"intermediate|final","receives_from":["step1"]}]}'
 
 _SCHEMATIC_CREATE_PROMPT = """\
 Extract a manufacturing process schematic from the information below. Return ONLY valid JSON.
@@ -37,6 +37,7 @@ RULES:
 - For doe_contractors: actual lab/company names from the contract data.
 - For investment: actual dollar amounts from contracts if available.
 - Connect inputs to steps and steps to outputs using id fields.
+- For contractor_details: list each DOE contractor that participates in this step. Include their specific role/contribution, actual contract_value in dollars, and significance_pct as their share of the total capital for this step (percentages should sum to ~100 within each step). Set step_total_capital to the sum of all contract values for that step.
 
 JSON SCHEMA:
 """ + _SCHEMATIC_JSON_SCHEMA + "\n\n"

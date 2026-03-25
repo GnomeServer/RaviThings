@@ -122,6 +122,17 @@
 					lines.push(`**Investment:** ${step.investment}`);
 					lines.push('');
 				}
+				if (step.contractor_details && step.contractor_details.length > 0) {
+					const total = step.step_total_capital > 0
+						? ` ($${(step.step_total_capital / 1e6).toFixed(1)}M total)`
+						: '';
+					lines.push(`**Contractor Allocation${total}:**`);
+					for (const c of step.contractor_details) {
+						const val = c.contract_value > 0 ? ` — $${(c.contract_value / 1e6).toFixed(1)}M` : '';
+						lines.push(`- **${c.name}** (${c.significance_pct.toFixed(0)}%)${val}: ${c.role}`);
+					}
+					lines.push('');
+				}
 			}
 		}
 
@@ -546,6 +557,42 @@
 											<span class="investment-value">{step.investment}</span>
 										</div>
 									{/if}
+
+									<!-- Contractor Allocation -->
+									{#if step.contractor_details && step.contractor_details.length > 0}
+										<div class="card-section contractor-section">
+											<div class="section-label contractor-label">
+												Contractor Allocation
+												{#if step.step_total_capital > 0}
+													<span class="capital-total">${(step.step_total_capital / 1e6).toFixed(1)}M</span>
+												{/if}
+											</div>
+											<div class="contractor-list">
+												{#each step.contractor_details as c}
+													<div class="contractor-row">
+														<div class="contractor-bar-track">
+															<div
+																class="contractor-bar-fill"
+																style="width: {Math.min(c.significance_pct, 100)}%"
+															></div>
+														</div>
+														<div class="contractor-info">
+															<span class="contractor-name">{c.name}</span>
+															<span class="contractor-pct">{c.significance_pct.toFixed(0)}%</span>
+														</div>
+														<div class="contractor-meta">
+															{#if c.contract_value > 0}
+																<span class="contractor-value">${(c.contract_value / 1e6).toFixed(1)}M</span>
+															{/if}
+															{#if c.role}
+																<span class="contractor-role">{c.role}</span>
+															{/if}
+														</div>
+													</div>
+												{/each}
+											</div>
+										</div>
+									{/if}
 								</div>
 							{/each}
 						</div>
@@ -940,6 +987,99 @@
 		font-weight: 700;
 		font-family: var(--font-mono);
 		color: var(--accent-green-light);
+	}
+
+	/* ====================== Contractor Allocation ====================== */
+	.contractor-section {
+		border-top: 1px solid rgba(245, 158, 11, 0.15);
+		padding-top: 8px;
+		margin-top: 4px;
+	}
+
+	.contractor-label {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.capital-total {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 700;
+		color: rgb(245, 158, 11);
+	}
+
+	.contractor-list {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		margin-top: 6px;
+	}
+
+	.contractor-row {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.contractor-bar-track {
+		width: 100%;
+		height: 4px;
+		background: rgba(245, 158, 11, 0.1);
+		border-radius: 2px;
+		overflow: hidden;
+	}
+
+	.contractor-bar-fill {
+		height: 100%;
+		background: linear-gradient(90deg, rgb(245, 158, 11), rgb(251, 191, 36));
+		border-radius: 2px;
+		transition: width 0.4s ease-out;
+	}
+
+	.contractor-info {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+	}
+
+	.contractor-name {
+		font-size: 11px;
+		font-weight: 600;
+		color: var(--text-primary);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 75%;
+	}
+
+	.contractor-pct {
+		font-size: 11px;
+		font-weight: 700;
+		font-family: var(--font-mono);
+		color: rgb(245, 158, 11);
+	}
+
+	.contractor-meta {
+		display: flex;
+		gap: 6px;
+		align-items: baseline;
+		flex-wrap: wrap;
+	}
+
+	.contractor-value {
+		font-size: 10px;
+		font-family: var(--font-mono);
+		color: rgba(245, 158, 11, 0.7);
+		font-weight: 600;
+	}
+
+	.contractor-role {
+		font-size: 10px;
+		color: var(--text-muted);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	/* ====================== Legend ====================== */
