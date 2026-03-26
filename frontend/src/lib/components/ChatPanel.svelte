@@ -302,6 +302,16 @@
 		graphStore.clearHighlights();
 	}
 
+	function startNewChat() {
+		clearChat();
+		schematicStore.clear();
+		activityLogs = [];
+		deepAnalysisCounts = null;
+		deepAnalysisStartTime = null;
+		deepAnalysisDone = false;
+		pipelineStatus = null;
+	}
+
 	function formatDollars(amount: number): string {
 		if (Math.abs(amount) >= 1_000_000_000) {
 			return `$${(amount / 1_000_000_000).toFixed(1)}B`;
@@ -496,6 +506,13 @@
 			{/if}
 			{#if chatMode === 'saturate'}
 				<span class="saturate-warning">runs until exhausted</span>
+			{/if}
+			{#if chatStore.messages.length > 0}
+				<button
+					class="btn-new-chat"
+					disabled={chatStore.isStreaming}
+					onclick={startNewChat}
+				>New Chat</button>
 			{/if}
 		</div>
 	</div>
@@ -832,6 +849,31 @@
 		border-radius: 9999px;
 		border: 1px solid rgba(217, 119, 6, 0.3);
 		letter-spacing: 0.02em;
+	}
+
+	.btn-new-chat {
+		font-size: 10px;
+		font-weight: 600;
+		color: var(--text-muted);
+		background: transparent;
+		border: 1px solid var(--border-accent);
+		padding: 2px 10px;
+		border-radius: 4px;
+		cursor: pointer;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		transition: all 0.15s ease;
+	}
+
+	.btn-new-chat:hover:not(:disabled) {
+		color: var(--text-secondary);
+		border-color: var(--text-secondary);
+		background: var(--bg-hover);
+	}
+
+	.btn-new-chat:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
 	}
 
 	.saturate-warning {
