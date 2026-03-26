@@ -170,6 +170,10 @@ def _merge_schematic(base: dict, delta: dict) -> tuple[dict, dict]:
 
     # 1. Add new steps
     for new_step in delta.get("new_steps", []):
+        if isinstance(new_step, str):
+            new_step = {"name": new_step, "description": ""}
+        if not isinstance(new_step, dict):
+            continue
         name = new_step.get("name", "").lower()
         if name and name not in step_by_name:
             # Assign a new id if missing
@@ -180,8 +184,12 @@ def _merge_schematic(base: dict, delta: dict) -> tuple[dict, dict]:
             step_by_name[name] = new_step
             counts["new_steps"] += 1
 
-    # 2. Add new inputs
+    # 2. Add new inputs (handle both dict and string formats from LLM)
     for new_input in delta.get("new_inputs", []):
+        if isinstance(new_input, str):
+            new_input = {"name": new_input, "type": "raw_material"}
+        if not isinstance(new_input, dict):
+            continue
         name = new_input.get("name", "").lower()
         if name and name not in existing_input_names:
             if not new_input.get("id"):
@@ -191,8 +199,12 @@ def _merge_schematic(base: dict, delta: dict) -> tuple[dict, dict]:
             existing_input_names.add(name)
             counts["new_inputs"] += 1
 
-    # 3. Add new outputs
+    # 3. Add new outputs (handle both dict and string formats from LLM)
     for new_output in delta.get("new_outputs", []):
+        if isinstance(new_output, str):
+            new_output = {"name": new_output, "type": "intermediate"}
+        if not isinstance(new_output, dict):
+            continue
         name = new_output.get("name", "").lower()
         if name and name not in existing_output_names:
             if not new_output.get("id"):
@@ -204,6 +216,8 @@ def _merge_schematic(base: dict, delta: dict) -> tuple[dict, dict]:
 
     # 4. Apply enrichments to existing steps
     for enrichment in delta.get("enrichments", []):
+        if not isinstance(enrichment, dict):
+            continue
         step_name = enrichment.get("step_name", "").lower()
         target = step_by_name.get(step_name)
         if not target:
