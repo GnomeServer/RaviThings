@@ -652,6 +652,67 @@
     font-size: 10px;
   }
 
+  /* ─── NETWORK DIAGRAM ─── */
+  .net-diagram {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-dim);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+
+  .net-diagram svg {
+    width: 100%;
+    display: block;
+  }
+
+  .net-diagram svg text {
+    font-family: 'JetBrains Mono', monospace;
+    fill: var(--text-secondary);
+  }
+
+  .net-node-label {
+    font-size: 9px;
+    fill: var(--text-primary) !important;
+  }
+
+  .net-node-sub {
+    font-size: 7.5px;
+    fill: var(--text-muted) !important;
+  }
+
+  .coloc-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-left: 2px solid var(--border-dim);
+  }
+
+  .coloc-item:hover {
+    background: rgba(0, 229, 255, 0.06);
+    border-left-color: var(--accent-cyan);
+  }
+
+  .coloc-item + .coloc-item { margin-top: 3px; }
+
+  .coloc-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+  }
+
+  .coloc-cat {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
   /* ─── RELATIONSHIP LINES ─── */
   .relationship-line {
     stroke-dasharray: 6, 4;
@@ -981,6 +1042,7 @@ async function init() {
   buildLegend();
   addMarkers();
   addRelationshipLines();
+  addColocationOverlay();
   setupSearch();
 
   // Hide loading
@@ -1399,11 +1461,17 @@ function buildPanelBody(c) {
     </div>
   </div>`;
 
+  // ── Network Diagram ──
+  html += buildNetworkDiagram(c);
+
   // ── OSINT Intelligence (all layers) ──
   html += buildOSINTSection(c);
 
   // ── Shodan Intelligence (legacy) ──
   html += buildShodanSection(c);
+
+  // ── Co-located Contractors ──
+  html += buildColocationSection(c);
 
   return html;
 }
@@ -1689,6 +1757,274 @@ function getCVESeverity(cve) {
   if (year >= 2021) return 'high';
   if (year >= 2018) return 'medium';
   return 'low';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NETWORK DIAGRAM
+// ═══════════════════════════════════════════════════════════════
+
+function buildNetworkDiagram(c) {
+  const o = c.osint || {};
+  const s = c.shodan || {};
+  const dns = o.dns || {};
+  const web = o.web || {};
+  const ct = o.ct || {};
+  const dd = o.domain_discovery || {};
+
+  const domain = dd.domain;
+  if (!domain) return '';
+
+  // Collect nodes and edges for the diagram
+  const nodes = [];
+  const edges = [];
+  let nodeId = 0;
+
+  // Central domain node
+  const centralId = nodeId++;
+  nodes.push({ id: centralId, label: domain, type: 'domain', x: 200, y: 30 });
+
+  // Layer 1: Infrastructure services (row below domain)
+  const infraNodes = [];
+
+  // Mail provider
+  if (dns.mail_provider && dns.mail_provider !== 'Unknown') {
+    const id = nodeId++;
+    infraNodes.push({ id, label: dns.mail_provider, type: 'mail', sub: 'Email' });
+    edges.push({ from: centralId, to: id, label: 'MX' });
+  }
+
+  // DNS provider
+  if (dns.dns_provider && dns.dns_provider !== 'Unknown') {
+    const id = nodeId++;
+    infraNodes.push({ id, label: dns.dns_provider, type: 'dns_prov', sub: 'DNS' });
+    edges.push({ from: centralId, to: id, label: 'NS' });
+  }
+
+  // CDN
+  const cdn = (web.cdn_detected && web.cdn_detected !== 'None' && web.cdn_detected) ||
+              (dns.cdn && dns.cdn !== 'Unknown' && dns.cdn !== 'None' && dns.cdn);
+  if (cdn) {
+    const id = nodeId++;
+    infraNodes.push({ id, label: cdn, type: 'cdn', sub: 'CDN' });
+    edges.push({ from: centralId, to: id, label: 'CNAME' });
+  }
+
+  // Web server
+  if (web.server) {
+    const serverShort = web.server.split('/')[0];
+    const id = nodeId++;
+    infraNodes.push({ id, label: serverShort, type: 'server', sub: web.cms || 'Web' });
+    edges.push({ from: cdn ? infraNodes.find(n => n.type === 'cdn').id : centralId, to: id, label: cdn ? '' : 'HTTPS' });
+  }
+
+  // Position infra nodes in a row
+  const infraY = 90;
+  const infraSpacing = 400 / Math.max(infraNodes.length, 1);
+  infraNodes.forEach((n, i) => {
+    n.x = 15 + infraSpacing * i + infraSpacing / 2;
+    n.y = infraY;
+    nodes.push(n);
+  });
+
+  // Layer 2: CT subdomains / Shodan hosts (bottom rows)
+  const subNodes = [];
+
+  // CT infrastructure hints
+  const hints = ct.infrastructure_hints || {};
+  const hintTypes = [
+    { key: 'vpn', color: '#ff1744', icon: 'VPN' },
+    { key: 'email', color: '#ffd740', icon: 'MAIL' },
+    { key: 'dev_ci', color: '#7c4dff', icon: 'DEV' },
+    { key: 'auth', color: '#00e5ff', icon: 'AUTH' },
+    { key: 'cloud', color: '#00e676', icon: 'CLOUD' },
+  ];
+
+  hintTypes.forEach(ht => {
+    const subs = (hints[ht.key] || []).slice(0, 3);
+    subs.forEach(sub => {
+      const id = nodeId++;
+      // Shorten subdomain: "vpn.company.com" -> "vpn"
+      const shortLabel = sub.replace('.' + domain, '').replace(/\..+$/, '');
+      subNodes.push({ id, label: shortLabel, type: ht.key, color: ht.color, sub: ht.icon, fullName: sub });
+      edges.push({ from: centralId, to: id, label: '', dashed: true });
+    });
+  });
+
+  // Shodan sample hosts (if no CT data)
+  if (subNodes.length === 0 && s.sample_hosts && s.sample_hosts.length) {
+    s.sample_hosts.slice(0, 5).forEach(h => {
+      const id = nodeId++;
+      const label = h.ip + ':' + h.port;
+      subNodes.push({ id, label, type: 'host', color: '#b0bec5', sub: h.product || '' });
+      edges.push({ from: centralId, to: id, label: String(h.port), dashed: true });
+    });
+  }
+
+  // A record IPs (if nothing else)
+  if (subNodes.length === 0 && dns.a_records && dns.a_records.length) {
+    dns.a_records.slice(0, 4).forEach(ip => {
+      const id = nodeId++;
+      subNodes.push({ id, label: ip, type: 'ip', color: '#64748b', sub: 'A record' });
+      edges.push({ from: centralId, to: id, label: 'A' });
+    });
+  }
+
+  // Position sub nodes
+  const subY = 155;
+  const subSpacing = 400 / Math.max(subNodes.length, 1);
+  subNodes.forEach((n, i) => {
+    n.x = 15 + subSpacing * i + subSpacing / 2;
+    n.y = subY;
+    nodes.push(n);
+  });
+
+  // If we have nothing beyond the central node, skip diagram
+  if (nodes.length <= 1) return '';
+
+  // Calculate SVG height based on layers
+  const svgH = subNodes.length > 0 ? 200 : 130;
+
+  // Render SVG
+  let svg = `<svg viewBox="0 0 415 ${svgH}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<defs>
+    <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+      <polygon points="0 0, 6 2, 0 4" fill="rgba(0,229,255,0.4)"/>
+    </marker>
+  </defs>`;
+
+  // Draw edges
+  edges.forEach(e => {
+    const from = nodes.find(n => n.id === e.from);
+    const to = nodes.find(n => n.id === e.to);
+    if (!from || !to) return;
+    const dash = e.dashed ? 'stroke-dasharray="3,2"' : '';
+    svg += `<line x1="${from.x}" y1="${from.y + 12}" x2="${to.x}" y2="${to.y - 12}"
+      stroke="rgba(0,229,255,0.25)" stroke-width="1" ${dash} marker-end="url(#arrowhead)"/>`;
+    if (e.label) {
+      const mx = (from.x + to.x) / 2;
+      const my = (from.y + to.y) / 2 + 4;
+      svg += `<text x="${mx}" y="${my}" text-anchor="middle" class="net-node-sub">${escapeHtml(e.label)}</text>`;
+    }
+  });
+
+  // Node colors
+  const typeColors = {
+    domain: '#00e5ff', mail: '#ffd740', dns_prov: '#76ff03', cdn: '#ff9100',
+    server: '#e040fb', vpn: '#ff1744', email: '#ffd740', dev_ci: '#7c4dff',
+    auth: '#00e5ff', cloud: '#00e676', host: '#b0bec5', ip: '#64748b',
+  };
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const color = n.color || typeColors[n.type] || '#b0bec5';
+    const rx = n.type === 'domain' ? 12 : 8;
+    const ry = n.type === 'domain' ? 12 : 8;
+    // Node circle/diamond
+    if (n.type === 'domain') {
+      svg += `<rect x="${n.x - 50}" y="${n.y - 12}" width="100" height="24" rx="4"
+        fill="${color}15" stroke="${color}" stroke-width="1.2"/>`;
+      svg += `<text x="${n.x}" y="${n.y + 4}" text-anchor="middle" class="net-node-label" fill="${color}" style="font-weight:600">${escapeHtml(n.label)}</text>`;
+    } else {
+      svg += `<circle cx="${n.x}" cy="${n.y}" r="${rx}" fill="${color}20" stroke="${color}" stroke-width="1"/>`;
+      // Label below
+      svg += `<text x="${n.x}" y="${n.y + rx + 10}" text-anchor="middle" class="net-node-label">${escapeHtml(n.label.substring(0, 14))}</text>`;
+      if (n.sub) {
+        svg += `<text x="${n.x}" y="${n.y + rx + 19}" text-anchor="middle" class="net-node-sub">${escapeHtml(n.sub)}</text>`;
+      }
+    }
+  });
+
+  svg += '</svg>';
+
+  return `
+  <div class="panel-section">
+    <div class="section-title">Network Topology</div>
+    <div class="net-diagram">${svg}</div>
+  </div>`;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// CO-LOCATION
+// ═══════════════════════════════════════════════════════════════
+
+function buildColocationSection(c) {
+  if (!c.address || !DATA) return '';
+
+  // Find other contractors at the same address (by city + zip)
+  const colocated = DATA.contractors.filter(other =>
+    other.id !== c.id &&
+    other.city === c.city &&
+    other.zip === c.zip &&
+    other.address === c.address
+  );
+
+  if (colocated.length === 0) return '';
+
+  return `
+  <div class="panel-section">
+    <div class="section-title">Co-Located at This Address (${colocated.length})</div>
+    <div>
+      ${colocated.slice(0, 15).map(co => `
+        <div class="coloc-item" onclick="openDetailPanel(${DATA.contractors.indexOf(co)})">
+          <div style="width:10px;height:10px;border-radius:2px;background:${co.style.color};flex-shrink:0"></div>
+          <span class="coloc-name">${escapeHtml(co.name.substring(0, 40))}</span>
+          <span class="coloc-cat">${co.category.substring(0, 15)}</span>
+        </div>
+      `).join('')}
+      ${colocated.length > 15 ? `<div style="padding:4px 8px;font-size:11px;color:var(--text-muted)">+${colocated.length - 15} more</div>` : ''}
+    </div>
+  </div>`;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// CO-LOCATION MAP OVERLAY
+// ═══════════════════════════════════════════════════════════════
+
+let colocationLines = [];
+
+function addColocationOverlay() {
+  if (!DATA) return;
+
+  // Group contractors by address
+  const addrMap = {};
+  DATA.contractors.forEach((c, idx) => {
+    if (!c.address) return;
+    const key = c.city + '|' + c.zip;
+    if (!addrMap[key]) addrMap[key] = [];
+    addrMap[key].push(idx);
+  });
+
+  // Draw lines between co-located contractors (only groups of 2-10 to avoid noise)
+  Object.values(addrMap).forEach(group => {
+    if (group.length < 2 || group.length > 10) return;
+    // Connect first to all others (star topology)
+    const anchor = DATA.contractors[group[0]];
+    for (let i = 1; i < group.length; i++) {
+      const other = DATA.contractors[group[i]];
+      const line = L.polyline(
+        [[anchor.lat, anchor.lon], [other.lat, other.lon]],
+        {
+          color: '#ffd740',
+          weight: 1,
+          opacity: 0.25,
+          dashArray: '2, 4',
+        }
+      );
+      line.bindTooltip(
+        `<div style="font-family:JetBrains Mono,monospace;font-size:11px;">
+          <strong>Co-located</strong><br/>
+          ${anchor.name.substring(0, 30)}<br/>
+          ${other.name.substring(0, 30)}<br/>
+          <span style="color:#64748b">${anchor.city}, ${anchor.state}</span>
+        </div>`,
+        { className: 'rel-tooltip', sticky: true }
+      );
+      line.addTo(map);
+      colocationLines.push(line);
+    }
+  });
 }
 
 function formatCompact(val) {
