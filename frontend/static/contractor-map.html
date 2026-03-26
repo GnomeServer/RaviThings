@@ -1399,9 +1399,158 @@ function buildPanelBody(c) {
     </div>
   </div>`;
 
-  // ── Shodan Intelligence ──
+  // ── OSINT Intelligence (all layers) ──
+  html += buildOSINTSection(c);
+
+  // ── Shodan Intelligence (legacy) ──
   html += buildShodanSection(c);
 
+  return html;
+}
+
+function buildOSINTSection(c) {
+  const o = c.osint;
+  if (!o) return '';
+
+  let html = '';
+  const dd = o.domain_discovery || {};
+  const dns = o.dns || {};
+  const web = o.web || {};
+
+  // Only show if we have data from any layer
+  const hasDNS = dns.queried && dns.technologies_detected && dns.technologies_detected.length > 0;
+  const hasWeb = web.queried && web.technologies_detected && web.technologies_detected.length > 0;
+  const hasDomain = dd.domain;
+
+  if (!hasDNS && !hasWeb && !hasDomain) return '';
+
+  // ── Domain & Infrastructure Overview ──
+  html += '<div class="panel-section"><div class="section-title">Infrastructure Intelligence</div>';
+
+  // Domain
+  if (hasDomain) {
+    html += `<div style="margin-bottom:12px">
+      <span class="data-label">Discovered Domain</span>
+      <div style="margin-top:4px">
+        <span class="data-value mono highlight">${escapeHtml(dd.domain)}</span>
+        <span style="font-size:10px;color:var(--text-muted);margin-left:6px">via ${dd.source || 'unknown'}</span>
+      </div>
+    </div>`;
+  }
+
+  // DNS — Mail, DNS Provider, DMARC
+  if (hasDNS) {
+    const gridItems = [];
+
+    if (dns.mail_provider && dns.mail_provider !== 'Unknown') {
+      gridItems.push({label: 'Email Provider', value: dns.mail_provider, highlight: true});
+    }
+    if (dns.dns_provider && dns.dns_provider !== 'Unknown') {
+      gridItems.push({label: 'DNS Provider', value: dns.dns_provider});
+    }
+    if (dns.cdn && dns.cdn !== 'Unknown' && dns.cdn !== 'None') {
+      gridItems.push({label: 'CDN', value: dns.cdn});
+    }
+    if (dns.dmarc_policy) {
+      const dmarcColors = {reject: '#00e676', quarantine: '#ffd740', none: '#ff1744', not_set: '#ff1744'};
+      const color = dmarcColors[dns.dmarc_policy] || 'var(--text-secondary)';
+      gridItems.push({label: 'DMARC Policy', value: dns.dmarc_policy, color});
+    }
+
+    if (gridItems.length) {
+      html += '<div class="data-grid" style="margin-bottom:12px">';
+      gridItems.forEach(item => {
+        const style = item.highlight ? 'color:var(--accent-cyan);font-weight:600' : item.color ? 'color:' + item.color : '';
+        html += `<div class="data-cell">
+          <span class="data-label">${item.label}</span>
+          <span class="data-value" style="${style}">${escapeHtml(item.value)}</span>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    // Verification tokens
+    if (dns.verification_tokens && dns.verification_tokens.length) {
+      html += `<div style="margin-bottom:12px">
+        <span class="data-label">Service Integrations (DNS Verification Tokens)</span>
+        <div class="tag-list" style="margin-top:4px">
+          ${dns.verification_tokens.map(t => `<span class="tag active">${escapeHtml(t.service)}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    // SPF includes
+    if (dns.spf_includes && dns.spf_includes.length) {
+      html += `<div style="margin-bottom:12px">
+        <span class="data-label">Email Infrastructure (SPF)</span>
+        <div class="tag-list" style="margin-top:4px">
+          ${dns.spf_includes.map(s => `<span class="tag">${escapeHtml(s)}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+  }
+
+  // Web fingerprint
+  if (hasWeb) {
+    const webItems = [];
+    if (web.server) webItems.push({label: 'Web Server', value: web.server});
+    if (web.cdn_detected && web.cdn_detected !== 'None') webItems.push({label: 'CDN', value: web.cdn_detected});
+    if (web.cms) webItems.push({label: 'CMS', value: web.cms});
+    if (web.powered_by) webItems.push({label: 'Powered By', value: web.powered_by});
+
+    if (webItems.length) {
+      html += '<div class="data-grid" style="margin-bottom:12px">';
+      webItems.forEach(item => {
+        html += `<div class="data-cell">
+          <span class="data-label">${item.label}</span>
+          <span class="data-value mono">${escapeHtml(item.value)}</span>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    // JS frameworks
+    if (web.js_frameworks && web.js_frameworks.length) {
+      html += `<div style="margin-bottom:12px">
+        <span class="data-label">Frontend Frameworks</span>
+        <div class="tag-list" style="margin-top:4px">
+          ${web.js_frameworks.map(f => `<span class="tag active">${escapeHtml(f)}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    // Security headers score
+    if (web.security_headers) {
+      const sh = web.security_headers;
+      const score = web.security_score || 0;
+      const scoreColor = score >= 3 ? '#00e676' : score >= 2 ? '#ffd740' : '#ff1744';
+      html += `<div style="margin-bottom:12px">
+        <span class="data-label">Security Headers</span>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+          <span style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:${scoreColor}">${score}/4</span>
+          <span class="tag${sh.hsts ? ' active' : ''}" style="${sh.hsts ? '' : 'opacity:0.3'}">HSTS</span>
+          <span class="tag${sh.csp ? ' active' : ''}" style="${sh.csp ? '' : 'opacity:0.3'}">CSP</span>
+          <span class="tag${sh.x_frame ? ' active' : ''}" style="${sh.x_frame ? '' : 'opacity:0.3'}">X-Frame</span>
+          <span class="tag${sh.x_content_type ? ' active' : ''}" style="${sh.x_content_type ? '' : 'opacity:0.3'}">X-Content-Type</span>
+        </div>
+      </div>`;
+    }
+  }
+
+  // Combined technology stack
+  const allTech = new Set();
+  (dns.technologies_detected || []).forEach(t => allTech.add(t));
+  (web.technologies_detected || []).forEach(t => allTech.add(t));
+  if (allTech.size > 0) {
+    html += `<div style="margin-bottom:8px">
+      <span class="data-label">Full Technology Stack</span>
+      <div class="tag-list" style="margin-top:4px">
+        ${[...allTech].sort().map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
   return html;
 }
 
