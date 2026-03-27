@@ -25,10 +25,12 @@ import shodan
 from dotenv import load_dotenv
 
 from osint.domain_discovery import discover_domain
+from osint.domain_verify import verify_domain
 from osint.dns_intel import enrich_dns
 from osint.ct_logs import enrich_ct
 from osint.web_fingerprint import enrich_web
 from osint.enhanced_shodan import enrich_shodan
+from osint.asn_enum import enrich_asn
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -145,6 +147,113 @@ def run_layer_enhanced_shodan(contractors, api, force=False, limit=0):
         time.sleep(1)  # Rate limit
 
     print(f'\n  Enhanced Shodan: {found}/{len(to_process)} with results')
+    return found
+
+
+def run_layer_domain_verification(contractors, force=False, limit=0):
+    """Layer 2b: Domain Verification — confidence scoring."""
+    print('\n' + '=' * 60)
+    print('LAYER: Domain Verification')
+    print('=' * 60)
+
+    to_process = [
+        (i, c) for i, c in enumerate(contractors)
+        if needs_layer(c, 'domain_verify', force) and get_contractor_domain(c)
+    ]
+    if limit > 0:
+        to_process = to_process[:limit]
+
+    print(f'  {len(to_process)} domains to verify')
+    verified = 0
+    parking = 0
+    unverified = 0
+
+    for idx, (i, c) in enumerate(to_process):
+        domain = get_contractor_domain(c)
+        print(f'  [{idx+1}/{len(to_process)}] {c["name"][:35]:35s} -> {domain:30s}', end=' ', flush=True)
+
+        dns_data = c.get('osint', {}).get('dns')
+        ct_data = c.get('osint', {}).get('ct')
+
+        result = verify_domain(c['name'], domain, dba=c.get('dba', ''),
+                               dns_data=dns_data, ct_data=ct_data)
+
+        if 'osint' not in contractors[i]:
+            contractors[i]['osint'] = {}
+        contractors[i]['osint']['domain_verify'] = result
+
+        verdict = result['verdict']
+        conf = result['confidence']
+        if result['is_parking']:
+            print(f'  PARKING  conf={conf} "{result["page_title"][:30]}"')
+            parking += 1
+        elif verdict == 'verified':
+            print(f'  VERIFIED conf={conf}')
+            verified += 1
+        elif verdict == 'likely':
+            print(f'  LIKELY   conf={conf}')
+            verified += 1
+        elif verdict == 'uncertain':
+            print(f'  UNCERTAIN conf={conf}')
+        else:
+            print(f'  UNVERIFIED conf={conf}')
+            unverified += 1
+
+        time.sleep(0.5)  # Rate limit HTTP fetches
+
+        if (idx + 1) % 100 == 0:
+            print(f'\n  Saving progress ({idx+1}/{len(to_process)})...\n')
+            save_data({'contractors': contractors, **{k: v for k, v in load_data().items() if k != 'contractors'}})
+
+    print(f'\n  Domain Verification: {verified} verified/likely, {parking} parking, {unverified} unverified')
+    return verified
+
+
+def run_layer_asn(contractors, force=False, limit=0):
+    """Layer 6: ASN/IP enumeration via InternetDB."""
+    print('\n' + '=' * 60)
+    print('LAYER: ASN / IP Enumeration')
+    print('=' * 60)
+
+    to_process = [
+        (i, c) for i, c in enumerate(contractors)
+        if needs_layer(c, 'asn', force)
+        and get_contractor_domain(c)
+        and c.get('osint', {}).get('dns', {}).get('a_records')
+        # Only process verified/likely domains
+        and c.get('osint', {}).get('domain_verify', {}).get('verdict', '') in ('verified', 'likely', '')
+    ]
+    if limit > 0:
+        to_process = to_process[:limit]
+
+    print(f'  {len(to_process)} contractors with verified IPs to enumerate')
+    found = 0
+
+    for idx, (i, c) in enumerate(to_process):
+        domain = get_contractor_domain(c)
+        a_records = c.get('osint', {}).get('dns', {}).get('a_records', [])
+        print(f'  [{idx+1}/{len(to_process)}] {domain:35s} ({len(a_records)} IPs)', end=' ', flush=True)
+
+        result = enrich_asn(domain, a_records)
+        if 'osint' not in contractors[i]:
+            contractors[i]['osint'] = {}
+        contractors[i]['osint']['asn'] = result
+
+        if result.get('total_ports', 0) > 0:
+            asn_info = result.get('asn', {})
+            asn_str = asn_info.get('number', '?')
+            print(f'  OK  {asn_str} ports={result["total_ports"]} vulns={result["total_vulns"]}')
+            found += 1
+        elif result.get('error'):
+            print(f'  !! {result["error"][:30]}')
+        else:
+            print(f'  -- no data')
+
+        if (idx + 1) % 100 == 0:
+            print(f'\n  Saving progress ({idx+1}/{len(to_process)})...\n')
+            save_data({'contractors': contractors, **{k: v for k, v in load_data().items() if k != 'contractors'}})
+
+    print(f'\n  ASN Enumeration: {found}/{len(to_process)} with port/vuln data')
     return found
 
 
@@ -369,6 +478,10 @@ def main():
         run_layer_domain_discovery(contractors, force=args.force, limit=args.limit)
         save_data(data)
 
+    if run_all or 'verify' in layers:
+        run_layer_domain_verification(contractors, force=args.force, limit=args.limit)
+        save_data(data)
+
     if (run_all or 'shodan' in layers) and api:
         run_layer_enhanced_shodan(contractors, api, force=args.force, limit=args.limit)
         save_data(data)
@@ -383,6 +496,10 @@ def main():
 
     if run_all or 'web' in layers:
         run_layer_web(contractors, force=args.force, limit=args.limit)
+        save_data(data)
+
+    if run_all or 'asn' in layers:
+        run_layer_asn(contractors, force=args.force, limit=args.limit)
         save_data(data)
 
     # Final save and summary

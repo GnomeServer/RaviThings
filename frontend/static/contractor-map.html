@@ -1497,12 +1497,22 @@ function buildOSINTSection(c) {
 
   // Domain
   if (hasDomain) {
+    const dv = o.domain_verify || {};
+    const conf = dv.confidence || 0;
+    const verdict = dv.verdict || 'pending';
+    const verdictColors = {verified: '#00e676', likely: '#ffd740', uncertain: '#ff9100', unverified: '#ff1744', pending: '#64748b'};
+    const verdictIcons = {verified: '\u2714', likely: '\u2714', uncertain: '?', unverified: '\u2718', pending: '\u2022'};
+    const vc = verdictColors[verdict] || '#64748b';
+    const vi = verdictIcons[verdict] || '';
+
     html += `<div style="margin-bottom:12px">
       <span class="data-label">Discovered Domain</span>
-      <div style="margin-top:4px">
+      <div style="margin-top:4px;display:flex;align-items:center;gap:8px">
         <span class="data-value mono highlight">${escapeHtml(dd.domain)}</span>
-        <span style="font-size:10px;color:var(--text-muted);margin-left:6px">via ${dd.source || 'unknown'}</span>
+        <span style="font-size:10px;padding:2px 6px;border-radius:3px;background:${vc}15;border:1px solid ${vc}40;color:${vc};font-family:JetBrains Mono,monospace">${vi} ${verdict} ${conf}%</span>
       </div>
+      ${dv.is_parking ? '<div style="font-size:11px;color:#ff1744;margin-top:4px">\u26a0 Domain appears to be parked/for sale</div>' : ''}
+      ${dv.is_redirect_away ? '<div style="font-size:11px;color:#ff9100;margin-top:4px">\u26a0 Redirects to a different domain</div>' : ''}
     </div>`;
   }
 
@@ -1616,6 +1626,73 @@ function buildOSINTSection(c) {
         ${[...allTech].sort().map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}
       </div>
     </div>`;
+  }
+
+  // ASN / IP Enumeration data
+  const asn = o.asn || {};
+  if (asn.queried && (asn.total_ports > 0 || asn.asn)) {
+    html += `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-dim)">
+      <span class="data-label">IP / ASN Intelligence (InternetDB)</span>`;
+
+    if (asn.asn && asn.asn.number) {
+      html += `<div class="data-grid" style="margin-top:4px;margin-bottom:8px">
+        <div class="data-cell">
+          <span class="data-label">ASN</span>
+          <span class="data-value mono highlight">${escapeHtml(asn.asn.number)}</span>
+        </div>
+        <div class="data-cell">
+          <span class="data-label">Network</span>
+          <span class="data-value mono">${escapeHtml(asn.asn.name || asn.asn.description || '')}</span>
+        </div>
+        ${asn.asn.prefix ? `<div class="data-cell">
+          <span class="data-label">Prefix</span>
+          <span class="data-value mono">${escapeHtml(asn.asn.prefix)}</span>
+        </div>` : ''}
+      </div>`;
+    }
+
+    if (asn.all_ports && asn.all_ports.length) {
+      const riskyPorts = new Set([21,23,25,110,143,445,1433,1521,3306,3389,5432,5900,6379,8080,9200,11211,27017]);
+      html += `<div style="margin-bottom:8px">
+        <span class="data-label">Open Ports (${asn.all_ports.length})</span>
+        <div class="port-badges" style="margin-top:4px">
+          ${asn.all_ports.slice(0, 20).map(p =>
+            '<span class="port-badge' + (riskyPorts.has(p) ? ' risky' : '') + '">' + p + '</span>'
+          ).join('')}
+          ${asn.all_ports.length > 20 ? '<span style="font-size:10px;color:var(--text-muted)">+' + (asn.all_ports.length - 20) + ' more</span>' : ''}
+        </div>
+      </div>`;
+    }
+
+    if (asn.all_vulns && asn.all_vulns.length) {
+      html += `<div style="margin-bottom:8px">
+        <span class="data-label">Vulnerabilities (${asn.all_vulns.length})</span>
+        <div class="vuln-list" style="margin-top:4px">
+          ${asn.all_vulns.slice(0, 8).map(v => {
+            const severity = getCVESeverity(v);
+            return '<span class="vuln-badge ' + severity + '">' + escapeHtml(v) + '</span>';
+          }).join('')}
+          ${asn.all_vulns.length > 8 ? '<div style="font-size:10px;color:var(--text-muted)">+' + (asn.all_vulns.length - 8) + ' more</div>' : ''}
+        </div>
+      </div>`;
+    }
+
+    if (asn.hosts && asn.hosts.length) {
+      html += `<div style="margin-bottom:4px">
+        <span class="data-label">Hosts</span>
+        <div style="margin-top:4px">
+          ${asn.hosts.slice(0, 5).map(h => {
+            const ports = (h.ports || []).slice(0, 6).join(', ');
+            const vulnCount = (h.vulns || []).length;
+            return '<div class="host-card"><span class="host-ip">' + escapeHtml(h.ip) + '</span>' +
+              '<div class="host-meta">ports: ' + ports + (vulnCount ? ' \u2022 ' + vulnCount + ' CVEs' : '') +
+              (h.reverse_dns ? ' \u2022 ' + escapeHtml(h.reverse_dns) : '') + '</div></div>';
+          }).join('')}
+        </div>
+      </div>`;
+    }
+
+    html += '</div>';
   }
 
   html += '</div>';
