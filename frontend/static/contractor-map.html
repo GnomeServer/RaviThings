@@ -14,6 +14,9 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
+<!-- Leaflet Heat Map -->
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -826,10 +829,283 @@
     text-transform: uppercase;
   }
 
+  /* ─── THREAT DASHBOARD BANNER ─── */
+  #threatBanner {
+    position: fixed;
+    top: 54px;
+    left: 0; right: 0;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0;
+    background: linear-gradient(90deg, rgba(255, 23, 68, 0.06) 0%, rgba(10, 14, 23, 0.92) 30%, rgba(10, 14, 23, 0.92) 70%, rgba(255, 23, 68, 0.06) 100%);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 23, 68, 0.15);
+    overflow: hidden;
+  }
+
+  #threatBanner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0px, transparent 200px, rgba(255,23,68,0.03) 200px, rgba(255,23,68,0.03) 201px);
+    pointer-events: none;
+  }
+
+  .threat-label {
+    padding: 8px 16px;
+    background: rgba(255, 23, 68, 0.12);
+    border-right: 1px solid rgba(255, 23, 68, 0.2);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .threat-label .pulse-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #ff1744;
+    box-shadow: 0 0 8px #ff1744, 0 0 16px rgba(255,23,68,0.4);
+    animation: threatPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes threatPulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 8px #ff1744, 0 0 16px rgba(255,23,68,0.4); }
+    50% { opacity: 0.4; box-shadow: 0 0 4px #ff1744; }
+  }
+
+  .threat-label span:last-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #ff1744;
+  }
+
+  .threat-stats {
+    display: flex;
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .threat-stats::-webkit-scrollbar { display: none; }
+
+  .threat-stat {
+    padding: 6px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-right: 1px solid var(--border-dim);
+    flex-shrink: 0;
+    min-width: 100px;
+    position: relative;
+  }
+
+  .threat-stat.critical { background: rgba(255, 23, 68, 0.05); }
+  .threat-stat.warn { background: rgba(255, 145, 0, 0.04); }
+
+  .threat-stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 18px;
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+
+  .threat-stat-value.red { color: #ff1744; }
+  .threat-stat-value.orange { color: #ff9100; }
+  .threat-stat-value.yellow { color: #ffd740; }
+  .threat-stat-value.cyan { color: var(--accent-cyan); }
+
+  .threat-stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+    white-space: nowrap;
+  }
+
+  .threat-toggle {
+    padding: 6px 14px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .heatmap-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border-dim);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .heatmap-toggle:hover { border-color: #ff1744; color: #ff1744; }
+  .heatmap-toggle.active {
+    border-color: #ff1744;
+    background: rgba(255, 23, 68, 0.12);
+    color: #ff1744;
+    box-shadow: 0 0 12px rgba(255,23,68,0.2);
+  }
+
+  .heatmap-toggle .toggle-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .heatmap-toggle.active .toggle-dot {
+    background: #ff1744;
+    box-shadow: 0 0 6px #ff1744;
+  }
+
+  /* ─── RISK SCORE IN DETAIL PANEL ─── */
+  .risk-score-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    margin: -16px -16px 12px -16px;
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  .risk-score-banner.risk-critical {
+    background: linear-gradient(90deg, rgba(255,23,68,0.12) 0%, transparent 100%);
+    border-bottom-color: rgba(255,23,68,0.2);
+  }
+  .risk-score-banner.risk-high {
+    background: linear-gradient(90deg, rgba(255,145,0,0.1) 0%, transparent 100%);
+    border-bottom-color: rgba(255,145,0,0.15);
+  }
+  .risk-score-banner.risk-medium {
+    background: linear-gradient(90deg, rgba(255,215,64,0.08) 0%, transparent 100%);
+    border-bottom-color: rgba(255,215,64,0.12);
+  }
+  .risk-score-banner.risk-low {
+    background: linear-gradient(90deg, rgba(0,230,118,0.06) 0%, transparent 100%);
+    border-bottom-color: rgba(0,230,118,0.1);
+  }
+
+  .risk-gauge {
+    width: 52px; height: 52px;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .risk-gauge svg { width: 100%; height: 100%; }
+
+  .risk-gauge-value {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 16px;
+  }
+
+  .risk-gauge-value.critical { color: #ff1744; }
+  .risk-gauge-value.high { color: #ff9100; }
+  .risk-gauge-value.medium { color: #ffd740; }
+  .risk-gauge-value.low { color: #00e676; }
+
+  .risk-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .risk-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .risk-severity {
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+
+  .risk-severity.critical { color: #ff1744; }
+  .risk-severity.high { color: #ff9100; }
+  .risk-severity.medium { color: #ffd740; }
+  .risk-severity.low { color: #00e676; }
+
+  .risk-factors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .risk-factor {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(255,23,68,0.08);
+    border: 1px solid rgba(255,23,68,0.15);
+    color: #ff8a80;
+  }
+
+  .risk-factor.warn {
+    background: rgba(255,145,0,0.08);
+    border-color: rgba(255,145,0,0.15);
+    color: #ffab40;
+  }
+
+  .risk-factor.ok {
+    background: rgba(0,230,118,0.06);
+    border-color: rgba(0,230,118,0.1);
+    color: #69f0ae;
+  }
+
+  /* ─── MARKER RISK RING ─── */
+  .risk-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    pointer-events: none;
+    animation: riskRingPulse 3s ease-in-out infinite;
+  }
+  .risk-ring.critical { border-color: #ff1744; box-shadow: 0 0 8px rgba(255,23,68,0.5); }
+  .risk-ring.high { border-color: #ff9100; box-shadow: 0 0 6px rgba(255,145,0,0.4); }
+  .risk-ring.medium { border-color: #ffd740; box-shadow: 0 0 4px rgba(255,215,64,0.3); }
+  .risk-ring.low { border-color: #00e676; }
+
+  @keyframes riskRingPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
   /* ─── RESPONSIVE ─── */
   @media (max-width: 768px) {
     #detailPanel { width: 100%; right: -100%; }
     .stats-bar { display: none; }
+    #threatBanner { display: none; }
     #legend { bottom: 10px; left: 10px; max-width: 200px; padding: 10px; }
     .legend-label { font-size: 10px; }
   }
@@ -879,6 +1155,50 @@
       <span class="stat-value" id="statObligation">—</span>
       <span class="stat-label">Total Obligated</span>
     </div>
+  </div>
+</div>
+
+<!-- Threat Dashboard Banner -->
+<div id="threatBanner">
+  <div class="threat-label">
+    <div class="pulse-dot"></div>
+    <span>Threat Surface</span>
+  </div>
+  <div class="threat-stats">
+    <div class="threat-stat critical">
+      <span class="threat-stat-value red" id="tExposed">—</span>
+      <span class="threat-stat-label">Exposed Hosts</span>
+    </div>
+    <div class="threat-stat critical">
+      <span class="threat-stat-value red" id="tCriticalCVE">—</span>
+      <span class="threat-stat-label">w/ Critical CVEs</span>
+    </div>
+    <div class="threat-stat warn">
+      <span class="threat-stat-value orange" id="tNoDMARC">—</span>
+      <span class="threat-stat-label">No DMARC</span>
+    </div>
+    <div class="threat-stat warn">
+      <span class="threat-stat-value orange" id="tRiskyPorts">—</span>
+      <span class="threat-stat-label">Risky Ports</span>
+    </div>
+    <div class="threat-stat">
+      <span class="threat-stat-value yellow" id="tWeakSSL">—</span>
+      <span class="threat-stat-label">Weak/No SSL</span>
+    </div>
+    <div class="threat-stat">
+      <span class="threat-stat-value yellow" id="tNoHeaders">—</span>
+      <span class="threat-stat-label">No Sec Headers</span>
+    </div>
+    <div class="threat-stat">
+      <span class="threat-stat-value cyan" id="tAvgRisk">—</span>
+      <span class="threat-stat-label">Avg Risk Score</span>
+    </div>
+  </div>
+  <div class="threat-toggle">
+    <button class="heatmap-toggle" id="heatmapToggle" onclick="toggleHeatmap()">
+      <div class="toggle-dot"></div>
+      Heat Map
+    </button>
   </div>
 </div>
 
@@ -1003,6 +1323,119 @@ let allMarkers = [];
 let relationshipLines = [];
 let activeFilters = new Set();
 let selectedContractor = null;
+let heatLayer = null;
+let heatmapVisible = false;
+
+// ═══════════════════════════════════════════════════════════════
+// RISK SCORING ENGINE
+// ═══════════════════════════════════════════════════════════════
+
+const RISKY_PORTS = new Set([21, 23, 25, 110, 143, 445, 1433, 1521, 3306, 3389, 5432, 5900, 6379, 8080, 8443, 9200, 11211, 27017]);
+
+function computeRiskScore(c) {
+  let score = 0;
+  const factors = [];
+
+  const s = c.shodan || {};
+  const o = c.osint || {};
+  const dns = o.dns || {};
+  const web = o.web || {};
+  const ct = o.ct || {};
+
+  // 1. Internet exposure (0-20 pts)
+  if (s.total_hosts > 0) {
+    const hostScore = Math.min(s.total_hosts / 50, 1) * 20;
+    score += hostScore;
+    if (s.total_hosts > 10) factors.push({ text: `${s.total_hosts} exposed hosts`, level: 'bad' });
+  }
+
+  // 2. Vulnerabilities (0-30 pts)
+  const vulnCount = (s.vulns || []).length;
+  if (vulnCount > 0) {
+    const vulnScore = Math.min(vulnCount / 15, 1) * 30;
+    score += vulnScore;
+    if (vulnCount >= 5) factors.push({ text: `${vulnCount} known CVEs`, level: 'bad' });
+    else if (vulnCount > 0) factors.push({ text: `${vulnCount} CVEs`, level: 'warn' });
+  }
+
+  // 3. Risky ports (0-15 pts)
+  const riskyPortCount = (s.top_ports || []).filter(p => RISKY_PORTS.has(p.port)).length;
+  if (riskyPortCount > 0) {
+    score += Math.min(riskyPortCount / 5, 1) * 15;
+    factors.push({ text: `${riskyPortCount} risky ports`, level: 'bad' });
+  }
+
+  // 4. DMARC policy (0-10 pts)
+  const dmarc = dns.dmarc_policy;
+  if (!dmarc || dmarc === 'not_set' || dmarc === 'none') {
+    score += 10;
+    factors.push({ text: dmarc === 'none' ? 'DMARC=none' : 'No DMARC', level: 'bad' });
+  } else if (dmarc === 'quarantine') {
+    score += 3;
+    factors.push({ text: 'DMARC=quarantine', level: 'warn' });
+  } else if (dmarc === 'reject') {
+    factors.push({ text: 'DMARC=reject', level: 'ok' });
+  }
+
+  // 5. Web security score (0-10 pts)
+  const webSec = web.security_score;
+  if (typeof webSec === 'number') {
+    const webRisk = Math.max(0, (100 - webSec) / 100) * 10;
+    score += webRisk;
+    if (webSec < 30) factors.push({ text: `Sec headers: ${webSec}/100`, level: 'bad' });
+    else if (webSec < 60) factors.push({ text: `Sec headers: ${webSec}/100`, level: 'warn' });
+  } else if (dns.queried) {
+    // Has domain but no web security data
+    score += 5;
+  }
+
+  // 6. CT subdomain exposure (0-10 pts)
+  const subCount = (ct.subdomains || []).length;
+  if (subCount > 10) {
+    score += Math.min((subCount - 10) / 40, 1) * 10;
+    factors.push({ text: `${subCount} subdomains exposed`, level: 'warn' });
+  }
+
+  // 7. SSL issues (0-5 pts)
+  const sampleHosts = s.sample_hosts || [];
+  const hasExpiredSSL = sampleHosts.some(h => {
+    if (!h.ssl_expires) return false;
+    return new Date(h.ssl_expires) < new Date();
+  });
+  if (hasExpiredSSL) {
+    score += 5;
+    factors.push({ text: 'Expired SSL cert', level: 'bad' });
+  }
+
+  score = Math.min(Math.round(score), 100);
+
+  let severity;
+  if (score >= 70) severity = 'critical';
+  else if (score >= 40) severity = 'high';
+  else if (score >= 15) severity = 'medium';
+  else severity = 'low';
+
+  return { score, severity, factors };
+}
+
+function getRiskColor(severity) {
+  return { critical: '#ff1744', high: '#ff9100', medium: '#ffd740', low: '#00e676' }[severity] || '#64748b';
+}
+
+function buildRiskGaugeSVG(score, severity) {
+  const color = getRiskColor(severity);
+  const circumference = 2 * Math.PI * 20;
+  const progress = (score / 100) * circumference;
+
+  return `
+    <svg viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
+      <circle cx="24" cy="24" r="20" fill="none" stroke="${color}" stroke-width="3"
+        stroke-dasharray="${progress} ${circumference - progress}"
+        stroke-linecap="round" transform="rotate(-90 24 24)"
+        style="filter: drop-shadow(0 0 4px ${color});" />
+    </svg>`;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // INIT
@@ -1039,6 +1472,7 @@ async function init() {
   }
 
   populateStats();
+  populateThreatDashboard();
   buildLegend();
   addMarkers();
   addRelationshipLines();
@@ -1068,6 +1502,105 @@ function populateStats() {
   const totalObl = DATA.contractors.reduce((sum, c) => sum + (c.obligation || 0), 0);
   document.getElementById('statObligation').textContent =
     '$' + (totalObl / 1e9).toFixed(1) + 'B';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// THREAT DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+
+function populateThreatDashboard() {
+  const cc = DATA.contractors;
+
+  // Total exposed hosts
+  let totalHosts = 0;
+  let contractorsWithCVEs = 0;
+  let noDMARC = 0;
+  let riskyPortContractors = 0;
+  let weakSSL = 0;
+  let noSecHeaders = 0;
+  let totalRisk = 0;
+  let scoredCount = 0;
+
+  cc.forEach(c => {
+    const s = c.shodan || {};
+    const o = c.osint || {};
+    const dns = o.dns || {};
+    const web = o.web || {};
+
+    // Exposed hosts
+    totalHosts += (s.total_hosts || 0);
+
+    // CVEs
+    if ((s.vulns || []).length > 0) contractorsWithCVEs++;
+
+    // DMARC
+    const dmarc = dns.dmarc_policy;
+    if (dns.queried && (!dmarc || dmarc === 'not_set' || dmarc === 'none')) noDMARC++;
+
+    // Risky ports
+    if ((s.top_ports || []).some(p => RISKY_PORTS.has(p.port))) riskyPortContractors++;
+
+    // Weak SSL
+    const hosts = s.sample_hosts || [];
+    if (hosts.some(h => h.ssl_expires && new Date(h.ssl_expires) < new Date())) weakSSL++;
+
+    // No security headers
+    if (web.queried && typeof web.security_score === 'number' && web.security_score < 30) noSecHeaders++;
+
+    // Risk score
+    const risk = computeRiskScore(c);
+    c._riskScore = risk.score;
+    c._riskSeverity = risk.severity;
+    totalRisk += risk.score;
+    scoredCount++;
+  });
+
+  document.getElementById('tExposed').textContent = totalHosts.toLocaleString();
+  document.getElementById('tCriticalCVE').textContent = contractorsWithCVEs.toLocaleString();
+  document.getElementById('tNoDMARC').textContent = noDMARC.toLocaleString();
+  document.getElementById('tRiskyPorts').textContent = riskyPortContractors.toLocaleString();
+  document.getElementById('tWeakSSL').textContent = weakSSL.toLocaleString();
+  document.getElementById('tNoHeaders').textContent = noSecHeaders.toLocaleString();
+  document.getElementById('tAvgRisk').textContent = scoredCount ? Math.round(totalRisk / scoredCount) : '—';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HEATMAP
+// ═══════════════════════════════════════════════════════════════
+
+function buildHeatmapData() {
+  return DATA.contractors
+    .filter(c => c._riskScore > 0)
+    .map(c => [c.lat, c.lon, c._riskScore / 100]);
+}
+
+function toggleHeatmap() {
+  const btn = document.getElementById('heatmapToggle');
+  heatmapVisible = !heatmapVisible;
+
+  if (heatmapVisible) {
+    if (!heatLayer) {
+      heatLayer = L.heatLayer(buildHeatmapData(), {
+        radius: 30,
+        blur: 20,
+        maxZoom: 12,
+        max: 1.0,
+        gradient: {
+          0.0: 'transparent',
+          0.2: 'rgba(255, 215, 64, 0.15)',
+          0.4: 'rgba(255, 145, 0, 0.3)',
+          0.6: 'rgba(255, 87, 34, 0.45)',
+          0.8: 'rgba(255, 23, 68, 0.6)',
+          1.0: 'rgba(255, 23, 68, 0.85)',
+        },
+      });
+    }
+    heatLayer.addTo(map);
+    btn.classList.add('active');
+  } else {
+    if (heatLayer) map.removeLayer(heatLayer);
+    btn.classList.remove('active');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1153,8 +1686,12 @@ function addMarkers() {
 
   DATA.contractors.forEach((c, idx) => {
     const svg = createMarkerSVG(c.style.shape, c.style.color, 28);
+    const riskSev = c._riskSeverity || 'low';
+    const ringHtml = riskSev !== 'low'
+      ? `<div class="risk-ring ${riskSev}"></div>`
+      : '';
     const icon = L.divIcon({
-      html: svg,
+      html: `<div style="position:relative;width:28px;height:28px">${svg}${ringHtml}</div>`,
       className: '',
       iconSize: [28, 28],
       iconAnchor: [14, 14],
@@ -1262,6 +1799,26 @@ function closePanel() {
 
 function buildPanelBody(c) {
   let html = '';
+
+  // ── Risk Score Banner ──
+  const risk = computeRiskScore(c);
+  html += `
+  <div class="risk-score-banner risk-${risk.severity}">
+    <div class="risk-gauge">
+      ${buildRiskGaugeSVG(risk.score, risk.severity)}
+      <div class="risk-gauge-value ${risk.severity}">${risk.score}</div>
+    </div>
+    <div class="risk-details">
+      <div class="risk-label">Attack Surface Risk</div>
+      <div class="risk-severity ${risk.severity}">${risk.severity.toUpperCase()} RISK</div>
+      ${risk.factors.length ? `
+      <div class="risk-factors">
+        ${risk.factors.slice(0, 5).map(f =>
+          `<span class="risk-factor${f.level === 'warn' ? ' warn' : f.level === 'ok' ? ' ok' : ''}">${f.text}</span>`
+        ).join('')}
+      </div>` : ''}
+    </div>
+  </div>`;
 
   // ── Financials ──
   html += `
