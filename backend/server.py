@@ -525,6 +525,8 @@ def create_app() -> FastAPI:
     class SaturateChatRequest(BaseModel):
         messages: list[dict]
         max_passes: int | None = None  # None = no limit, run until converged
+        auto_explore: bool = True
+        max_depth: int = 3
 
     @app.post("/api/saturate-chat")
     async def saturate_chat(req: SaturateChatRequest):
@@ -545,7 +547,12 @@ def create_app() -> FastAPI:
         )
 
         async def event_stream():
-            async for event in pipeline.saturate(user_msg, max_passes=req.max_passes):
+            async for event in pipeline.saturate(
+                    user_msg,
+                    max_passes=req.max_passes,
+                    auto_explore=req.auto_explore,
+                    max_depth=req.max_depth,
+                ):
                 yield {
                     "event": event["event"],
                     "data": json.dumps(event["data"]),

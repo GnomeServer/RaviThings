@@ -242,8 +242,12 @@ def _merge_schematic(base: dict, delta: dict) -> tuple[dict, dict]:
         add_equip = enrichment.get("add_equipment", [])
         if add_equip:
             existing_equip = target.setdefault("equipment", [])
-            existing_equip_lower = {e.lower() for e in existing_equip}
+            existing_equip_lower = {e.lower() for e in existing_equip if isinstance(e, str)}
             for e in add_equip:
+                if isinstance(e, dict):
+                    e = e.get("name", "") or str(e)
+                if not isinstance(e, str) or not e:
+                    continue
                 if e.lower() not in existing_equip_lower:
                     existing_equip.append(e)
                     existing_equip_lower.add(e.lower())
@@ -253,11 +257,15 @@ def _merge_schematic(base: dict, delta: dict) -> tuple[dict, dict]:
         add_contractors = enrichment.get("add_contractors", [])
         if add_contractors:
             existing_cd = target.setdefault("contractor_details", [])
-            existing_names = {c.get("name", "").lower() for c in existing_cd}
+            existing_names = {c.get("name", "").lower() for c in existing_cd if isinstance(c, dict)}
             # Also check flat doe_contractors list
             existing_dc = target.setdefault("doe_contractors", [])
-            existing_names.update(c.lower() for c in existing_dc)
+            existing_names.update(c.lower() for c in existing_dc if isinstance(c, str))
             for c in add_contractors:
+                if isinstance(c, str):
+                    c = {"name": c, "role": "unknown"}
+                if not isinstance(c, dict):
+                    continue
                 cname = c.get("name", "").lower()
                 if cname and cname not in existing_names:
                     existing_cd.append(c)
@@ -314,14 +322,172 @@ class SaturationPipeline:
         self,
         query: str,
         max_passes: int | None = None,
+        auto_explore: bool = True,
+        max_depth: int = 3,
     ) -> AsyncGenerator[dict, None]:
-        """Run iterative saturation. Yields SSE event dicts.
+        """Run iterative saturation with optional auto-explore.
 
-        Stops when structural diff shows 0 new entities for 2 consecutive passes,
-        or when max_passes is reached (if set).
+        When auto_explore is True, after saturating the initial query,
+        automatically drills into each discovered step, saturating each
+        one and merging results into the master schematic. Repeats
+        recursively until no new steps are discovered at any level.
         """
-        accumulated_schematic: dict | None = None
-        seen_contract_keys: set[str] = set()
+        master_schematic: dict | None = None
+        explored_steps: set[str] = set()
+        global_contracts: set[str] = set()
+        global_entities = 0
+        global_passes = 0
+        depth = 0
+
+        # --- Phase 1: Saturate the initial query ---
+        async for event in self._saturate_query(
+            query, max_passes=max_passes,
+            accumulated_schematic=None, seen_contract_keys=global_contracts,
+            label="Initial",
+        ):
+            # Capture the final schematic from process_schematic events
+            if event["event"] == "process_schematic":
+                master_schematic = event["data"]
+            elif event["event"] == "done":
+                global_passes += event["data"].get("passes", 0)
+                global_entities += event["data"].get("total_new_entities", 0)
+                continue  # don't emit done yet — more work to do
+            yield event
+
+        if not auto_explore or not master_schematic:
+            yield self._evt("done", {
+                "passes": global_passes,
+                "total_new_entities": global_entities,
+                "unique_contracts": len(global_contracts),
+            })
+            return
+
+        # --- Phase 2+: Recursive auto-explore ---
+        while True:
+            depth += 1
+            if depth > max_depth:
+                yield self._evt("status", {
+                    "stage": "explore_done",
+                    "message": f"Auto-explore reached max depth ({max_depth}). Stopping.",
+                })
+                break
+            # Find unexplored steps
+            all_steps = master_schematic.get("steps", [])
+            unexplored = [
+                s for s in all_steps
+                if s.get("name", "").lower() not in explored_steps
+            ]
+
+            if not unexplored:
+                yield self._evt("status", {
+                    "stage": "explore_done",
+                    "message": f"Auto-explore complete — all {len(all_steps)} steps explored across {depth - 1} levels",
+                })
+                break
+
+            yield self._evt("status", {
+                "stage": "explore_level",
+                "message": f"Auto-explore level {depth} — {len(unexplored)} steps to drill into",
+            })
+
+            level_new_steps = 0
+
+            for i, step in enumerate(unexplored, 1):
+                step_name = step.get("name", "Unknown")
+                explored_steps.add(step_name.lower())
+
+                yield self._evt("status", {
+                    "stage": "explore_step",
+                    "message": f"Level {depth} — Exploring step {i}/{len(unexplored)}: \"{step_name}\"",
+                })
+
+                drill_query = (
+                    f"Provide detailed technical specifications for the \"{step_name}\" process step. "
+                    f"Include specific equipment models, operating parameters (temperatures, pressures, "
+                    f"flow rates, tolerances), materials and their grades/purities, safety requirements, "
+                    f"quality control procedures, and which DOE contractors perform this work."
+                )
+
+                yield self._evt("token", {
+                    "content": f"\n\n---\n**Auto-Explore: Drilling into \"{step_name}\"...**\n\n",
+                })
+
+                steps_before = {s.get("name", "").lower() for s in master_schematic.get("steps", [])}
+
+                async for event in self._saturate_query(
+                    drill_query, max_passes=3,
+                    accumulated_schematic=master_schematic,
+                    seen_contract_keys=global_contracts,
+                    label=f"L{depth}/{step_name}",
+                ):
+                    if event["event"] == "process_schematic":
+                        master_schematic = event["data"]
+                    elif event["event"] == "done":
+                        global_passes += event["data"].get("passes", 0)
+                        global_entities += event["data"].get("total_new_entities", 0)
+                        continue
+                    yield event
+
+                steps_after = {s.get("name", "").lower() for s in master_schematic.get("steps", [])}
+                new_step_names = steps_after - steps_before
+                level_new_steps += len(new_step_names)
+
+                if new_step_names:
+                    yield self._evt("status", {
+                        "stage": "explore_step",
+                        "message": f"Level {depth} — \"{step_name}\" revealed {len(new_step_names)} new sub-steps: {', '.join(new_step_names)}",
+                    })
+
+            yield self._evt("status", {
+                "stage": "explore_level",
+                "message": f"Level {depth} complete — {level_new_steps} new sub-steps discovered across {len(unexplored)} steps explored",
+            })
+
+            if level_new_steps == 0:
+                yield self._evt("status", {
+                    "stage": "explore_done",
+                    "message": f"No new sub-steps at level {depth}. Exploration complete.",
+                })
+                break
+
+        # ---- FINAL DONE ----
+        total_steps = len(master_schematic.get("steps", [])) if master_schematic else 0
+        total_contractors = sum(
+            len(s.get("contractor_details", []))
+            for s in (master_schematic or {}).get("steps", [])
+        )
+        yield self._evt("status", {
+            "stage": "explore_done",
+            "message": (
+                f"Auto-explore complete — {depth} levels, {total_steps} steps, "
+                f"{total_contractors} contractors, {global_entities} entities "
+                f"from {len(global_contracts)} unique contracts across {global_passes} passes"
+            ),
+        })
+
+        yield self._evt("done", {
+            "passes": global_passes,
+            "total_new_entities": global_entities,
+            "unique_contracts": len(global_contracts),
+            "depth_levels": depth,
+            "total_steps": total_steps,
+        })
+
+    async def _saturate_query(
+        self,
+        query: str,
+        max_passes: int | None = None,
+        accumulated_schematic: dict | None = None,
+        seen_contract_keys: set[str] | None = None,
+        label: str = "",
+    ) -> AsyncGenerator[dict, None]:
+        """Internal: saturate a single query. Yields SSE events.
+
+        Can receive an existing schematic to merge into (for drill-downs).
+        """
+        if seen_contract_keys is None:
+            seen_contract_keys = set()
+        prefix = f"[{label}] " if label else ""
         consecutive_zero = 0
         total_zero_passes = 0
         pass_num = 0
@@ -330,7 +496,7 @@ class SaturationPipeline:
 
         yield self._evt("status", {
             "stage": "saturate_start",
-            "message": "Saturation mode — searching until knowledge is exhausted",
+            "message": f"{prefix}Saturation mode — searching until knowledge is exhausted",
         })
 
         while True:
@@ -346,7 +512,7 @@ class SaturationPipeline:
             # ---- RETRIEVE ----
             yield self._evt("status", {
                 "stage": "saturate_search",
-                "message": f"Pass {pass_num} — Searching contracts (vector + keyword + graph)...",
+                "message": f"{prefix}Pass {pass_num} — Searching contracts (vector + keyword + graph)...",
             })
 
             results = await asyncio.to_thread(self.retriever.search, query)
@@ -356,7 +522,7 @@ class SaturationPipeline:
 
             yield self._evt("status", {
                 "stage": "saturate_search",
-                "message": f"Pass {pass_num} — Retrieved {total_contracts} contracts ({len(new_keys)} not seen in prior passes)",
+                "message": f"{prefix}Pass {pass_num} — Retrieved {total_contracts} contracts ({len(new_keys)} not seen in prior passes)",
             })
 
             # Build contract context
@@ -452,9 +618,14 @@ class SaturationPipeline:
                         response_parts.append(token)
                         yield self._evt("token", {"content": token})
                 except Exception:
-                    if not response_parts:
-                        fell_back = True
+                    # Always fall back — partial output is worse than full retry
+                    response_parts.clear()
+                    fell_back = True
             if not use_hermes or fell_back:
+                if fell_back:
+                    yield self._evt("token", {
+                        "content": "\n\n[Connection lost — retrying with local model...]\n\n",
+                    })
                 async for token in self.ollama.chat_stream(messages):
                     response_parts.append(token)
                     yield self._evt("token", {"content": token})
@@ -614,7 +785,7 @@ class SaturationPipeline:
         yield self._evt("status", {
             "stage": "saturate_done",
             "message": (
-                f"Knowledge saturated after {pass_num} passes. "
+                f"{prefix}Knowledge saturated after {pass_num} passes. "
                 f"Total: {cumulative_new} entities from {len(seen_contract_keys)} unique contracts"
             ),
         })
