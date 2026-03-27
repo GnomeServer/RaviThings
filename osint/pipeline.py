@@ -31,6 +31,8 @@ from osint.ct_logs import enrich_ct
 from osint.web_fingerprint import enrich_web
 from osint.enhanced_shodan import enrich_shodan
 from osint.asn_enum import enrich_asn
+from osint.nvd_cvss import enrich_nvd_cvss, collect_cve_ids
+from osint.service_risk import classify_services
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -378,6 +380,75 @@ def run_layer_web(contractors, force=False, limit=0):
     return found
 
 
+def run_layer_service_risk(contractors, force=False, limit=0):
+    """Classify dangerous services for each contractor."""
+    print(f'\n--- Layer: Service Risk Classification ---')
+    processed = 0
+    flagged = 0
+    targets = contractors[:limit] if limit else contractors
+
+    for c in targets:
+        if not needs_layer(c, 'service_risk', force):
+            continue
+        result = classify_services(c)
+        c.setdefault('osint', {})['service_risk'] = result
+        processed += 1
+        if result['max_danger'] != 'none':
+            flagged += 1
+
+    print(f'  Processed: {processed}, Flagged: {flagged} with dangerous services')
+
+
+def run_layer_nvd(contractors, force=False, limit=0):
+    """Enrich CVEs with CVSS scores from NVD."""
+    print(f'\n--- Layer: NVD CVSS Scoring ---')
+
+    # First: build a global cache of already-known scores
+    global_cache = {}
+    for c in contractors:
+        existing = c.get('osint', {}).get('nvd_cvss', {}).get('scores', {})
+        global_cache.update(existing)
+
+    processed = 0
+    scored = 0
+    targets = contractors[:limit] if limit else contractors
+
+    for i, c in enumerate(targets):
+        if not needs_layer(c, 'nvd_cvss', force):
+            continue
+
+        cve_ids = collect_cve_ids(c)
+        if not cve_ids:
+            # Mark as queried with no CVEs
+            c.setdefault('osint', {})['nvd_cvss'] = {
+                'queried': True,
+                'query_time': time.strftime('%Y-%m-%dT%H:%M:%S'),
+                'total_cves': 0,
+                'scored_cves': 0,
+                'scores': {},
+                'summary': {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'none': 0, 'unknown': 0},
+                'max_severity': 'none',
+                'max_score': 0.0,
+                'error': None,
+            }
+            continue
+
+        result = enrich_nvd_cvss(cve_ids, existing_scores=global_cache)
+
+        # Update global cache with new scores
+        global_cache.update(result.get('scores', {}))
+
+        c.setdefault('osint', {})['nvd_cvss'] = result
+        processed += 1
+        scored += result.get('scored_cves', 0)
+
+        if (i + 1) % 10 == 0:
+            print(f'  Progress: {i + 1}/{len(targets)} contractors, {scored} CVEs scored')
+
+    print(f'  Processed: {processed} contractors, {scored} total CVE scores')
+    print(f'  Global cache: {len(global_cache)} unique CVEs')
+
+
 def print_summary(contractors):
     """Print aggregate summary of all OSINT data."""
     print('\n' + '=' * 60)
@@ -438,7 +509,7 @@ def print_summary(contractors):
 def main():
     parser = argparse.ArgumentParser(description='Multi-layer OSINT enrichment pipeline')
     parser.add_argument('--layers', default='all',
-                        help='Comma-separated layers to run: all,shodan,domain,dns,ct,web')
+                        help='Comma-separated layers: all,shodan,domain,verify,dns,ct,web,asn,service_risk,nvd')
     parser.add_argument('--limit', type=int, default=0,
                         help='Limit contractors per layer (0=all)')
     parser.add_argument('--force', action='store_true',
@@ -500,6 +571,14 @@ def main():
 
     if run_all or 'asn' in layers:
         run_layer_asn(contractors, force=args.force, limit=args.limit)
+        save_data(data)
+
+    if run_all or 'service_risk' in layers:
+        run_layer_service_risk(contractors, force=args.force, limit=args.limit)
+        save_data(data)
+
+    if run_all or 'nvd' in layers:
+        run_layer_nvd(contractors, force=args.force, limit=args.limit)
         save_data(data)
 
     # Final save and summary

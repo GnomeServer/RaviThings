@@ -1349,20 +1349,46 @@ function computeRiskScore(c) {
     if (s.total_hosts > 10) factors.push({ text: `${s.total_hosts} exposed hosts`, level: 'bad' });
   }
 
-  // 2. Vulnerabilities (0-30 pts)
+  // 2. Vulnerabilities (0-30 pts) — use CVSS data if available
   const vulnCount = (s.vulns || []).length;
+  const nvd = o.nvd_cvss || {};
+  const nvdSummary = nvd.summary || {};
+  const hasCVSS = nvd.scored_cves > 0;
+
   if (vulnCount > 0) {
-    const vulnScore = Math.min(vulnCount / 15, 1) * 30;
-    score += vulnScore;
-    if (vulnCount >= 5) factors.push({ text: `${vulnCount} known CVEs`, level: 'bad' });
-    else if (vulnCount > 0) factors.push({ text: `${vulnCount} CVEs`, level: 'warn' });
+    if (hasCVSS) {
+      // Weight by real CVSS severity: critical=4, high=3, medium=2, low=1
+      const weightedScore = ((nvdSummary.critical || 0) * 4 + (nvdSummary.high || 0) * 3 +
+        (nvdSummary.medium || 0) * 2 + (nvdSummary.low || 0)) / (nvd.scored_cves * 4);
+      score += weightedScore * 30;
+      if (nvdSummary.critical > 0) factors.push({ text: `${nvdSummary.critical} CRITICAL CVEs (CVSS 9.0+)`, level: 'bad' });
+      else if (nvdSummary.high > 0) factors.push({ text: `${nvdSummary.high} HIGH CVEs (CVSS 7.0+)`, level: 'bad' });
+      else factors.push({ text: `${vulnCount} CVEs (scored)`, level: 'warn' });
+    } else {
+      const vulnScore = Math.min(vulnCount / 15, 1) * 30;
+      score += vulnScore;
+      if (vulnCount >= 5) factors.push({ text: `${vulnCount} known CVEs`, level: 'bad' });
+      else if (vulnCount > 0) factors.push({ text: `${vulnCount} CVEs`, level: 'warn' });
+    }
   }
 
-  // 3. Risky ports (0-15 pts)
-  const riskyPortCount = (s.top_ports || []).filter(p => RISKY_PORTS.has(p.port)).length;
-  if (riskyPortCount > 0) {
-    score += Math.min(riskyPortCount / 5, 1) * 15;
-    factors.push({ text: `${riskyPortCount} risky ports`, level: 'bad' });
+  // 3. Dangerous services (0-15 pts) — from service_risk or client-side classification
+  const sr = o.service_risk || {};
+  const dangerSummary = sr.danger_summary || {};
+  const criticalSvcs = dangerSummary.critical || 0;
+  const highSvcs = dangerSummary.high || 0;
+
+  if (criticalSvcs > 0 || highSvcs > 0) {
+    score += Math.min((criticalSvcs * 3 + highSvcs * 1.5) / 8, 1) * 15;
+    if (criticalSvcs > 0) factors.push({ text: `${criticalSvcs} critical services exposed`, level: 'bad' });
+    else factors.push({ text: `${highSvcs} high-risk services`, level: 'warn' });
+  } else {
+    // Fallback: use RISKY_PORTS set
+    const riskyPortCount = (s.top_ports || []).filter(p => RISKY_PORTS.has(p.port)).length;
+    if (riskyPortCount > 0) {
+      score += Math.min(riskyPortCount / 5, 1) * 15;
+      factors.push({ text: `${riskyPortCount} risky ports`, level: 'bad' });
+    }
   }
 
   // 4. DMARC policy (0-10 pts)
@@ -2021,6 +2047,9 @@ function buildPanelBody(c) {
   // ── Network Diagram ──
   html += buildNetworkDiagram(c);
 
+  // ── Dangerous Services ──
+  html += buildDangerousServicesSection(c);
+
   // ── OSINT Intelligence (all layers) ──
   html += buildOSINTSection(c);
 
@@ -2031,6 +2060,79 @@ function buildPanelBody(c) {
   html += buildColocationSection(c);
 
   return html;
+}
+
+function buildDangerousServicesSection(c) {
+  const sr = (c.osint || {}).service_risk;
+
+  // If no enrichment data, classify on-the-fly from Shodan data
+  const services = sr ? sr.dangerous_services : classifyServicesClientSide(c);
+  if (!services || services.length === 0) return '';
+
+  const dangerColors = { critical: '#ff1744', high: '#ff9100', medium: '#ffd740' };
+  const dangerIcons = { critical: '\u26d4', high: '\u26a0', medium: '\u2139' };
+
+  let html = '<div class="panel-section"><div class="section-title">Dangerous Services Exposed</div>';
+
+  services.forEach(svc => {
+    const color = dangerColors[svc.danger] || '#64748b';
+    const icon = dangerIcons[svc.danger] || '';
+    html += `
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-dim)">
+      <span style="font-size:14px;flex-shrink:0">${icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="port-badge${svc.danger === 'critical' ? ' risky' : ''}">${svc.port}</span>
+          <span style="font-weight:600;font-size:12px;color:${color}">${svc.name}</span>
+          <span style="font-family:JetBrains Mono,monospace;font-size:8px;padding:1px 5px;border-radius:2px;background:${color}15;border:1px solid ${color}30;color:${color};text-transform:uppercase;letter-spacing:1px">${svc.danger}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:2px">${svc.reason}</div>
+      </div>
+    </div>`;
+  });
+
+  html += '</div>';
+  return html;
+}
+
+// Client-side service classification when pipeline data isn't available
+function classifyServicesClientSide(c) {
+  const dangerousMap = {
+    3389: {name:'RDP', danger:'critical', reason:'Remote Desktop — BlueKeep, brute force, lateral movement'},
+    445:  {name:'SMB', danger:'critical', reason:'Server Message Block — EternalBlue, WannaCry, ransomware vector'},
+    1433: {name:'MSSQL', danger:'critical', reason:'Microsoft SQL Server — default credentials, SQL injection pivot'},
+    3306: {name:'MySQL', danger:'critical', reason:'MySQL — often has weak/no auth when exposed'},
+    5432: {name:'PostgreSQL', danger:'critical', reason:'PostgreSQL — database exfiltration risk'},
+    27017:{name:'MongoDB', danger:'critical', reason:'MongoDB — frequently left without authentication'},
+    6379: {name:'Redis', danger:'critical', reason:'Redis — no auth by default, RCE via SLAVEOF'},
+    9200: {name:'Elasticsearch', danger:'critical', reason:'Elasticsearch — unauthenticated data access by default'},
+    5900: {name:'VNC', danger:'critical', reason:'VNC — remote framebuffer, weak auth common'},
+    2375: {name:'Docker API', danger:'critical', reason:'Docker daemon — unauthenticated container escape'},
+    21:   {name:'FTP', danger:'high', reason:'FTP — cleartext credentials, anonymous access'},
+    23:   {name:'Telnet', danger:'high', reason:'Telnet — cleartext everything, default credentials on IoT'},
+    25:   {name:'SMTP', danger:'high', reason:'SMTP — open relay testing, email spoofing'},
+    110:  {name:'POP3', danger:'high', reason:'POP3 — cleartext email retrieval'},
+    143:  {name:'IMAP', danger:'high', reason:'IMAP — cleartext email access'},
+    161:  {name:'SNMP', danger:'high', reason:'SNMP — community strings leak configs and credentials'},
+    389:  {name:'LDAP', danger:'high', reason:'LDAP — directory enumeration, credential harvesting'},
+    11211:{name:'Memcached', danger:'high', reason:'Memcached — DDoS amplification, data exfiltration'},
+    8080: {name:'HTTP-Proxy', danger:'medium', reason:'HTTP proxy — often dev servers, admin panels'},
+    8443: {name:'HTTPS-Alt', danger:'medium', reason:'HTTPS alt — management interfaces'},
+  };
+
+  const ports = new Set();
+  const s = c.shodan || {};
+  (s.top_ports || []).forEach(p => { if (p.port) ports.add(p.port); });
+  (s.sample_hosts || []).forEach(h => { if (h.port) ports.add(h.port); });
+
+  const dangerOrder = {critical: 0, high: 1, medium: 2};
+  const results = [];
+  ports.forEach(port => {
+    const svc = dangerousMap[port];
+    if (svc) results.push({port, ...svc});
+  });
+  results.sort((a, b) => (dangerOrder[a.danger] || 99) - (dangerOrder[b.danger] || 99));
+  return results;
 }
 
 function buildOSINTSection(c) {
@@ -2226,8 +2328,10 @@ function buildOSINTSection(c) {
         <span class="data-label">Vulnerabilities (${asn.all_vulns.length})</span>
         <div class="vuln-list" style="margin-top:4px">
           ${asn.all_vulns.slice(0, 8).map(v => {
-            const severity = getCVESeverity(v);
-            return '<span class="vuln-badge ' + severity + '">' + escapeHtml(v) + '</span>';
+            const severity = getCVESeverity(v, c);
+            const cvssData = getCVSSScore(v, c);
+            const scoreTag = cvssData ? ' <span style="opacity:0.7;font-size:9px">(' + cvssData.base_score.toFixed(1) + ')</span>' : '';
+            return '<span class="vuln-badge ' + severity + '">' + escapeHtml(v) + scoreTag + '</span>';
           }).join('')}
           ${asn.all_vulns.length > 8 ? '<div style="font-size:10px;color:var(--text-muted)">+' + (asn.all_vulns.length - 8) + ' more</div>' : ''}
         </div>
@@ -2329,8 +2433,10 @@ function buildShodanSection(c) {
       <span class="data-label">Vulnerabilities</span>
       <div class="vuln-list" style="margin-top:4px">
         ${s.vulns.slice(0, 12).map(v => {
-          const severity = getCVESeverity(v.cve);
-          return `<span class="vuln-badge ${severity}">${v.cve}<span class="vuln-count">\u00d7${v.count}</span></span>`;
+          const severity = getCVESeverity(v.cve, c);
+          const cvssData = getCVSSScore(v.cve, c);
+          const scoreTag = cvssData ? ` <span style="opacity:0.7;font-size:9px">(${cvssData.base_score.toFixed(1)})</span>` : '';
+          return `<span class="vuln-badge ${severity}">${v.cve}${scoreTag}<span class="vuln-count">\u00d7${v.count}</span></span>`;
         }).join('')}
       </div>
     </div>`;
@@ -2383,14 +2489,32 @@ function buildShodanSection(c) {
   return html;
 }
 
-function getCVESeverity(cve) {
-  // Heuristic based on CVE year and common critical CVEs
-  // In production you'd cross-reference CVSS scores
-  const year = parseInt(cve.replace('CVE-', '').split('-')[0]);
+function getCVESeverity(cve, contractor) {
+  // Use real CVSS data if available from NVD enrichment
+  if (contractor) {
+    const nvd = (contractor.osint || {}).nvd_cvss || {};
+    const scores = nvd.scores || {};
+    const cveId = typeof cve === 'string' ? cve : (cve.cve || cve);
+    const scoreData = scores[cveId];
+    if (scoreData && scoreData.severity) {
+      return scoreData.severity;
+    }
+  }
+  // Fallback: year-based heuristic
+  const cveStr = typeof cve === 'string' ? cve : (cve.cve || '');
+  const year = parseInt(cveStr.replace('CVE-', '').split('-')[0]);
   if (year >= 2023) return 'critical';
   if (year >= 2021) return 'high';
   if (year >= 2018) return 'medium';
   return 'low';
+}
+
+function getCVSSScore(cve, contractor) {
+  if (!contractor) return null;
+  const nvd = (contractor.osint || {}).nvd_cvss || {};
+  const scores = nvd.scores || {};
+  const cveId = typeof cve === 'string' ? cve : (cve.cve || cve);
+  return scores[cveId] || null;
 }
 
 // ═══════════════════════════════════════════════════════════════
