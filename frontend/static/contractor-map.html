@@ -17,6 +17,9 @@
 <!-- Leaflet Heat Map -->
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
+<!-- D3.js for network graph -->
+<script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script>
+
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -655,6 +658,86 @@
     font-size: 10px;
   }
 
+  /* ─── D3 NETWORK GRAPH OVERLAY ─── */
+  #netGraphOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(6, 10, 18, 0.97);
+    backdrop-filter: blur(12px);
+  }
+
+  #netGraphHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-dim);
+    background: rgba(10, 14, 23, 0.9);
+  }
+
+  #netGraphLegend {
+    display: flex;
+    gap: 14px;
+    padding: 6px 20px;
+    border-bottom: 1px solid var(--border-dim);
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    background: rgba(10, 14, 23, 0.5);
+  }
+
+  .ng-legend-item { color: var(--c); }
+
+  #netGraphSVG {
+    width: 100%;
+    height: calc(100vh - 70px);
+    display: block;
+  }
+
+  .ng-node { cursor: grab; }
+  .ng-node:active { cursor: grabbing; }
+
+  .ng-link {
+    stroke: rgba(0, 229, 255, 0.15);
+    stroke-width: 1;
+  }
+
+  .ng-link-risky {
+    stroke: rgba(255, 23, 68, 0.3);
+    stroke-width: 1.5;
+  }
+
+  .ng-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    fill: var(--text-secondary);
+    pointer-events: none;
+  }
+
+  .ng-label-primary {
+    font-size: 13px;
+    fill: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .ng-tooltip {
+    position: absolute;
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-active);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-primary);
+    pointer-events: none;
+    z-index: 2001;
+    max-width: 300px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    display: none;
+  }
+
   /* ─── NETWORK DIAGRAM ─── */
   .net-diagram {
     background: rgba(0,0,0,0.3);
@@ -1216,9 +1299,37 @@
     <div id="panelName" class="panel-contractor-name"></div>
     <div id="panelDba" class="panel-dba"></div>
     <div id="panelParent" class="panel-parent"></div>
+    <button id="viewNetworkBtn" onclick="openNetGraph()" style="margin-top:8px;padding:5px 12px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);border-radius:6px;color:var(--accent-cyan);cursor:pointer;font-family:JetBrains Mono,monospace;font-size:11px;display:none">View Network Map</button>
   </div>
   <div class="panel-body" id="panelBody"></div>
 </div>
+
+<!-- Network Graph Overlay -->
+<div id="netGraphOverlay" style="display:none">
+  <div id="netGraphHeader">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:16px;font-weight:700" id="netGraphTitle">Network Topology</span>
+      <span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--text-muted)" id="netGraphSubtitle"></span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span style="font-size:10px;color:var(--text-muted)">Drag nodes to rearrange. Scroll to zoom.</span>
+      <button onclick="closeNetGraph()" style="background:transparent;border:1px solid var(--border-dim);border-radius:6px;color:var(--text-muted);cursor:pointer;padding:4px 10px;font-size:13px">✕ Close</button>
+    </div>
+  </div>
+  <div id="netGraphLegend">
+    <span class="ng-legend-item" style="--c:#00e5ff">&#9679; Domain</span>
+    <span class="ng-legend-item" style="--c:#ffd740">&#9679; Email</span>
+    <span class="ng-legend-item" style="--c:#76ff03">&#9679; DNS</span>
+    <span class="ng-legend-item" style="--c:#ff9100">&#9679; CDN</span>
+    <span class="ng-legend-item" style="--c:#e040fb">&#9679; Server</span>
+    <span class="ng-legend-item" style="--c:#ff1744">&#9679; VPN</span>
+    <span class="ng-legend-item" style="--c:#7c4dff">&#9679; Dev/CI</span>
+    <span class="ng-legend-item" style="--c:#00e676">&#9679; Cloud</span>
+    <span class="ng-legend-item" style="--c:#b0bec5">&#9679; IP/Host</span>
+  </div>
+  <svg id="netGraphSVG"></svg>
+</div>
+<div class="ng-tooltip" id="ngTooltip"></div>
 
 <!-- Map container -->
 <div id="map"></div>
@@ -1814,6 +1925,11 @@ function openDetailPanel(idx) {
   // Body
   const body = document.getElementById('panelBody');
   body.innerHTML = buildPanelBody(c);
+
+  // Show "View Network" button if contractor has domain data
+  const dd = c.osint?.domain_discovery?.domain;
+  const netBtn = document.getElementById('viewNetworkBtn');
+  netBtn.style.display = dd ? 'inline-block' : 'none';
 
   panel.classList.add('open');
 }
@@ -2784,6 +2900,243 @@ function addColocationOverlay() {
     }
   });
 }
+
+// ═══════════════════════════════════════════════════════════════
+// D3 INTERACTIVE NETWORK GRAPH
+// ═══════════════════════════════════════════════════════════════
+
+function openNetGraph() {
+  if (selectedContractor === null) return;
+  const c = DATA.contractors[selectedContractor];
+  if (!c) return;
+
+  const overlay = document.getElementById('netGraphOverlay');
+  overlay.style.display = 'block';
+  document.getElementById('netGraphTitle').textContent = c.name;
+
+  const dd = c.osint?.domain_discovery || {};
+  document.getElementById('netGraphSubtitle').textContent = dd.domain || '';
+
+  renderNetworkGraph(c);
+}
+
+function closeNetGraph() {
+  document.getElementById('netGraphOverlay').style.display = 'none';
+  d3.select('#netGraphSVG').selectAll('*').remove();
+}
+
+function renderNetworkGraph(c) {
+  const svg = d3.select('#netGraphSVG');
+  svg.selectAll('*').remove();
+
+  const width = window.innerWidth;
+  const height = window.innerHeight - 70;
+  svg.attr('viewBox', [0, 0, width, height]);
+
+  const tooltip = document.getElementById('ngTooltip');
+  const o = c.osint || {};
+  const s = c.shodan || {};
+  const dd = o.domain_discovery || {};
+  const dns = o.dns || {};
+  const ct = o.ct || {};
+  const web = o.web || {};
+  const asn = o.asn || {};
+  const dv = o.domain_verify || {};
+
+  const domain = dd.domain;
+  if (!domain) return;
+
+  // Build graph data
+  const nodes = [];
+  const links = [];
+  let nid = 0;
+
+  const typeColors = {
+    domain: '#00e5ff', mail: '#ffd740', dns_prov: '#76ff03', cdn: '#ff9100',
+    server: '#e040fb', vpn: '#ff1744', email_sub: '#ffd740', dev_ci: '#7c4dff',
+    auth: '#00e5ff', cloud: '#00e676', host: '#b0bec5', ip: '#64748b',
+    subdomain: '#94a3b8', port: '#ff9100', vuln: '#ff1744',
+  };
+
+  // Central domain node
+  const domainNode = {id: nid++, label: domain, type: 'domain', size: 20,
+    detail: `Confidence: ${dv.confidence || '?'}% (${dv.verdict || 'pending'})`};
+  nodes.push(domainNode);
+
+  // Infrastructure services
+  if (dns.mail_provider && dns.mail_provider !== 'Unknown') {
+    const n = {id: nid++, label: dns.mail_provider, type: 'mail', size: 12, detail: 'Email Provider'};
+    nodes.push(n);
+    links.push({source: domainNode.id, target: n.id, label: 'MX'});
+  }
+  if (dns.dns_provider && dns.dns_provider !== 'Unknown') {
+    const n = {id: nid++, label: dns.dns_provider, type: 'dns_prov', size: 12, detail: 'DNS Provider'};
+    nodes.push(n);
+    links.push({source: domainNode.id, target: n.id, label: 'NS'});
+  }
+  const cdn = (web.cdn_detected && web.cdn_detected !== 'None' ? web.cdn_detected : null) ||
+              (dns.cdn && dns.cdn !== 'Unknown' && dns.cdn !== 'None' ? dns.cdn : null);
+  if (cdn) {
+    const n = {id: nid++, label: cdn, type: 'cdn', size: 12, detail: 'CDN'};
+    nodes.push(n);
+    links.push({source: domainNode.id, target: n.id, label: 'CNAME'});
+  }
+  if (web.server) {
+    const n = {id: nid++, label: web.server.split('/')[0], type: 'server', size: 10,
+      detail: [web.server, web.cms, web.powered_by].filter(Boolean).join(' | ')};
+    nodes.push(n);
+    links.push({source: cdn ? nodes.find(x=>x.type==='cdn').id : domainNode.id, target: n.id, label: 'HTTPS'});
+  }
+
+  // CT subdomains
+  const hints = ct.infrastructure_hints || {};
+  const hintMap = {vpn:'vpn', email:'email_sub', dev_ci:'dev_ci', auth:'auth', cloud:'cloud'};
+  Object.entries(hintMap).forEach(([key, type]) => {
+    (hints[key] || []).slice(0, 5).forEach(sub => {
+      const short = sub.replace('.' + domain, '').replace(/\..+$/, '');
+      const n = {id: nid++, label: short, type, size: 8, detail: sub};
+      nodes.push(n);
+      links.push({source: domainNode.id, target: n.id, dashed: true});
+    });
+  });
+
+  // Other CT subdomains (not in hint categories)
+  const hintSubs = new Set(Object.values(hints).flat());
+  (ct.unique_subdomains || []).filter(s => !hintSubs.has(s) && s !== domain && !s.startsWith('*')).slice(0, 15).forEach(sub => {
+    const short = sub.replace('.' + domain, '');
+    const n = {id: nid++, label: short, type: 'subdomain', size: 6, detail: sub};
+    nodes.push(n);
+    links.push({source: domainNode.id, target: n.id, dashed: true, weak: true});
+  });
+
+  // ASN hosts / IPs
+  if (asn.hosts && asn.hosts.length) {
+    asn.hosts.forEach(h => {
+      const vulnCount = (h.vulns || []).length;
+      const n = {id: nid++, label: h.ip, type: vulnCount > 0 ? 'vuln' : 'ip', size: vulnCount > 0 ? 10 : 8,
+        detail: `Ports: ${(h.ports||[]).join(', ')}\nVulns: ${vulnCount}\n${h.reverse_dns || ''}`};
+      nodes.push(n);
+      links.push({source: domainNode.id, target: n.id, label: 'A', risky: vulnCount > 0});
+
+      // Port nodes for this IP (top 5)
+      (h.ports || []).slice(0, 5).forEach(p => {
+        const pn = {id: nid++, label: String(p), type: 'port', size: 5, detail: `Port ${p} on ${h.ip}`};
+        nodes.push(pn);
+        links.push({source: n.id, target: pn.id, weak: true});
+      });
+    });
+  } else if (dns.a_records && dns.a_records.length) {
+    dns.a_records.slice(0, 4).forEach(ip => {
+      const n = {id: nid++, label: ip, type: 'ip', size: 8, detail: 'DNS A Record'};
+      nodes.push(n);
+      links.push({source: domainNode.id, target: n.id, label: 'A'});
+    });
+  }
+
+  // Shodan sample hosts (if no ASN data)
+  if (!asn.hosts?.length && s.sample_hosts?.length) {
+    s.sample_hosts.slice(0, 5).forEach(h => {
+      const n = {id: nid++, label: `${h.ip}:${h.port}`, type: 'host', size: 8,
+        detail: [h.product, h.version, h.http_title].filter(Boolean).join(' | ')};
+      nodes.push(n);
+      links.push({source: domainNode.id, target: n.id, dashed: true});
+    });
+  }
+
+  // D3 force simulation
+  const simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d => d.id).distance(d => d.weak ? 40 : 80))
+    .force('charge', d3.forceManyBody().strength(d => d.type === 'domain' ? -400 : d.type === 'port' ? -20 : -100))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(d => d.size + 8));
+
+  // Zoom
+  const g = svg.append('g');
+  svg.call(d3.zoom()
+    .scaleExtent([0.2, 5])
+    .on('zoom', (event) => g.attr('transform', event.transform)));
+
+  // Links
+  const link = g.append('g').selectAll('line')
+    .data(links).join('line')
+    .attr('class', d => d.risky ? 'ng-link-risky' : 'ng-link')
+    .attr('stroke-dasharray', d => d.dashed ? '4,3' : null)
+    .attr('stroke-opacity', d => d.weak ? 0.08 : null);
+
+  // Link labels
+  const linkLabel = g.append('g').selectAll('text')
+    .data(links.filter(d => d.label)).join('text')
+    .attr('class', 'ng-label')
+    .attr('text-anchor', 'middle')
+    .attr('font-size', '8px')
+    .text(d => d.label);
+
+  // Nodes
+  const node = g.append('g').selectAll('g')
+    .data(nodes).join('g')
+    .attr('class', 'ng-node')
+    .call(d3.drag()
+      .on('start', (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on('end', (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+    );
+
+  node.append('circle')
+    .attr('r', d => d.size)
+    .attr('fill', d => (typeColors[d.type] || '#b0bec5') + '30')
+    .attr('stroke', d => typeColors[d.type] || '#b0bec5')
+    .attr('stroke-width', d => d.type === 'domain' ? 2 : 1);
+
+  // Glow for domain node
+  node.filter(d => d.type === 'domain').select('circle')
+    .attr('filter', 'url(#domainGlow)');
+
+  // Add glow filter
+  const defs = svg.append('defs');
+  const filter = defs.append('filter').attr('id', 'domainGlow').attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
+  filter.append('feGaussianBlur').attr('stdDeviation', '4').attr('result', 'blur');
+  const merge = filter.append('feMerge');
+  merge.append('feMergeNode').attr('in', 'blur');
+  merge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+  // Labels
+  node.append('text')
+    .attr('class', d => d.type === 'domain' ? 'ng-label ng-label-primary' : 'ng-label')
+    .attr('dy', d => d.size + 14)
+    .attr('text-anchor', 'middle')
+    .text(d => d.label.length > 20 ? d.label.substring(0, 18) + '...' : d.label);
+
+  // Tooltip on hover
+  node.on('mouseover', (event, d) => {
+    tooltip.style.display = 'block';
+    tooltip.innerHTML = `<strong>${d.label}</strong><br/><span style="color:var(--text-muted)">${d.type}</span>${d.detail ? '<br/>' + d.detail.replace(/\n/g, '<br/>') : ''}`;
+  })
+  .on('mousemove', (event) => {
+    tooltip.style.left = (event.clientX + 12) + 'px';
+    tooltip.style.top = (event.clientY - 10) + 'px';
+  })
+  .on('mouseout', () => { tooltip.style.display = 'none'; });
+
+  // Tick
+  simulation.on('tick', () => {
+    link
+      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+    linkLabel
+      .attr('x', d => (d.source.x + d.target.x) / 2)
+      .attr('y', d => (d.source.y + d.target.y) / 2);
+    node.attr('transform', d => `translate(${d.x},${d.y})`);
+  });
+}
+
+// Close with Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('netGraphOverlay').style.display !== 'none') {
+    closeNetGraph();
+    e.stopPropagation();
+  }
+});
+
 
 function formatCompact(val) {
   if (!val || val === 0) return 'N/A';
