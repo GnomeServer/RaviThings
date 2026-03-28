@@ -204,14 +204,14 @@ def enrich_nvd_cvss(cve_ids: list[str], existing_scores: dict | None = None) -> 
     if not cve_ids:
         return result
 
-    # Deduplicate
-    unique_cves = sorted(set(cve_ids))
+    # Deduplicate and normalize to uppercase (NVD requires CVE-YYYY-NNNN format)
+    unique_cves = sorted({cve.upper() for cve in cve_ids})
     delay = _rate_delay()
     errors = 0
 
     for i, cve_id in enumerate(unique_cves):
-        # Use cached score if available
-        if cve_id in existing_scores:
+        # Use cached score if available (case-insensitive)
+        if cve_id in existing_scores or cve_id.lower() in existing_scores:
             cvss = existing_scores[cve_id]
             result["scores"][cve_id] = cvss
             sev = cvss.get("severity", "unknown")
