@@ -1234,6 +1234,236 @@
     color: var(--text-muted);
   }
 
+  /* ─── ATLAS CHAT PANEL ─── */
+  #atlasChatToggle {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1100;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 1px solid var(--accent-cyan);
+    background: linear-gradient(135deg, rgba(0,229,255,0.15) 0%, rgba(124,77,255,0.15) 100%);
+    backdrop-filter: blur(16px);
+    color: var(--accent-cyan);
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,229,255,0.2), 0 0 40px rgba(0,229,255,0.05);
+    transition: all 0.3s;
+  }
+  #atlasChatToggle:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 24px rgba(0,229,255,0.35), 0 0 60px rgba(0,229,255,0.1);
+    border-color: #fff;
+  }
+  #atlasChatToggle.open { display: none; }
+
+  #atlasChatPanel {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1100;
+    width: 420px;
+    max-height: calc(100vh - 140px);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-active);
+    border-radius: 16px;
+    box-shadow: 0 16px 64px rgba(0,0,0,0.5), 0 0 40px rgba(0,229,255,0.05);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  #atlasChatPanel.open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .atlas-chat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: linear-gradient(180deg, rgba(0,229,255,0.06) 0%, transparent 100%);
+    border-bottom: 1px solid var(--border-dim);
+    flex-shrink: 0;
+  }
+
+  .atlas-chat-header .chat-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #00e5ff 0%, #7c4dff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #0a0e17;
+    font-weight: 800;
+  }
+
+  .atlas-chat-header .chat-title {
+    flex: 1;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+
+  .atlas-chat-header .chat-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .atlas-chat-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  .atlas-chat-close:hover { color: var(--text-primary); }
+
+  .atlas-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 200px;
+    max-height: 50vh;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-dim) transparent;
+  }
+
+  .atlas-msg {
+    max-width: 90%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    word-wrap: break-word;
+  }
+
+  .atlas-msg.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, rgba(0,229,255,0.12) 0%, rgba(124,77,255,0.12) 100%);
+    border: 1px solid rgba(0,229,255,0.2);
+    color: var(--text-primary);
+  }
+
+  .atlas-msg.assistant {
+    align-self: flex-start;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-dim);
+    color: var(--text-primary);
+  }
+
+  .atlas-msg.assistant .map-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.2);
+    color: var(--accent-cyan);
+    margin: 4px 2px;
+  }
+
+  .atlas-msg.system {
+    align-self: center;
+    background: none;
+    border: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 4px 0;
+  }
+
+  .atlas-chat-input-area {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-dim);
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #atlasChatInput {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-dim);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    outline: none;
+    resize: none;
+    min-height: 20px;
+    max-height: 80px;
+    transition: border-color 0.2s;
+  }
+  #atlasChatInput:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  #atlasChatInput::placeholder { color: var(--text-muted); }
+
+  .atlas-chat-send {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--accent-cyan);
+    background: rgba(0,229,255,0.1);
+    color: var(--accent-cyan);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .atlas-chat-send:hover { background: rgba(0,229,255,0.2); }
+  .atlas-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .atlas-typing {
+    display: flex;
+    gap: 4px;
+    padding: 8px 14px;
+    align-self: flex-start;
+  }
+  .atlas-typing span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: typingBounce 1.4s ease-in-out infinite;
+  }
+  .atlas-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .atlas-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingBounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40% { transform: translateY(-6px); opacity: 1; }
+  }
+
   /* ─── MARKER RISK RING ─── */
   .risk-ring {
     position: absolute;
@@ -1319,7 +1549,7 @@
   <div class="threat-stats">
     <div class="threat-stat critical">
       <span class="threat-stat-value red" id="tExposed">—</span>
-      <span class="threat-stat-label">Exposed Hosts</span>
+      <span class="threat-stat-label">Internet-Exposed</span>
     </div>
     <div class="threat-stat critical">
       <span class="threat-stat-value red" id="tCriticalCVE">—</span>
@@ -1406,6 +1636,28 @@
 
 <!-- Map container -->
 <div id="map"></div>
+
+<!-- Atlas Chat Toggle Button -->
+<button id="atlasChatToggle" onclick="toggleAtlasChat()" title="Ask about OSINT data">&#x1F50D;</button>
+
+<!-- Atlas Chat Panel -->
+<div id="atlasChatPanel">
+  <div class="atlas-chat-header">
+    <div class="chat-icon">A</div>
+    <div>
+      <div class="chat-title">OSINT Atlas Intelligence</div>
+      <div class="chat-subtitle">Ask questions about contractor data</div>
+    </div>
+    <button class="atlas-chat-close" onclick="toggleAtlasChat()">&times;</button>
+  </div>
+  <div class="atlas-chat-messages" id="atlasChatMessages">
+    <div class="atlas-msg system">Ask me anything about the DOE contractor attack surface. I can filter the map, highlight contractors, and explain the data.</div>
+  </div>
+  <div class="atlas-chat-input-area">
+    <textarea id="atlasChatInput" rows="1" placeholder="e.g., Show me contractors with exposed RDP..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAtlasChat()}"></textarea>
+    <button class="atlas-chat-send" id="atlasChatSend" onclick="sendAtlasChat()">&#x27A4;</button>
+  </div>
+</div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════
@@ -1721,7 +1973,7 @@ function populateStats() {
 function populateThreatDashboard() {
   const cc = DATA.contractors;
 
-  // Total exposed hosts
+  // Contractors with internet-facing hosts (not sum of hosts — avoids Shodan false positive inflation)
   let totalHosts = 0;
   let contractorsWithCVEs = 0;
   let noDMARC = 0;
@@ -1737,8 +1989,8 @@ function populateThreatDashboard() {
     const dns = o.dns || {};
     const web = o.web || {};
 
-    // Exposed hosts
-    totalHosts += (s.total_hosts || 0);
+    // Exposed hosts — count contractors, not sum hosts (avoids Shodan false-positive inflation)
+    if ((s.total_hosts || 0) > 0) totalHosts++;
 
     // CVEs
     if ((s.vulns || []).length > 0) contractorsWithCVEs++;
@@ -3432,6 +3684,242 @@ tooltipStyle.textContent = `
   }
 `;
 document.head.appendChild(tooltipStyle);
+
+// ═══════════════════════════════════════════════════════════════
+// ATLAS CHAT — UI + STREAMING + MAP COMMANDS
+// ═══════════════════════════════════════════════════════════════
+
+let atlasChatOpen = false;
+let atlasChatStreaming = false;
+let atlasChatMessages = [];
+let atlasChatAbort = null;
+
+function toggleAtlasChat() {
+  atlasChatOpen = !atlasChatOpen;
+  document.getElementById('atlasChatPanel').classList.toggle('open', atlasChatOpen);
+  document.getElementById('atlasChatToggle').classList.toggle('open', atlasChatOpen);
+  if (atlasChatOpen) {
+    setTimeout(() => document.getElementById('atlasChatInput').focus(), 300);
+  }
+}
+
+function addAtlasMessage(role, content) {
+  const container = document.getElementById('atlasChatMessages');
+  const div = document.createElement('div');
+  div.className = `atlas-msg ${role}`;
+  div.innerHTML = content;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function showAtlasTyping() {
+  const container = document.getElementById('atlasChatMessages');
+  const div = document.createElement('div');
+  div.className = 'atlas-typing';
+  div.id = 'atlasTypingIndicator';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function hideAtlasTyping() {
+  const el = document.getElementById('atlasTypingIndicator');
+  if (el) el.remove();
+}
+
+async function sendAtlasChat() {
+  const input = document.getElementById('atlasChatInput');
+  const query = input.value.trim();
+  if (!query || atlasChatStreaming) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Add user message
+  addAtlasMessage('user', escapeHtml(query));
+  atlasChatMessages.push({ role: 'user', content: query });
+
+  // Show typing indicator
+  atlasChatStreaming = true;
+  document.getElementById('atlasChatSend').disabled = true;
+  showAtlasTyping();
+
+  // Prepare request
+  const payload = {
+    query: query,
+    messages: atlasChatMessages.slice(-10),
+    contractor_count: DATA ? DATA.contractors.length : 0,
+  };
+
+  try {
+    atlasChatAbort = new AbortController();
+    const response = await fetch('/api/atlas-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: atlasChatAbort.signal,
+    });
+
+    hideAtlasTyping();
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let assistantDiv = null;
+    let fullText = '';
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6);
+        if (payload === '[DONE]') continue;
+
+        let event;
+        try { event = JSON.parse(payload); } catch { continue; }
+
+        if (event.type === 'token') {
+          if (!assistantDiv) {
+            assistantDiv = addAtlasMessage('assistant', '');
+          }
+          fullText += event.content;
+          assistantDiv.innerHTML = formatAtlasMarkdown(fullText);
+          document.getElementById('atlasChatMessages').scrollTop =
+            document.getElementById('atlasChatMessages').scrollHeight;
+        } else if (event.type === 'map_command') {
+          executeMapCommand(event.command);
+          // Show command indicator in chat
+          if (assistantDiv) {
+            const cmdLabel = event.command.action || 'map update';
+            assistantDiv.innerHTML += `<span class="map-action">&#x1F5FA; ${escapeHtml(cmdLabel)}</span>`;
+          }
+        } else if (event.type === 'error') {
+          addAtlasMessage('system', `Error: ${escapeHtml(event.message)}`);
+        }
+      }
+    }
+
+    if (fullText) {
+      atlasChatMessages.push({ role: 'assistant', content: fullText });
+    }
+
+  } catch (e) {
+    hideAtlasTyping();
+    if (e.name !== 'AbortError') {
+      addAtlasMessage('system', `Connection error. Is the server running?`);
+    }
+  } finally {
+    atlasChatStreaming = false;
+    document.getElementById('atlasChatSend').disabled = false;
+    atlasChatAbort = null;
+  }
+}
+
+function formatAtlasMarkdown(text) {
+  // Minimal markdown: bold, code, newlines
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`(.+?)`/g, '<code style="background:rgba(0,229,255,0.08);padding:1px 4px;border-radius:3px;font-family:JetBrains Mono,monospace;font-size:11px">$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAP COMMAND DISPATCHER
+// ═══════════════════════════════════════════════════════════════
+
+function executeMapCommand(cmd) {
+  if (!cmd || !cmd.action) return;
+
+  switch (cmd.action) {
+    case 'fly_to':
+      map.flyTo([cmd.lat, cmd.lon], cmd.zoom || 8, { duration: 1.5 });
+      break;
+
+    case 'filter': {
+      // Filter markers by a field/value predicate
+      const field = cmd.field || '';
+      const value = cmd.value;
+      const op = cmd.op || 'eq';
+
+      markerCluster.clearLayers();
+      const visible = allMarkers.filter(m => {
+        const c = DATA.contractors[m._contractorIdx];
+        const fieldVal = getNestedField(c, field);
+        if (op === 'eq') return fieldVal === value;
+        if (op === 'contains') return String(fieldVal || '').toLowerCase().includes(String(value).toLowerCase());
+        if (op === 'gt') return Number(fieldVal) > Number(value);
+        if (op === 'gte') return Number(fieldVal) >= Number(value);
+        if (op === 'lt') return Number(fieldVal) < Number(value);
+        if (op === 'exists') return fieldVal !== null && fieldVal !== undefined && fieldVal !== '';
+        return true;
+      });
+      markerCluster.addLayers(visible);
+      addAtlasMessage('system', `Filtered to ${visible.length} contractors`);
+      break;
+    }
+
+    case 'highlight': {
+      // Highlight specific contractor IDs/indices
+      const ids = cmd.contractor_indices || [];
+      markerCluster.clearLayers();
+      const highlighted = allMarkers.filter(m => ids.includes(m._contractorIdx));
+      const dimmed = allMarkers.filter(m => !ids.includes(m._contractorIdx));
+      // Re-add all but dim non-highlighted
+      markerCluster.addLayers(allMarkers);
+      // Open first highlighted contractor's panel
+      if (ids.length > 0) {
+        openDetailPanel(ids[0]);
+      }
+      break;
+    }
+
+    case 'open_panel':
+      if (typeof cmd.contractor_index === 'number') {
+        openDetailPanel(cmd.contractor_index);
+      }
+      break;
+
+    case 'reset':
+      // Reset all filters, show all markers
+      markerCluster.clearLayers();
+      markerCluster.addLayers(allMarkers);
+      activeFilters.clear();
+      closePanel();
+      map.flyTo([39.5, -98.5], 5, { duration: 1 });
+      addAtlasMessage('system', 'Map reset — showing all contractors');
+      break;
+
+    case 'dim_others': {
+      // Dim all markers except specified ones — visual only
+      // This is handled by CSS opacity on the cluster layer
+      break;
+    }
+
+    default:
+      console.warn('Unknown map command:', cmd.action);
+  }
+}
+
+function getNestedField(obj, path) {
+  // Navigate nested fields: "osint.service_risk.max_danger" -> obj.osint.service_risk.max_danger
+  const parts = path.split('.');
+  let current = obj;
+  for (const part of parts) {
+    if (current === null || current === undefined) return undefined;
+    current = current[part];
+  }
+  return current;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // BOOT
