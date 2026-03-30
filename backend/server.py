@@ -636,91 +636,87 @@ RULES:
             if msg.get("role") in ("user", "assistant"):
                 messages.append({"role": msg["role"], "content": msg["content"][:500]})
 
-        async def event_stream():
-            import asyncio as aio
+        _MAP_PREFIX = "MAP_CMD:"
+        _PARTIAL_PREFIXES = [_MAP_PREFIX[:i] for i in range(1, len(_MAP_PREFIX) + 1)]
 
+        def _ends_with_partial(text):
+            for p in _PARTIAL_PREFIXES:
+                if text.endswith(p) or text.endswith("\n" + p):
+                    return True
+            return False
+
+        def _extract_cmds(text_so_far):
+            """Extract complete MAP_CMD lines, return (cleaned_text, commands)."""
+            cmds = []
+            while True:
+                for prefix in ("\nMAP_CMD:", "MAP_CMD:"):
+                    idx = text_so_far.find(prefix)
+                    if idx >= 0:
+                        break
+                else:
+                    break
+                json_start = idx + len(prefix)
+                line_end = text_so_far.find("\n", json_start)
+                if line_end == -1:
+                    break  # incomplete
+                json_str = text_so_far[json_start:line_end].strip()
+                try:
+                    cmds.append(json.loads(json_str))
+                except json.JSONDecodeError:
+                    pass
+                text_so_far = text_so_far[:idx] + text_so_far[line_end + 1:]
+            return text_so_far, cmds
+
+        async def event_stream():
             use_hermes = mercury and mercury.is_available()
             response_parts = []
+            last_emitted = ""
 
             try:
+                gen = None
                 if use_hermes:
                     try:
-                        async for token in mercury.chat_stream(messages):
-                            response_parts.append(token)
-                            # Check for MAP_CMD in accumulated text
-                            text_so_far = "".join(response_parts)
-                            while "MAP_CMD:" in text_so_far:
-                                idx = text_so_far.index("MAP_CMD:")
-                                # Find the JSON after MAP_CMD:
-                                json_start = idx + 8
-                                # Find the end of the JSON line
-                                line_end = text_so_far.find("\n", json_start)
-                                if line_end == -1:
-                                    break  # Incomplete — wait for more tokens
-                                json_str = text_so_far[json_start:line_end].strip()
-                                try:
-                                    cmd = json.loads(json_str)
-                                    yield f"data: {json.dumps({'type': 'map_command', 'command': cmd})}\n\n"
-                                except json.JSONDecodeError:
-                                    pass
-                                # Remove the MAP_CMD line from text and emit remaining as tokens
-                                before = text_so_far[:idx]
-                                after = text_so_far[line_end + 1:]
-                                text_so_far = before + after
-                                response_parts = [text_so_far]
-                                continue
-                            # Yield text tokens (non-command parts)
-                            clean = text_so_far
-                            # Don't emit text that contains partial MAP_CMD
-                            if "MAP_CMD:" in clean:
-                                break
-                            if clean and clean != getattr(event_stream, '_last_emitted', ''):
-                                diff = clean[len(getattr(event_stream, '_last_emitted', '')):]
-                                if diff:
-                                    yield f"data: {json.dumps({'type': 'token', 'content': diff})}\n\n"
-                                event_stream._last_emitted = clean
+                        gen = mercury.chat_stream(messages)
                     except Exception:
-                        response_parts = []
+                        gen = None
+                if gen is None:
+                    gen = ollama.chat_stream(messages)
 
-                if not response_parts:
-                    event_stream._last_emitted = ''
-                    async for token in ollama.chat_stream(messages):
-                        response_parts.append(token)
-                        text_so_far = "".join(response_parts)
+                async for token in gen:
+                    response_parts.append(token)
+                    text_so_far = "".join(response_parts)
 
-                        # Extract and emit MAP_CMDs
-                        while "\nMAP_CMD:" in text_so_far or text_so_far.startswith("MAP_CMD:"):
-                            prefix = "MAP_CMD:" if text_so_far.startswith("MAP_CMD:") else "\nMAP_CMD:"
-                            idx = text_so_far.index(prefix)
-                            json_start = idx + len(prefix)
-                            line_end = text_so_far.find("\n", json_start)
-                            if line_end == -1:
-                                break
-                            json_str = text_so_far[json_start:line_end].strip()
-                            try:
-                                cmd = json.loads(json_str)
-                                yield f"data: {json.dumps({'type': 'map_command', 'command': cmd})}\n\n"
-                            except json.JSONDecodeError:
-                                pass
-                            text_so_far = text_so_far[:idx] + text_so_far[line_end + 1:]
-                            response_parts = [text_so_far]
+                    # Extract complete MAP_CMD lines
+                    text_so_far, cmds = _extract_cmds(text_so_far)
+                    response_parts = [text_so_far]
 
-                        # Emit clean text
-                        clean = text_so_far
-                        if "MAP_CMD:" in clean:
-                            continue
-                        last = getattr(event_stream, '_last_emitted', '')
-                        if len(clean) > len(last):
-                            diff = clean[len(last):]
-                            yield f"data: {json.dumps({'type': 'token', 'content': diff})}\n\n"
-                            event_stream._last_emitted = clean
+                    for cmd in cmds:
+                        yield f"data: {json.dumps({'type': 'map_command', 'command': cmd})}\n\n"
+
+                    # Don't emit text that contains full or partial MAP_CMD
+                    if "MAP_CMD:" in text_so_far or _ends_with_partial(text_so_far):
+                        continue
+
+                    if len(text_so_far) > len(last_emitted):
+                        diff = text_so_far[len(last_emitted):]
+                        yield f"data: {json.dumps({'type': 'token', 'content': diff})}\n\n"
+                        last_emitted = text_so_far
+
+                # Flush remaining after stream ends
+                final = "".join(response_parts)
+                final, cmds = _extract_cmds(final)
+                for cmd in cmds:
+                    yield f"data: {json.dumps({'type': 'map_command', 'command': cmd})}\n\n"
+                if len(final) > len(last_emitted):
+                    diff = final[len(last_emitted):]
+                    if diff.strip():
+                        yield f"data: {json.dumps({'type': 'token', 'content': diff})}\n\n"
 
             except Exception as e:
                 yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
 
             yield "data: [DONE]\n\n"
 
-        event_stream._last_emitted = ''
         from starlette.responses import StreamingResponse
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 
