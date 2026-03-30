@@ -38,11 +38,7 @@
     --text-secondary: #7b8fa3;
     --text-muted: #3e5068;
     --accent-cyan: #00e5ff;
-    --accent-amber: #ffab00;
     --accent-glow: rgba(0, 229, 255, 0.12);
-    --accent-glow-strong: rgba(0, 229, 255, 0.25);
-    --scan-line: rgba(0, 229, 255, 0.02);
-    --grid-line: rgba(0, 229, 255, 0.04);
     --hud-radius: 2px;
   }
 
@@ -3899,12 +3895,12 @@ document.addEventListener('keydown', (e) => {
 const tooltipStyle = document.createElement('style');
 tooltipStyle.textContent = `
   .rel-tooltip {
-    background: var(--bg-glass) !important;
-    backdrop-filter: blur(12px) !important;
-    border: 1px solid var(--border-active) !important;
-    border-radius: 8px !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
-    padding: 8px 12px !important;
+    background: rgba(4,8,16,0.95) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(0,229,255,0.12) !important;
+    border-radius: 2px !important;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.5) !important;
+    padding: 6px 10px !important;
     color: var(--text-primary) !important;
   }
   .rel-tooltip .leaflet-tooltip-content { margin: 0 !important; }
