@@ -1549,7 +1549,7 @@
   <div class="threat-stats">
     <div class="threat-stat critical">
       <span class="threat-stat-value red" id="tExposed">—</span>
-      <span class="threat-stat-label">Exposed Hosts</span>
+      <span class="threat-stat-label">Internet-Exposed</span>
     </div>
     <div class="threat-stat critical">
       <span class="threat-stat-value red" id="tCriticalCVE">—</span>
@@ -1973,7 +1973,7 @@ function populateStats() {
 function populateThreatDashboard() {
   const cc = DATA.contractors;
 
-  // Total exposed hosts
+  // Contractors with internet-facing hosts (not sum of hosts — avoids Shodan false positive inflation)
   let totalHosts = 0;
   let contractorsWithCVEs = 0;
   let noDMARC = 0;
@@ -1989,8 +1989,8 @@ function populateThreatDashboard() {
     const dns = o.dns || {};
     const web = o.web || {};
 
-    // Exposed hosts
-    totalHosts += (s.total_hosts || 0);
+    // Exposed hosts — count contractors, not sum hosts (avoids Shodan false-positive inflation)
+    if ((s.total_hosts || 0) > 0) totalHosts++;
 
     // CVEs
     if ((s.vulns || []).length > 0) contractorsWithCVEs++;

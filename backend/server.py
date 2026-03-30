@@ -735,6 +735,16 @@ RULES:
             return FileResponse(atlas_path, media_type="text/html")
         return JSONResponse({"error": "Atlas map not found"}, 404)
 
+    @app.get("/contractors.json")
+    async def serve_contractors_json():
+        """Serve the enriched contractors data for the Atlas map."""
+        from fastapi.responses import FileResponse
+        import pathlib
+        json_path = pathlib.Path(__file__).parent.parent / "frontend" / "static" / "contractors.json"
+        if json_path.is_file():
+            return FileResponse(json_path, media_type="application/json")
+        return JSONResponse({"error": "Contractors data not found"}, 404)
+
     # --- Static files (SvelteKit build) ---
     # Mount on a sub-path first, then add a catch-all for SPA fallback
     # This prevents the static mount from shadowing /api/* routes
