@@ -1,5 +1,6 @@
 # backend/server.py
 """FastAPI server for DOE GraphRAG."""
+import asyncio
 import os
 import json
 import re
@@ -559,6 +560,180 @@ def create_app() -> FastAPI:
                 }
 
         return EventSourceResponse(event_stream())
+
+    # --- Atlas Chat (SSE with map commands) ---
+    _ATLAS_SYSTEM_PROMPT = """\
+You are the OSINT Atlas Intelligence Analyst for DOE contractor security. You have access to \
+intelligence data on DOE contractors including their network exposure, vulnerabilities, and infrastructure.
+
+You answer questions about the contractor data AND emit map commands to visualize your answers.
+
+CONTRACTOR DATA SCHEMA (each contractor has these fields):
+- name, city, state, zip, lat, lon, category
+- obligation (federal dollars), contract_count
+- shodan.total_hosts, shodan.top_ports[{port,count}], shodan.vulns[{cve,count}], shodan.sample_hosts[{ip,port,product}]
+- osint.dns.dmarc_policy (reject|quarantine|none|not_set), osint.dns.mail_provider, osint.dns.dns_provider
+- osint.ct.subdomains[], osint.ct.infrastructure_hints.vpn[], osint.ct.infrastructure_hints.auth[]
+- osint.web.security_score (0-100), osint.web.server, osint.web.cms
+- osint.service_risk.max_danger (critical|high|medium|none), osint.service_risk.dangerous_services[{port,name,danger,reason}]
+- osint.nvd_cvss.max_score, osint.nvd_cvss.max_severity, osint.nvd_cvss.summary.{critical,high,medium,low}
+- osint.onprem_network.on_prem_count, osint.onprem_network.cloud_count, osint.onprem_network.on_prem_percentage
+
+MAP COMMANDS — emit these as JSON on a line by itself, prefixed with MAP_CMD:
+The frontend will execute these to manipulate the map in real-time.
+
+Available commands:
+- MAP_CMD:{"action":"fly_to","lat":39.5,"lon":-105.0,"zoom":8}
+- MAP_CMD:{"action":"filter","field":"state","value":"CO","op":"eq"}
+- MAP_CMD:{"action":"filter","field":"osint.service_risk.max_danger","value":"critical","op":"eq"}
+- MAP_CMD:{"action":"filter","field":"shodan.total_hosts","value":0,"op":"gt"}
+- MAP_CMD:{"action":"filter","field":"category","value":"IT & Cyber","op":"eq"}
+- MAP_CMD:{"action":"reset"}
+- MAP_CMD:{"action":"open_panel","contractor_index":42}
+
+Filter operators: eq, contains, gt, gte, lt, exists
+Field paths use dot notation into the contractor JSON.
+
+RULES:
+1. Always emit MAP_CMD commands BEFORE your text explanation so the map updates first
+2. Use fly_to when the user asks about a geographic area
+3. Use filter when the user wants to see a subset of contractors
+4. Use reset before applying new filters to clear previous state
+5. Be specific with numbers — cite actual counts from the data
+6. When mentioning a specific contractor, use open_panel with their index
+7. Keep answers concise but impactful — this is a security briefing tool
+"""
+
+    class AtlasChatRequest(BaseModel):
+        query: str
+        messages: list[dict] = []
+        contractor_count: int = 0
+
+    @app.post("/api/atlas-chat")
+    async def atlas_chat(req: AtlasChatRequest):
+        ollama = state["ollama"]
+        mercury = state.get("mercury")
+
+        # Build context with data summary for the LLM
+        retriever = state["retriever"]
+        results = await asyncio.to_thread(retriever.search, req.query)
+        contract_context = "\n".join(
+            f"- {c.recipient}: {c.description} (${c.obligation:,.0f})"
+            for c in results.contracts[:20]
+        )
+
+        messages = [
+            {"role": "system", "content": _ATLAS_SYSTEM_PROMPT},
+            {"role": "user", "content": (
+                f"Contractor dataset: {req.contractor_count} DOE contractors\n\n"
+                f"RELEVANT CONTRACT DATA:\n{contract_context}\n\n"
+                f"USER QUESTION: {req.query}"
+            )},
+        ]
+
+        # Add conversation history
+        for msg in req.messages[-6:]:
+            if msg.get("role") in ("user", "assistant"):
+                messages.append({"role": msg["role"], "content": msg["content"][:500]})
+
+        async def event_stream():
+            import asyncio as aio
+
+            use_hermes = mercury and mercury.is_available()
+            response_parts = []
+
+            try:
+                if use_hermes:
+                    try:
+                        async for token in mercury.chat_stream(messages):
+                            response_parts.append(token)
+                            # Check for MAP_CMD in accumulated text
+                            text_so_far = "".join(response_parts)
+                            while "MAP_CMD:" in text_so_far:
+                                idx = text_so_far.index("MAP_CMD:")
+                                # Find the JSON after MAP_CMD:
+                                json_start = idx + 8
+                                # Find the end of the JSON line
+                                line_end = text_so_far.find("\n", json_start)
+                                if line_end == -1:
+                                    break  # Incomplete — wait for more tokens
+                                json_str = text_so_far[json_start:line_end].strip()
+                                try:
+                                    cmd = json.loads(json_str)
+                                    yield f"data: {json.dumps({'type': 'map_command', 'command': cmd})}\n\n"
+                                except json.JSONDecodeError:
+                                    pass
+                                # Remove the MAP_CMD line from text and emit remaining as tokens
+                                before = text_so_far[:idx]
+                                after = text_so_far[line_end + 1:]
+                                text_so_far = before + after
+                                response_parts = [text_so_far]
+                                continue
+                            # Yield text tokens (non-command parts)
+                            clean = text_so_far
+                            # Don't emit text that contains partial MAP_CMD
+                            if "MAP_CMD:" in clean:
+                                break
+                            if clean and clean != getattr(event_stream, '_last_emitted', ''):
+                                diff = clean[len(getattr(event_stream, '_last_emitted', '')):]
+                                if diff:
+                                    yield f"data: {json.dumps({'type': 'token', 'content': diff})}\n\n"
+                                event_stream._last_emitted = clean
+                    except Exception:
+                        response_parts = []
+
+                if not response_parts:
+                    event_stream._last_emitted = ''
+                    async for token in ollama.chat_stream(messages):
+                        response_parts.append(token)
+                        text_so_far = "".join(response_parts)
+
+                        # Extract and emit MAP_CMDs
+                        while "\nMAP_CMD:" in text_so_far or text_so_far.startswith("MAP_CMD:"):
+                            prefix = "MAP_CMD:" if text_so_far.startswith("MAP_CMD:") else "\nMAP_CMD:"
+                            idx = text_so_far.index(prefix)
+                            json_start = idx + len(prefix)
+                            line_end = text_so_far.find("\n", json_start)
+                            if line_end == -1:
+                                break
+                            json_str = text_so_far[json_start:line_end].strip()
+                            try:
+                                cmd = json.loads(json_str)
+                                yield f"data: {json.dumps({'type': 'map_command', 'command': cmd})}\n\n"
+                            except json.JSONDecodeError:
+                                pass
+                            text_so_far = text_so_far[:idx] + text_so_far[line_end + 1:]
+                            response_parts = [text_so_far]
+
+                        # Emit clean text
+                        clean = text_so_far
+                        if "MAP_CMD:" in clean:
+                            continue
+                        last = getattr(event_stream, '_last_emitted', '')
+                        if len(clean) > len(last):
+                            diff = clean[len(last):]
+                            yield f"data: {json.dumps({'type': 'token', 'content': diff})}\n\n"
+                            event_stream._last_emitted = clean
+
+            except Exception as e:
+                yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+            yield "data: [DONE]\n\n"
+
+        event_stream._last_emitted = ''
+        from starlette.responses import StreamingResponse
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+    # --- Atlas route (OSINT intelligence map) ---
+    @app.get("/atlas")
+    async def serve_atlas():
+        """Serve the OSINT Atlas contractor intelligence map."""
+        from fastapi.responses import FileResponse
+        import pathlib
+        atlas_path = pathlib.Path(__file__).parent.parent / "frontend" / "static" / "contractor-map.html"
+        if atlas_path.is_file():
+            return FileResponse(atlas_path, media_type="text/html")
+        return JSONResponse({"error": "Atlas map not found"}, 404)
 
     # --- Static files (SvelteKit build) ---
     # Mount on a sub-path first, then add a catch-all for SPA fallback
