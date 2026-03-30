@@ -1165,6 +1165,75 @@
     color: #69f0ae;
   }
 
+  /* ─── ON-PREM NETWORK SECTION ─── */
+  .onprem-split {
+    display: flex;
+    gap: 2px;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0;
+  }
+
+  .onprem-split-bar {
+    height: 100%;
+    transition: width 0.3s;
+  }
+
+  .onprem-split-bar.on-prem { background: #ff1744; }
+  .onprem-split-bar.cloud { background: var(--accent-cyan); }
+
+  .onprem-ip-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .onprem-ip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  .onprem-ip-row .ip-addr { flex: 1; color: var(--text-primary); }
+
+  .ip-badge {
+    font-size: 8px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .ip-badge.on-prem {
+    background: rgba(255,23,68,0.12);
+    border: 1px solid rgba(255,23,68,0.25);
+    color: #ff1744;
+  }
+
+  .ip-badge.cloud {
+    background: rgba(0,188,212,0.1);
+    border: 1px solid rgba(0,188,212,0.2);
+    color: var(--accent-cyan);
+  }
+
+  .ip-source-tag {
+    font-size: 8px;
+    padding: 1px 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-dim);
+    color: var(--text-muted);
+  }
+
   /* ─── MARKER RISK RING ─── */
   .risk-ring {
     position: absolute;
@@ -1271,6 +1340,10 @@
     <div class="threat-stat">
       <span class="threat-stat-value yellow" id="tNoHeaders">—</span>
       <span class="threat-stat-label">No Sec Headers</span>
+    </div>
+    <div class="threat-stat">
+      <span class="threat-stat-value red" id="tOnPrem">—</span>
+      <span class="threat-stat-label">On-Prem Exposed</span>
     </div>
     <div class="threat-stat">
       <span class="threat-stat-value cyan" id="tAvgRisk">—</span>
@@ -1698,6 +1771,15 @@ function populateThreatDashboard() {
   document.getElementById('tRiskyPorts').textContent = riskyPortContractors.toLocaleString();
   document.getElementById('tWeakSSL').textContent = weakSSL.toLocaleString();
   document.getElementById('tNoHeaders').textContent = noSecHeaders.toLocaleString();
+
+  // On-prem exposed
+  let onPremContractors = 0;
+  cc.forEach(c => {
+    const op = (c.osint || {}).onprem_network || {};
+    if (op.on_prem_count > 0) onPremContractors++;
+  });
+  document.getElementById('tOnPrem').textContent = onPremContractors.toLocaleString();
+
   document.getElementById('tAvgRisk').textContent = scoredCount ? Math.round(totalRisk / scoredCount) : '—';
 }
 
@@ -2163,6 +2245,9 @@ function buildPanelBody(c) {
   // ── Network Diagram ──
   html += buildNetworkDiagram(c);
 
+  // ── On-Premises Network ──
+  html += buildOnPremSection(c);
+
   // ── Dangerous Services ──
   html += buildDangerousServicesSection(c);
 
@@ -2175,6 +2260,78 @@ function buildPanelBody(c) {
   // ── Co-located Contractors ──
   html += buildColocationSection(c);
 
+  return html;
+}
+
+function buildOnPremSection(c) {
+  const onprem = (c.osint || {}).onprem_network;
+  if (!onprem || !onprem.queried) return '';
+
+  const onCount = onprem.on_prem_count || 0;
+  const cloudCount = onprem.cloud_count || 0;
+  const total = onCount + cloudCount;
+
+  if (total === 0) return '';
+
+  const onPct = total > 0 ? Math.round(onCount / total * 100) : 0;
+  const cloudPct = 100 - onPct;
+
+  let html = '<div class="panel-section"><div class="section-title">On-Premises vs Cloud Infrastructure</div>';
+
+  // Split bar
+  html += `
+  <div style="display:flex;justify-content:space-between;font-family:JetBrains Mono,monospace;font-size:10px;margin-top:4px">
+    <span style="color:#ff1744">${onCount} ON-PREM (${onPct}%)</span>
+    <span style="color:var(--accent-cyan)">${cloudCount} CLOUD (${cloudPct}%)</span>
+  </div>
+  <div class="onprem-split">
+    <div class="onprem-split-bar on-prem" style="width:${onPct}%"></div>
+    <div class="onprem-split-bar cloud" style="width:${cloudPct}%"></div>
+  </div>`;
+
+  // ISP
+  if (onprem.inferred_isp) {
+    html += `<div style="font-size:11px;color:var(--text-secondary);margin:4px 0">
+      <span style="color:var(--text-muted)">Inferred ISP:</span> ${escapeHtml(onprem.inferred_isp)}
+    </div>`;
+  }
+
+  // On-prem IPs
+  if (onCount > 0) {
+    html += '<div style="margin-top:8px;font-family:JetBrains Mono,monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase">On-Premises IPs</div>';
+    html += '<div class="onprem-ip-list">';
+    (onprem.on_prem_ips || []).slice(0, 15).forEach(ip => {
+      const classified = (onprem.classified_ips || []).find(c => c.ip === ip);
+      const sources = classified ? (classified.sources || []) : [];
+      html += `
+      <div class="onprem-ip-row">
+        <span class="ip-badge on-prem">on-prem</span>
+        <span class="ip-addr">${escapeHtml(ip)}</span>
+        ${sources.map(s => `<span class="ip-source-tag">${s.replace('_', ' ')}</span>`).join('')}
+      </div>`;
+    });
+    if (onCount > 15) html += `<div style="font-size:10px;color:var(--text-muted);padding:4px">...and ${onCount - 15} more</div>`;
+    html += '</div>';
+  }
+
+  // Cloud IPs (collapsed)
+  if (cloudCount > 0) {
+    html += '<div style="margin-top:8px;font-family:JetBrains Mono,monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase">Cloud / Hosted IPs</div>';
+    html += '<div class="onprem-ip-list">';
+    (onprem.cloud_ips || []).slice(0, 8).forEach(entry => {
+      const ip = entry.ip || entry;
+      const provider = entry.provider || '?';
+      html += `
+      <div class="onprem-ip-row">
+        <span class="ip-badge cloud">${escapeHtml(provider)}</span>
+        <span class="ip-addr">${escapeHtml(ip)}</span>
+      </div>`;
+    });
+    if (cloudCount > 8) html += `<div style="font-size:10px;color:var(--text-muted);padding:4px">...and ${cloudCount - 8} more</div>`;
+    html += '</div>';
+  }
+
+  html += '</div>';
   return html;
 }
 

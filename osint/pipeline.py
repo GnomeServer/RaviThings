@@ -33,6 +33,7 @@ from osint.enhanced_shodan import enrich_shodan
 from osint.asn_enum import enrich_asn
 from osint.nvd_cvss import enrich_nvd_cvss, collect_cve_ids
 from osint.service_risk import classify_services
+from osint.onprem_network import identify_onprem_network
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -380,6 +381,28 @@ def run_layer_web(contractors, force=False, limit=0):
     return found
 
 
+def run_layer_onprem(contractors, force=False, limit=0):
+    """Identify on-premises vs cloud infrastructure for each contractor."""
+    print(f'\n--- Layer: On-Premises Network Identification ---')
+    processed = 0
+    with_onprem = 0
+    targets = contractors[:limit] if limit else contractors
+
+    for i, c in enumerate(targets):
+        if not needs_layer(c, 'onprem_network', force):
+            continue
+        result = identify_onprem_network(c)
+        c.setdefault('osint', {})['onprem_network'] = result
+        processed += 1
+        if result['on_prem_count'] > 0:
+            with_onprem += 1
+
+        if (i + 1) % 100 == 0:
+            print(f'  Progress: {i + 1}/{len(targets)}, on-prem found: {with_onprem}')
+
+    print(f'  Processed: {processed}, with on-prem IPs: {with_onprem}')
+
+
 def run_layer_service_risk(contractors, force=False, limit=0):
     """Classify dangerous services for each contractor."""
     print(f'\n--- Layer: Service Risk Classification ---')
@@ -509,7 +532,7 @@ def print_summary(contractors):
 def main():
     parser = argparse.ArgumentParser(description='Multi-layer OSINT enrichment pipeline')
     parser.add_argument('--layers', default='all',
-                        help='Comma-separated layers: all,shodan,domain,verify,dns,ct,web,asn,service_risk,nvd')
+                        help='Comma-separated layers: all,shodan,domain,verify,dns,ct,web,asn,onprem,service_risk,nvd')
     parser.add_argument('--limit', type=int, default=0,
                         help='Limit contractors per layer (0=all)')
     parser.add_argument('--force', action='store_true',
@@ -571,6 +594,10 @@ def main():
 
     if run_all or 'asn' in layers:
         run_layer_asn(contractors, force=args.force, limit=args.limit)
+        save_data(data)
+
+    if run_all or 'onprem' in layers:
+        run_layer_onprem(contractors, force=args.force, limit=args.limit)
         save_data(data)
 
     if run_all or 'service_risk' in layers:
