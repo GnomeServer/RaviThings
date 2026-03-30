@@ -18,6 +18,7 @@ from backend.setup_fts import ensure_fts5
 from backend.brave_search import BraveSearchClient
 from backend.mercury_client import HermesClient
 from backend.deep_analysis import DeepAnalysisPipeline
+from backend.saturate import SaturationPipeline, _merge_schematic, _SATURATE_DELTA_PROMPT
 
 # Keywords that indicate a "how to make" question warranting schematic extraction
 _SCHEMATIC_KEYWORDS = re.compile(
@@ -25,7 +26,7 @@ _SCHEMATIC_KEYWORDS = re.compile(
     re.IGNORECASE,
 )
 
-_SCHEMATIC_JSON_SCHEMA = '{"title":"string","inputs":[{"id":"in1","name":"Chemical name (formula)","type":"raw_material|precursor|equipment|energy","sources":{"commercial":["Real supplier names"],"diy":"How to synthesize this yourself"},"feeds_into":["step1"]}],"steps":[{"id":"step1","name":"Process step name","description":"Detailed description of what happens in this step","parameters":{"key":"value with real numbers"},"equipment":["Specific equipment needed"],"inputs_from":["in1"],"outputs_to":["step2"],"doe_contractors":["Real lab names from contracts"],"investment":"Real dollar amount or unknown"}],"outputs":[{"id":"out1","name":"Product name","description":"Detailed description of the output product and its properties","type":"intermediate|final","receives_from":["step1"]}]}'
+_SCHEMATIC_JSON_SCHEMA = '{"title":"string","inputs":[{"id":"in1","name":"Chemical name (formula)","type":"raw_material|precursor|equipment|energy","sources":{"commercial":["Real supplier names"],"diy":"How to synthesize this yourself"},"feeds_into":["step1"]}],"steps":[{"id":"step1","name":"Process step name","description":"Detailed description of what happens in this step","parameters":{"key":"value with real numbers"},"equipment":["Specific equipment needed"],"inputs_from":["in1"],"outputs_to":["step2"],"doe_contractors":["Real lab names from contracts"],"investment":"Real dollar amount or unknown","contractor_details":[{"name":"Real contractor/lab name","role":"Specific contribution to this step","contract_value":12400000,"significance_pct":42.3}],"step_total_capital":29400000}],"outputs":[{"id":"out1","name":"Product name","description":"Detailed description of the output product and its properties","type":"intermediate|final","receives_from":["step1"]}]}'
 
 _SCHEMATIC_CREATE_PROMPT = """\
 Extract a manufacturing process schematic from the information below. Return ONLY valid JSON.
@@ -37,6 +38,7 @@ RULES:
 - For doe_contractors: actual lab/company names from the contract data.
 - For investment: actual dollar amounts from contracts if available.
 - Connect inputs to steps and steps to outputs using id fields.
+- For contractor_details: list each DOE contractor that participates in this step. Include their specific role/contribution, actual contract_value in dollars, and significance_pct as their share of the total capital for this step (percentages should sum to ~100 within each step). Set step_total_capital to the sum of all contract values for that step.
 
 JSON SCHEMA:
 """ + _SCHEMATIC_JSON_SCHEMA + "\n\n"
@@ -44,12 +46,15 @@ JSON SCHEMA:
 _SCHEMATIC_UPDATE_PROMPT = """\
 You have an EXISTING process schematic (shown below as JSON). The user asked a follow-up question and got a new answer with more detail. UPDATE the existing schematic by:
 
-1. KEEP all existing steps, inputs, and outputs that are still relevant.
-2. ADD new information: fill in missing parameters, add new inputs/steps/outputs discovered.
-3. ENRICH existing entries: add more detail to descriptions, add equipment, add suppliers, update parameters with more specific values.
-4. NEVER remove existing data unless it's clearly wrong.
-5. Preserve all existing id values so connections aren't broken.
-6. Pay special attention to the USER'S QUESTION below — focus enrichment on the step or area they asked about.
+1. The EXISTING SCHEMATIC below is the MASTER. Start from it. NEVER discard or replace it.
+2. KEEP ALL existing steps, inputs, and outputs — every single one.
+3. ADD new sub-steps, inputs, outputs, contractors, parameters, or equipment discovered.
+4. If the user asked about ONE specific step, ENRICH that step's description, parameters, equipment, and contractors. Do NOT replace the entire schematic with a schematic about only that step.
+5. NEVER remove existing data unless clearly wrong.
+6. Preserve all existing id values so connections aren't broken.
+7. Pay special attention to the USER'S QUESTION below — focus enrichment on the step or area they asked about.
+
+CRITICAL: The output must contain ALL steps from the existing schematic PLUS any new ones. If the existing schematic has 7 steps, the output must have at least 7 steps.
 
 Return the COMPLETE updated schematic as valid JSON (not just the changes).
 
@@ -356,11 +361,13 @@ def create_app() -> FastAPI:
                     )
 
                     if is_update:
-                        # UPDATE existing schematic — enrich, don't replace
+                        # DELTA approach: ask LLM for additions only, merge in code
+                        step_names = ", ".join(
+                            s.get("name", "?") for s in req.schematic.get("steps", [])
+                        )
                         prompt = (
-                            _SCHEMATIC_UPDATE_PROMPT
-                            .replace("{existing_schematic}", json.dumps(req.schematic, indent=2))
-                            .replace("{user_question}", user_msg)
+                            _SATURATE_DELTA_PROMPT
+                            .replace("{existing_step_names}", step_names)
                         ) + new_info
                     else:
                         # CREATE new schematic from scratch
@@ -369,7 +376,7 @@ def create_app() -> FastAPI:
                     # Use Hermes-4 for all schematic work (better JSON, 131K context)
                     hermes_available = hermes and hermes.is_available()
                     if hermes_available:
-                        action = "Enriching" if is_update else "Generating"
+                        action = "Extracting additions for" if is_update else "Generating"
                         yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": f"{action} schematic with Hermes-4..."})}
                         schematic_msgs = [{"role": "user", "content": prompt}]
                         try:
@@ -397,6 +404,13 @@ def create_app() -> FastAPI:
                         schematic_data = json.loads(raw_schematic[start:end + 1])
                     else:
                         schematic_data = json.loads(raw_schematic)
+
+                    # For updates: merge delta into existing schematic in code
+                    if is_update:
+                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "Merging additions into existing schematic..."})}
+                        schematic_data, merge_counts = _merge_schematic(req.schematic, schematic_data)
+                        n_new = merge_counts.get("total_new", 0)
+                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": f"Merged {n_new} new entities into schematic"})}
 
                     # Validate it has at least a title or steps
                     if schematic_data.get("title") or schematic_data.get("steps"):
@@ -500,6 +514,45 @@ def create_app() -> FastAPI:
 
         async def event_stream():
             async for event in pipeline.analyze(user_msg, conversation_history):
+                yield {
+                    "event": event["event"],
+                    "data": json.dumps(event["data"]),
+                }
+
+        return EventSourceResponse(event_stream())
+
+    # --- Saturate Chat (SSE) ---
+    class SaturateChatRequest(BaseModel):
+        messages: list[dict]
+        max_passes: int | None = None  # None = no limit, run until converged
+        auto_explore: bool = True
+        max_depth: int = 3
+
+    @app.post("/api/saturate-chat")
+    async def saturate_chat(req: SaturateChatRequest):
+        ollama = state["ollama"]
+        mercury = state.get("mercury")
+        brave = state.get("brave")
+        retriever = state["retriever"]
+
+        pipeline = SaturationPipeline(
+            retriever=retriever,
+            ollama=ollama,
+            hermes=mercury if mercury and mercury.is_available() else None,
+            brave=brave,
+        )
+
+        user_msg = next(
+            (m["content"] for m in reversed(req.messages) if m["role"] == "user"), ""
+        )
+
+        async def event_stream():
+            async for event in pipeline.saturate(
+                    user_msg,
+                    max_passes=req.max_passes,
+                    auto_explore=req.auto_explore,
+                    max_depth=req.max_depth,
+                ):
                 yield {
                     "event": event["event"],
                     "data": json.dumps(event["data"]),

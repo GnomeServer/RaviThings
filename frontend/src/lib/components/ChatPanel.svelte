@@ -13,7 +13,7 @@
 	let messagesContainer: HTMLDivElement | undefined = $state();
 	let currentAbortController: AbortController | null = $state(null);
 	let contracts = $state<ContractResult[]>([]);
-	let chatMode = $state<'quick' | 'deep'>('quick');
+	let chatMode = $state<'quick' | 'deep' | 'saturate'>('quick');
 	let recipePhase = $state<string | null>(null);
 	let recipeRounds = $state<Array<{ round: number; contracts: number; topics: number; newTopics: number }>>([]);
 	let pipelineStatus = $state<{ stage: string; message: string; progress?: number; total?: number } | null>(null);
@@ -256,7 +256,9 @@
 		chatStore.addUserMessage(text);
 		chatStore.startAssistantMessage();
 
-		const endpoint = chatMode === 'deep' ? '/api/deep-chat' : '/api/chat';
+		const endpoint = chatMode === 'deep' ? '/api/deep-chat'
+			: chatMode === 'saturate' ? '/api/saturate-chat'
+			: '/api/chat';
 
 		const messagesPayload = chatStore.messages
 			.filter((m) => !m.isStreaming)
@@ -298,6 +300,16 @@
 		chatStore.clearMessages();
 		contracts = [];
 		graphStore.clearHighlights();
+	}
+
+	function startNewChat() {
+		clearChat();
+		schematicStore.clear();
+		activityLogs = [];
+		deepAnalysisCounts = null;
+		deepAnalysisStartTime = null;
+		deepAnalysisDone = false;
+		pipelineStatus = null;
 	}
 
 	function formatDollars(amount: number): string {
@@ -398,8 +410,8 @@
 	</div>
 
 	{#if pipelineStatus}
-		<div class="status-bar" class:status-done={pipelineStatus.stage === 'done'} class:status-error={pipelineStatus.stage === 'schematic_failed'} class:status-deep={chatMode === 'deep' && pipelineStatus.stage !== 'done'}>
-			<span class="status-spinner" class:status-spinner-done={pipelineStatus.stage === 'done'} class:status-spinner-deep={chatMode === 'deep' && pipelineStatus.stage !== 'done'}></span>
+		<div class="status-bar" class:status-done={pipelineStatus.stage === 'done' || pipelineStatus.stage === 'saturate_done'} class:status-error={pipelineStatus.stage === 'schematic_failed'} class:status-deep={(chatMode === 'deep' || chatMode === 'saturate') && pipelineStatus.stage !== 'done' && pipelineStatus.stage !== 'saturate_done'}>
+			<span class="status-spinner" class:status-spinner-done={pipelineStatus.stage === 'done' || pipelineStatus.stage === 'saturate_done'} class:status-spinner-deep={(chatMode === 'deep' || chatMode === 'saturate') && pipelineStatus.stage !== 'done' && pipelineStatus.stage !== 'saturate_done'}></span>
 			<span class="status-text">{pipelineStatus.message}</span>
 			{#if pipelineStatus.stage === 'scoring' && pipelineStatus.total}
 				<div class="scoring-progress-bar">
@@ -482,9 +494,25 @@
 					disabled={chatStore.isStreaming}
 					onclick={() => chatMode = 'deep'}
 				>Deep Analysis</button>
+				<button
+					class="mode-btn"
+					class:mode-btn-active-saturate={chatMode === 'saturate'}
+					disabled={chatStore.isStreaming}
+					onclick={() => chatMode = 'saturate'}
+				>Saturate</button>
 			</div>
 			{#if chatMode === 'deep'}
 				<span class="deep-warning">~3-5 min</span>
+			{/if}
+			{#if chatMode === 'saturate'}
+				<span class="saturate-warning">runs until exhausted</span>
+			{/if}
+			{#if chatStore.messages.length > 0}
+				<button
+					class="btn-new-chat"
+					disabled={chatStore.isStreaming}
+					onclick={startNewChat}
+				>New Chat</button>
 			{/if}
 		</div>
 	</div>
@@ -807,6 +835,11 @@
 		color: #fbbf24;
 	}
 
+	.mode-btn-active-saturate {
+		background: rgba(139, 92, 246, 0.2);
+		color: #a78bfa;
+	}
+
 	.deep-warning {
 		font-size: 10px;
 		font-weight: 600;
@@ -815,6 +848,42 @@
 		padding: 2px 8px;
 		border-radius: 9999px;
 		border: 1px solid rgba(217, 119, 6, 0.3);
+		letter-spacing: 0.02em;
+	}
+
+	.btn-new-chat {
+		font-size: 10px;
+		font-weight: 600;
+		color: var(--text-muted);
+		background: transparent;
+		border: 1px solid var(--border-accent);
+		padding: 2px 10px;
+		border-radius: 4px;
+		cursor: pointer;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		transition: all 0.15s ease;
+	}
+
+	.btn-new-chat:hover:not(:disabled) {
+		color: var(--text-secondary);
+		border-color: var(--text-secondary);
+		background: var(--bg-hover);
+	}
+
+	.btn-new-chat:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.saturate-warning {
+		font-size: 10px;
+		font-weight: 600;
+		color: #8b5cf6;
+		background: rgba(139, 92, 246, 0.12);
+		padding: 2px 8px;
+		border-radius: 9999px;
+		border: 1px solid rgba(139, 92, 246, 0.3);
 		letter-spacing: 0.02em;
 	}
 

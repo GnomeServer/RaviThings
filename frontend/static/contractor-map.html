@@ -1,0 +1,3443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOE Contractor Intelligence Map — FY 2024–2026</title>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Leaflet MarkerCluster -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<!-- Leaflet Heat Map -->
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+<!-- D3.js for network graph -->
+<script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2235;
+    --bg-glass: rgba(17, 24, 39, 0.85);
+    --bg-glass-hover: rgba(26, 34, 53, 0.92);
+    --border-dim: rgba(99, 130, 191, 0.12);
+    --border-active: rgba(99, 130, 191, 0.3);
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent-cyan: #00e5ff;
+    --accent-glow: rgba(0, 229, 255, 0.15);
+    --scan-line: rgba(0, 229, 255, 0.03);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ─── MAP ─── */
+  #map {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  .leaflet-container { background: var(--bg-primary) !important; }
+
+  /* Invert OSM tiles to dark theme */
+  .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) saturate(0.3) brightness(0.75) contrast(1.3); }
+  .leaflet-control-zoom a {
+    background: var(--bg-glass) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-dim) !important;
+    backdrop-filter: blur(16px);
+  }
+  .leaflet-control-zoom a:hover {
+    background: var(--bg-glass-hover) !important;
+    color: var(--accent-cyan) !important;
+  }
+  .leaflet-control-attribution {
+    background: rgba(10, 14, 23, 0.7) !important;
+    color: var(--text-muted) !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 9px !important;
+  }
+  .leaflet-control-attribution a { color: var(--text-secondary) !important; }
+
+  /* Cluster styling */
+  .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+    background: rgba(0, 229, 255, 0.12) !important;
+    border: 1px solid rgba(0, 229, 255, 0.3) !important;
+    backdrop-filter: blur(8px);
+  }
+  .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+    background: rgba(0, 229, 255, 0.2) !important;
+    color: #e2e8f0 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .marker-cluster-medium { background: rgba(0, 229, 255, 0.18) !important; }
+  .marker-cluster-large { background: rgba(0, 229, 255, 0.25) !important; }
+
+  /* ─── TOP BAR ─── */
+  #topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    background: linear-gradient(180deg, rgba(10, 14, 23, 0.95) 0%, rgba(10, 14, 23, 0.7) 100%);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  .logo-mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #00e5ff 0%, #7c4dff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0a0e17;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+
+  .logo-text .title {
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+  }
+
+  .logo-text .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .search-container {
+    flex: 1;
+    max-width: 420px;
+    position: relative;
+  }
+
+  #searchInput {
+    width: 100%;
+    padding: 8px 14px 8px 36px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-dim);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  #searchInput:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  #searchInput::placeholder { color: var(--text-muted); }
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .stats-bar {
+    display: flex;
+    gap: 20px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.1;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--accent-cyan);
+  }
+
+  .stat-label {
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+
+  /* ─── CATEGORY LEGEND ─── */
+  #legend {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-dim);
+    border-radius: 12px;
+    padding: 14px 16px;
+    max-width: 260px;
+  }
+
+  .legend-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .legend-items {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+  }
+
+  .legend-item:hover { background: rgba(255,255,255,0.04); }
+  .legend-item.dimmed { opacity: 0.25; }
+
+  .legend-swatch {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .legend-swatch svg { width: 14px; height: 14px; }
+
+  .legend-label {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    flex: 1;
+  }
+
+  .legend-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* ─── DETAIL PANEL ─── */
+  #detailPanel {
+    position: fixed;
+    top: 54px;
+    right: -480px;
+    bottom: 0;
+    width: 460px;
+    z-index: 1000;
+    background: linear-gradient(180deg, rgba(17, 24, 39, 0.97) 0%, rgba(10, 14, 23, 0.98) 100%);
+    backdrop-filter: blur(24px);
+    border-left: 1px solid var(--border-dim);
+    overflow-y: auto;
+    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-active) transparent;
+  }
+
+  #detailPanel.open { right: 0; }
+
+  #detailPanel::-webkit-scrollbar { width: 6px; }
+  #detailPanel::-webkit-scrollbar-track { background: transparent; }
+  #detailPanel::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 3px; }
+
+  .panel-header {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(17, 24, 39, 0.9) 100%);
+    backdrop-filter: blur(20px);
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border-dim);
+    z-index: 2;
+  }
+
+  .panel-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border-dim);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+
+  .panel-close:hover {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    background: var(--accent-glow);
+  }
+
+  .panel-category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+
+  .panel-contractor-name {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    padding-right: 36px;
+  }
+
+  .panel-dba {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+
+  .panel-parent {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .panel-parent span { color: var(--accent-cyan); }
+
+  .panel-body { padding: 0 24px 24px; }
+
+  .panel-section {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  .panel-section:last-child { border-bottom: none; }
+
+  .section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .data-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .data-cell.wide { grid-column: 1 / -1; }
+
+  .data-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .data-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    word-break: break-word;
+  }
+
+  .data-value.mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  .data-value.highlight {
+    color: var(--accent-cyan);
+    font-weight: 600;
+  }
+
+  .data-value.large {
+    font-size: 22px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-dim);
+    color: var(--text-secondary);
+  }
+
+  .tag.active {
+    background: var(--accent-glow);
+    border-color: rgba(0, 229, 255, 0.3);
+    color: var(--accent-cyan);
+  }
+
+  .personnel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .person {
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 4px;
+    border-left: 2px solid var(--border-dim);
+  }
+
+  .role-text {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+
+  /* ─── SHODAN INTELLIGENCE ─── */
+  .shodan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .shodan-exposure {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(255, 23, 68, 0.06);
+    border: 1px solid rgba(255, 23, 68, 0.15);
+    margin-bottom: 12px;
+  }
+
+  .shodan-exposure.low {
+    background: rgba(0, 230, 118, 0.06);
+    border-color: rgba(0, 230, 118, 0.15);
+  }
+
+  .shodan-exposure.medium {
+    background: rgba(255, 209, 64, 0.06);
+    border-color: rgba(255, 209, 64, 0.15);
+  }
+
+  .exposure-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .exposure-detail {
+    flex: 1;
+  }
+
+  .exposure-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .exposure-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .port-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .port-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    color: var(--accent-cyan);
+  }
+
+  .port-badge.risky {
+    background: rgba(255, 23, 68, 0.08);
+    border-color: rgba(255, 23, 68, 0.2);
+    color: #ff1744;
+  }
+
+  .service-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.02);
+    font-size: 12px;
+  }
+
+  .service-row + .service-row { margin-top: 3px; }
+
+  .service-name {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .service-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .vuln-list { display: flex; flex-direction: column; gap: 3px; }
+
+  .vuln-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .vuln-badge.critical {
+    background: rgba(213, 0, 0, 0.12);
+    border: 1px solid rgba(213, 0, 0, 0.25);
+    color: #ff1744;
+  }
+
+  .vuln-badge.high {
+    background: rgba(255, 109, 0, 0.1);
+    border: 1px solid rgba(255, 109, 0, 0.2);
+    color: #ff6d00;
+  }
+
+  .vuln-badge.medium {
+    background: rgba(255, 209, 64, 0.08);
+    border: 1px solid rgba(255, 209, 64, 0.2);
+    color: #ffd740;
+  }
+
+  .vuln-badge.low {
+    background: rgba(0, 230, 118, 0.06);
+    border: 1px solid rgba(0, 230, 118, 0.15);
+    color: #00e676;
+  }
+
+  .vuln-count {
+    font-size: 9px;
+    opacity: 0.6;
+  }
+
+  .shodan-empty {
+    text-align: center;
+    padding: 16px 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 8px;
+    border: 1px dashed var(--border-dim);
+  }
+
+  .host-card {
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 6px;
+    border-left: 2px solid var(--border-dim);
+    font-size: 11px;
+  }
+
+  .host-card + .host-card { margin-top: 4px; }
+
+  .host-ip {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--accent-cyan);
+  }
+
+  .host-meta {
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+  }
+
+  /* ─── D3 NETWORK GRAPH OVERLAY ─── */
+  #netGraphOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(6, 10, 18, 0.97);
+    backdrop-filter: blur(12px);
+  }
+
+  #netGraphHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-dim);
+    background: rgba(10, 14, 23, 0.9);
+  }
+
+  #netGraphLegend {
+    display: flex;
+    gap: 14px;
+    padding: 6px 20px;
+    border-bottom: 1px solid var(--border-dim);
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    background: rgba(10, 14, 23, 0.5);
+  }
+
+  .ng-legend-item { color: var(--c); }
+
+  #netGraphSVG {
+    width: 100%;
+    height: calc(100vh - 70px);
+    display: block;
+  }
+
+  .ng-node { cursor: grab; }
+  .ng-node:active { cursor: grabbing; }
+
+  .ng-link {
+    stroke: rgba(0, 229, 255, 0.15);
+    stroke-width: 1;
+  }
+
+  .ng-link-risky {
+    stroke: rgba(255, 23, 68, 0.3);
+    stroke-width: 1.5;
+  }
+
+  .ng-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    fill: var(--text-secondary);
+    pointer-events: none;
+  }
+
+  .ng-label-primary {
+    font-size: 13px;
+    fill: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .ng-tooltip {
+    position: absolute;
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-active);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-primary);
+    pointer-events: none;
+    z-index: 2001;
+    max-width: 300px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    display: none;
+  }
+
+  /* ─── NETWORK DIAGRAM ─── */
+  .net-diagram {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-dim);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+
+  .net-diagram svg {
+    width: 100%;
+    display: block;
+  }
+
+  .net-diagram svg text {
+    font-family: 'JetBrains Mono', monospace;
+    fill: var(--text-secondary);
+  }
+
+  .net-node-label {
+    font-size: 9px;
+    fill: var(--text-primary) !important;
+  }
+
+  .net-node-sub {
+    font-size: 7.5px;
+    fill: var(--text-muted) !important;
+  }
+
+  .coloc-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-left: 2px solid var(--border-dim);
+  }
+
+  .coloc-item:hover {
+    background: rgba(0, 229, 255, 0.06);
+    border-left-color: var(--accent-cyan);
+  }
+
+  .coloc-item + .coloc-item { margin-top: 3px; }
+
+  .coloc-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+  }
+
+  .coloc-cat {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
+  /* ─── RELATIONSHIP LINES ─── */
+  .relationship-line {
+    stroke-dasharray: 6, 4;
+    animation: dashFlow 1.5s linear infinite;
+  }
+
+  @keyframes dashFlow {
+    to { stroke-dashoffset: -20; }
+  }
+
+  /* ─── SCAN LINE OVERLAY ─── */
+  #scanOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 3px,
+      var(--scan-line) 3px,
+      var(--scan-line) 4px
+    );
+    opacity: 0.5;
+  }
+
+  /* ─── SEARCH RESULTS DROPDOWN ─── */
+  #searchResults {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-active);
+    border-radius: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1001;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+
+  #searchResults.visible { display: block; }
+
+  .search-result {
+    padding: 8px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-dim);
+    transition: background 0.1s;
+  }
+
+  .search-result:last-child { border-bottom: none; }
+  .search-result:hover { background: var(--bg-tertiary); }
+
+  .search-result .sr-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+  }
+
+  .search-result .sr-location {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .search-result .sr-swatch {
+    width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+  }
+
+  /* ─── LOADING ─── */
+  #loadingOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    transition: opacity 0.6s;
+  }
+
+  #loadingOverlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--border-dim);
+    border-top-color: var(--accent-cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ─── THREAT DASHBOARD BANNER ─── */
+  #threatBanner {
+    position: fixed;
+    top: 54px;
+    left: 0; right: 0;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0;
+    background: linear-gradient(90deg, rgba(255, 23, 68, 0.06) 0%, rgba(10, 14, 23, 0.92) 30%, rgba(10, 14, 23, 0.92) 70%, rgba(255, 23, 68, 0.06) 100%);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 23, 68, 0.15);
+    overflow: hidden;
+  }
+
+  #threatBanner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0px, transparent 200px, rgba(255,23,68,0.03) 200px, rgba(255,23,68,0.03) 201px);
+    pointer-events: none;
+  }
+
+  .threat-label {
+    padding: 8px 16px;
+    background: rgba(255, 23, 68, 0.12);
+    border-right: 1px solid rgba(255, 23, 68, 0.2);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .threat-label .pulse-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #ff1744;
+    box-shadow: 0 0 8px #ff1744, 0 0 16px rgba(255,23,68,0.4);
+    animation: threatPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes threatPulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 8px #ff1744, 0 0 16px rgba(255,23,68,0.4); }
+    50% { opacity: 0.4; box-shadow: 0 0 4px #ff1744; }
+  }
+
+  .threat-label span:last-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #ff1744;
+  }
+
+  .threat-stats {
+    display: flex;
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .threat-stats::-webkit-scrollbar { display: none; }
+
+  .threat-stat {
+    padding: 6px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-right: 1px solid var(--border-dim);
+    flex-shrink: 0;
+    min-width: 100px;
+    position: relative;
+  }
+
+  .threat-stat.critical { background: rgba(255, 23, 68, 0.05); }
+  .threat-stat.warn { background: rgba(255, 145, 0, 0.04); }
+
+  .threat-stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 18px;
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+
+  .threat-stat-value.red { color: #ff1744; }
+  .threat-stat-value.orange { color: #ff9100; }
+  .threat-stat-value.yellow { color: #ffd740; }
+  .threat-stat-value.cyan { color: var(--accent-cyan); }
+
+  .threat-stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+    white-space: nowrap;
+  }
+
+  .threat-toggle {
+    padding: 6px 14px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .heatmap-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border-dim);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .heatmap-toggle:hover { border-color: #ff1744; color: #ff1744; }
+  .heatmap-toggle.active {
+    border-color: #ff1744;
+    background: rgba(255, 23, 68, 0.12);
+    color: #ff1744;
+    box-shadow: 0 0 12px rgba(255,23,68,0.2);
+  }
+
+  .heatmap-toggle .toggle-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .heatmap-toggle.active .toggle-dot {
+    background: #ff1744;
+    box-shadow: 0 0 6px #ff1744;
+  }
+
+  /* ─── RISK SCORE IN DETAIL PANEL ─── */
+  .risk-score-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    margin: -16px -16px 12px -16px;
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  .risk-score-banner.risk-critical {
+    background: linear-gradient(90deg, rgba(255,23,68,0.12) 0%, transparent 100%);
+    border-bottom-color: rgba(255,23,68,0.2);
+  }
+  .risk-score-banner.risk-high {
+    background: linear-gradient(90deg, rgba(255,145,0,0.1) 0%, transparent 100%);
+    border-bottom-color: rgba(255,145,0,0.15);
+  }
+  .risk-score-banner.risk-medium {
+    background: linear-gradient(90deg, rgba(255,215,64,0.08) 0%, transparent 100%);
+    border-bottom-color: rgba(255,215,64,0.12);
+  }
+  .risk-score-banner.risk-low {
+    background: linear-gradient(90deg, rgba(0,230,118,0.06) 0%, transparent 100%);
+    border-bottom-color: rgba(0,230,118,0.1);
+  }
+
+  .risk-gauge {
+    width: 52px; height: 52px;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .risk-gauge svg { width: 100%; height: 100%; }
+
+  .risk-gauge-value {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 16px;
+  }
+
+  .risk-gauge-value.critical { color: #ff1744; }
+  .risk-gauge-value.high { color: #ff9100; }
+  .risk-gauge-value.medium { color: #ffd740; }
+  .risk-gauge-value.low { color: #00e676; }
+
+  .risk-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .risk-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .risk-severity {
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+
+  .risk-severity.critical { color: #ff1744; }
+  .risk-severity.high { color: #ff9100; }
+  .risk-severity.medium { color: #ffd740; }
+  .risk-severity.low { color: #00e676; }
+
+  .risk-factors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .risk-factor {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(255,23,68,0.08);
+    border: 1px solid rgba(255,23,68,0.15);
+    color: #ff8a80;
+  }
+
+  .risk-factor.warn {
+    background: rgba(255,145,0,0.08);
+    border-color: rgba(255,145,0,0.15);
+    color: #ffab40;
+  }
+
+  .risk-factor.ok {
+    background: rgba(0,230,118,0.06);
+    border-color: rgba(0,230,118,0.1);
+    color: #69f0ae;
+  }
+
+  /* ─── ON-PREM NETWORK SECTION ─── */
+  .onprem-split {
+    display: flex;
+    gap: 2px;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0;
+  }
+
+  .onprem-split-bar {
+    height: 100%;
+    transition: width 0.3s;
+  }
+
+  .onprem-split-bar.on-prem { background: #ff1744; }
+  .onprem-split-bar.cloud { background: var(--accent-cyan); }
+
+  .onprem-ip-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .onprem-ip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  .onprem-ip-row .ip-addr { flex: 1; color: var(--text-primary); }
+
+  .ip-badge {
+    font-size: 8px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .ip-badge.on-prem {
+    background: rgba(255,23,68,0.12);
+    border: 1px solid rgba(255,23,68,0.25);
+    color: #ff1744;
+  }
+
+  .ip-badge.cloud {
+    background: rgba(0,188,212,0.1);
+    border: 1px solid rgba(0,188,212,0.2);
+    color: var(--accent-cyan);
+  }
+
+  .ip-source-tag {
+    font-size: 8px;
+    padding: 1px 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-dim);
+    color: var(--text-muted);
+  }
+
+  /* ─── MARKER RISK RING ─── */
+  .risk-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    pointer-events: none;
+    animation: riskRingPulse 3s ease-in-out infinite;
+  }
+  .risk-ring.critical { border-color: #ff1744; box-shadow: 0 0 8px rgba(255,23,68,0.5); }
+  .risk-ring.high { border-color: #ff9100; box-shadow: 0 0 6px rgba(255,145,0,0.4); }
+  .risk-ring.medium { border-color: #ffd740; box-shadow: 0 0 4px rgba(255,215,64,0.3); }
+  .risk-ring.low { border-color: #00e676; }
+
+  @keyframes riskRingPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    #detailPanel { width: 100%; right: -100%; }
+    .stats-bar { display: none; }
+    #threatBanner { display: none; }
+    #legend { bottom: 10px; left: 10px; max-width: 200px; padding: 10px; }
+    .legend-label { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Initializing contractor intelligence map</div>
+</div>
+
+<!-- CRT scan lines -->
+<div id="scanOverlay"></div>
+
+<!-- Top bar -->
+<div id="topbar">
+  <div class="logo-mark">
+    <div class="logo-icon">D</div>
+    <div class="logo-text">
+      <span class="title">DOE Contractor Intelligence</span>
+      <span class="subtitle">FY 2024 – 2026 Due Diligence</span>
+    </div>
+  </div>
+
+  <div class="search-container">
+    <span class="search-icon">&#x1F50D;</span>
+    <input type="text" id="searchInput" placeholder="Search contractors, cities, NAICS…" autocomplete="off" />
+    <div id="searchResults"></div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-value" id="statContractors">—</span>
+      <span class="stat-label">Contractors</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" id="statStates">—</span>
+      <span class="stat-label">States</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" id="statLinks">—</span>
+      <span class="stat-label">Links</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" id="statObligation">—</span>
+      <span class="stat-label">Total Obligated</span>
+    </div>
+  </div>
+</div>
+
+<!-- Threat Dashboard Banner -->
+<div id="threatBanner">
+  <div class="threat-label">
+    <div class="pulse-dot"></div>
+    <span>Threat Surface</span>
+  </div>
+  <div class="threat-stats">
+    <div class="threat-stat critical">
+      <span class="threat-stat-value red" id="tExposed">—</span>
+      <span class="threat-stat-label">Exposed Hosts</span>
+    </div>
+    <div class="threat-stat critical">
+      <span class="threat-stat-value red" id="tCriticalCVE">—</span>
+      <span class="threat-stat-label">w/ Critical CVEs</span>
+    </div>
+    <div class="threat-stat warn">
+      <span class="threat-stat-value orange" id="tNoDMARC">—</span>
+      <span class="threat-stat-label">No DMARC</span>
+    </div>
+    <div class="threat-stat warn">
+      <span class="threat-stat-value orange" id="tRiskyPorts">—</span>
+      <span class="threat-stat-label">Risky Ports</span>
+    </div>
+    <div class="threat-stat">
+      <span class="threat-stat-value yellow" id="tWeakSSL">—</span>
+      <span class="threat-stat-label">Weak/No SSL</span>
+    </div>
+    <div class="threat-stat">
+      <span class="threat-stat-value yellow" id="tNoHeaders">—</span>
+      <span class="threat-stat-label">No Sec Headers</span>
+    </div>
+    <div class="threat-stat">
+      <span class="threat-stat-value red" id="tOnPrem">—</span>
+      <span class="threat-stat-label">On-Prem Exposed</span>
+    </div>
+    <div class="threat-stat">
+      <span class="threat-stat-value cyan" id="tAvgRisk">—</span>
+      <span class="threat-stat-label">Avg Risk Score</span>
+    </div>
+  </div>
+  <div class="threat-toggle">
+    <button class="heatmap-toggle" id="heatmapToggle" onclick="toggleHeatmap()">
+      <div class="toggle-dot"></div>
+      Heat Map
+    </button>
+  </div>
+</div>
+
+<!-- Legend -->
+<div id="legend">
+  <div class="legend-title">Contractor Categories</div>
+  <div class="legend-items" id="legendItems"></div>
+</div>
+
+<!-- Detail panel -->
+<div id="detailPanel">
+  <div class="panel-header">
+    <button class="panel-close" onclick="closePanel()">✕</button>
+    <div id="panelBadge" class="panel-category-badge"></div>
+    <div id="panelName" class="panel-contractor-name"></div>
+    <div id="panelDba" class="panel-dba"></div>
+    <div id="panelParent" class="panel-parent"></div>
+    <button id="viewNetworkBtn" onclick="openNetGraph()" style="margin-top:8px;padding:5px 12px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);border-radius:6px;color:var(--accent-cyan);cursor:pointer;font-family:JetBrains Mono,monospace;font-size:11px;display:none">View Network Map</button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+
+<!-- Network Graph Overlay -->
+<div id="netGraphOverlay" style="display:none">
+  <div id="netGraphHeader">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:16px;font-weight:700" id="netGraphTitle">Network Topology</span>
+      <span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--text-muted)" id="netGraphSubtitle"></span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span style="font-size:10px;color:var(--text-muted)">Drag nodes to rearrange. Scroll to zoom.</span>
+      <button onclick="closeNetGraph()" style="background:transparent;border:1px solid var(--border-dim);border-radius:6px;color:var(--text-muted);cursor:pointer;padding:4px 10px;font-size:13px">✕ Close</button>
+    </div>
+  </div>
+  <div id="netGraphLegend">
+    <span class="ng-legend-item" style="--c:#00e5ff">&#9679; Domain</span>
+    <span class="ng-legend-item" style="--c:#ffd740">&#9679; Email</span>
+    <span class="ng-legend-item" style="--c:#76ff03">&#9679; DNS</span>
+    <span class="ng-legend-item" style="--c:#ff9100">&#9679; CDN</span>
+    <span class="ng-legend-item" style="--c:#e040fb">&#9679; Server</span>
+    <span class="ng-legend-item" style="--c:#ff1744">&#9679; VPN</span>
+    <span class="ng-legend-item" style="--c:#7c4dff">&#9679; Dev/CI</span>
+    <span class="ng-legend-item" style="--c:#00e676">&#9679; Cloud</span>
+    <span class="ng-legend-item" style="--c:#b0bec5">&#9679; IP/Host</span>
+  </div>
+  <svg id="netGraphSVG"></svg>
+</div>
+<div class="ng-tooltip" id="ngTooltip"></div>
+
+<!-- Map container -->
+<div id="map"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SVG MARKER SHAPES
+// ═══════════════════════════════════════════════════════════════
+
+function createMarkerSVG(shape, color, size = 24) {
+  const half = size / 2;
+  const r = size * 0.35;
+  let path;
+
+  switch (shape) {
+    case 'hexagon': {
+      const pts = [];
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 6;
+        pts.push(`${half + r * Math.cos(angle)},${half + r * Math.sin(angle)}`);
+      }
+      path = `<polygon points="${pts.join(' ')}" />`;
+      break;
+    }
+    case 'diamond':
+      path = `<polygon points="${half},${half - r} ${half + r},${half} ${half},${half + r} ${half - r},${half}" />`;
+      break;
+    case 'square':
+      path = `<rect x="${half - r * 0.75}" y="${half - r * 0.75}" width="${r * 1.5}" height="${r * 1.5}" rx="2" />`;
+      break;
+    case 'triangle':
+      path = `<polygon points="${half},${half - r} ${half + r},${half + r * 0.7} ${half - r},${half + r * 0.7}" />`;
+      break;
+    case 'pentagon': {
+      const pts = [];
+      for (let i = 0; i < 5; i++) {
+        const angle = (2 * Math.PI / 5) * i - Math.PI / 2;
+        pts.push(`${half + r * Math.cos(angle)},${half + r * Math.sin(angle)}`);
+      }
+      path = `<polygon points="${pts.join(' ')}" />`;
+      break;
+    }
+    case 'star': {
+      const pts = [];
+      for (let i = 0; i < 10; i++) {
+        const angle = (Math.PI / 5) * i - Math.PI / 2;
+        const rad = i % 2 === 0 ? r : r * 0.45;
+        pts.push(`${half + rad * Math.cos(angle)},${half + rad * Math.sin(angle)}`);
+      }
+      path = `<polygon points="${pts.join(' ')}" />`;
+      break;
+    }
+    case 'bolt':
+      path = `<polygon points="${half - 2},${half - r} ${half + r * 0.5},${half - r} ${half},${half - 1} ${half + r * 0.4},${half - 1} ${half - r * 0.3},${half + r} ${half + 1},${half + 1} ${half - r * 0.5},${half + 1}" />`;
+      break;
+    case 'gear': {
+      const teeth = 8;
+      const outer = r;
+      const inner = r * 0.65;
+      const pts = [];
+      for (let i = 0; i < teeth * 2; i++) {
+        const angle = (Math.PI / teeth) * i - Math.PI / 2;
+        const rad = i % 2 === 0 ? outer : inner;
+        pts.push(`${half + rad * Math.cos(angle)},${half + rad * Math.sin(angle)}`);
+      }
+      path = `<polygon points="${pts.join(' ')}" />`;
+      break;
+    }
+    case 'arrow':
+      path = `<polygon points="${half},${half - r} ${half + r * 0.6},${half} ${half + r * 0.25},${half} ${half + r * 0.25},${half + r} ${half - r * 0.25},${half + r} ${half - r * 0.25},${half} ${half - r * 0.6},${half}" />`;
+      break;
+    default: // circle
+      path = `<circle cx="${half}" cy="${half}" r="${r}" />`;
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <defs>
+      <filter id="glow-${shape}" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="2" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <g fill="${color}" fill-opacity="0.85" stroke="${color}" stroke-width="1.2" stroke-opacity="0.5" filter="url(#glow-${shape})">
+      ${path}
+    </g>
+  </svg>`;
+}
+
+function createSwatchSVG(shape, color) {
+  return createMarkerSVG(shape, color, 14);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// APPLICATION STATE
+// ═══════════════════════════════════════════════════════════════
+
+let DATA = null;
+let map = null;
+let markerCluster = null;
+let allMarkers = [];
+let relationshipLines = [];
+let activeFilters = new Set();
+let selectedContractor = null;
+let heatLayer = null;
+let heatmapVisible = false;
+
+// ═══════════════════════════════════════════════════════════════
+// RISK SCORING ENGINE
+// ═══════════════════════════════════════════════════════════════
+
+const RISKY_PORTS = new Set([21, 23, 25, 110, 143, 445, 1433, 1521, 3306, 3389, 5432, 5900, 6379, 8080, 8443, 9200, 11211, 27017]);
+
+function computeRiskScore(c) {
+  let score = 0;
+  const factors = [];
+
+  const s = c.shodan || {};
+  const o = c.osint || {};
+  const dns = o.dns || {};
+  const web = o.web || {};
+  const ct = o.ct || {};
+
+  // 1. Internet exposure (0-20 pts)
+  if (s.total_hosts > 0) {
+    const hostScore = Math.min(s.total_hosts / 50, 1) * 20;
+    score += hostScore;
+    if (s.total_hosts > 10) factors.push({ text: `${s.total_hosts} exposed hosts`, level: 'bad' });
+  }
+
+  // 2. Vulnerabilities (0-30 pts) — use CVSS data if available
+  const vulnCount = (s.vulns || []).length;
+  const nvd = o.nvd_cvss || {};
+  const nvdSummary = nvd.summary || {};
+  const hasCVSS = nvd.scored_cves > 0;
+
+  if (vulnCount > 0) {
+    if (hasCVSS) {
+      // Weight by real CVSS severity: critical=4, high=3, medium=2, low=1
+      const weightedScore = ((nvdSummary.critical || 0) * 4 + (nvdSummary.high || 0) * 3 +
+        (nvdSummary.medium || 0) * 2 + (nvdSummary.low || 0)) / (nvd.scored_cves * 4);
+      score += weightedScore * 30;
+      if (nvdSummary.critical > 0) factors.push({ text: `${nvdSummary.critical} CRITICAL CVEs (CVSS 9.0+)`, level: 'bad' });
+      else if (nvdSummary.high > 0) factors.push({ text: `${nvdSummary.high} HIGH CVEs (CVSS 7.0+)`, level: 'bad' });
+      else factors.push({ text: `${vulnCount} CVEs (scored)`, level: 'warn' });
+    } else {
+      const vulnScore = Math.min(vulnCount / 15, 1) * 30;
+      score += vulnScore;
+      if (vulnCount >= 5) factors.push({ text: `${vulnCount} known CVEs`, level: 'bad' });
+      else if (vulnCount > 0) factors.push({ text: `${vulnCount} CVEs`, level: 'warn' });
+    }
+  }
+
+  // 3. Dangerous services (0-15 pts) — from service_risk or client-side classification
+  const sr = o.service_risk || {};
+  const dangerSummary = sr.danger_summary || {};
+  const criticalSvcs = dangerSummary.critical || 0;
+  const highSvcs = dangerSummary.high || 0;
+
+  if (criticalSvcs > 0 || highSvcs > 0) {
+    score += Math.min((criticalSvcs * 3 + highSvcs * 1.5) / 8, 1) * 15;
+    if (criticalSvcs > 0) factors.push({ text: `${criticalSvcs} critical services exposed`, level: 'bad' });
+    else factors.push({ text: `${highSvcs} high-risk services`, level: 'warn' });
+  } else {
+    // Fallback: use RISKY_PORTS set
+    const riskyPortCount = (s.top_ports || []).filter(p => RISKY_PORTS.has(p.port)).length;
+    if (riskyPortCount > 0) {
+      score += Math.min(riskyPortCount / 5, 1) * 15;
+      factors.push({ text: `${riskyPortCount} risky ports`, level: 'bad' });
+    }
+  }
+
+  // 4. DMARC policy (0-10 pts)
+  const dmarc = dns.dmarc_policy;
+  if (!dmarc || dmarc === 'not_set' || dmarc === 'none') {
+    score += 10;
+    factors.push({ text: dmarc === 'none' ? 'DMARC=none' : 'No DMARC', level: 'bad' });
+  } else if (dmarc === 'quarantine') {
+    score += 3;
+    factors.push({ text: 'DMARC=quarantine', level: 'warn' });
+  } else if (dmarc === 'reject') {
+    factors.push({ text: 'DMARC=reject', level: 'ok' });
+  }
+
+  // 5. Web security score (0-10 pts)
+  const webSec = web.security_score;
+  if (typeof webSec === 'number') {
+    const webRisk = Math.max(0, (100 - webSec) / 100) * 10;
+    score += webRisk;
+    if (webSec < 30) factors.push({ text: `Sec headers: ${webSec}/100`, level: 'bad' });
+    else if (webSec < 60) factors.push({ text: `Sec headers: ${webSec}/100`, level: 'warn' });
+  } else if (dns.queried) {
+    // Has domain but no web security data
+    score += 5;
+  }
+
+  // 6. CT subdomain exposure (0-10 pts)
+  const subCount = (ct.subdomains || []).length;
+  if (subCount > 10) {
+    score += Math.min((subCount - 10) / 40, 1) * 10;
+    factors.push({ text: `${subCount} subdomains exposed`, level: 'warn' });
+  }
+
+  // 7. SSL issues (0-5 pts)
+  const sampleHosts = s.sample_hosts || [];
+  const hasExpiredSSL = sampleHosts.some(h => {
+    if (!h.ssl_expires) return false;
+    return new Date(h.ssl_expires) < new Date();
+  });
+  if (hasExpiredSSL) {
+    score += 5;
+    factors.push({ text: 'Expired SSL cert', level: 'bad' });
+  }
+
+  score = Math.min(Math.round(score), 100);
+
+  let severity;
+  if (score >= 70) severity = 'critical';
+  else if (score >= 40) severity = 'high';
+  else if (score >= 15) severity = 'medium';
+  else severity = 'low';
+
+  return { score, severity, factors };
+}
+
+function getRiskColor(severity) {
+  return { critical: '#ff1744', high: '#ff9100', medium: '#ffd740', low: '#00e676' }[severity] || '#64748b';
+}
+
+function buildRiskGaugeSVG(score, severity) {
+  const color = getRiskColor(severity);
+  const circumference = 2 * Math.PI * 20;
+  const progress = (score / 100) * circumference;
+
+  return `
+    <svg viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
+      <circle cx="24" cy="24" r="20" fill="none" stroke="${color}" stroke-width="3"
+        stroke-dasharray="${progress} ${circumference - progress}"
+        stroke-linecap="round" transform="rotate(-90 24 24)"
+        style="filter: drop-shadow(0 0 4px ${color});" />
+    </svg>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+
+async function init() {
+  // Initialize map
+  map = L.map('map', {
+    center: [39.5, -98.5],
+    zoom: 5,
+    minZoom: 3,
+    maxZoom: 20,
+    zoomControl: true,
+    attributionControl: true,
+  });
+
+  // OSM tiles — inverted to dark via CSS filter on .leaflet-tile-pane
+  // Full street/building/POI detail at every zoom level
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+    maxNativeZoom: 19,
+  }).addTo(map);
+
+  // Load data
+  try {
+    const resp = await fetch('contractors.json');
+    DATA = await resp.json();
+  } catch (e) {
+    console.error('Failed to load contractors.json:', e);
+    document.getElementById('loadingOverlay').innerHTML =
+      '<div style="color:#ff1744;font-family:JetBrains Mono,monospace;font-size:14px;">ERROR: Could not load contractors.json</div>';
+    return;
+  }
+
+  populateStats();
+  populateThreatDashboard();
+  buildLegend();
+  addMarkers();
+  addRelationshipLines();
+  addColocationOverlay();
+  setupSearch();
+
+  // Hide loading
+  setTimeout(() => {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+  }, 600);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATS BAR
+// ═══════════════════════════════════════════════════════════════
+
+function populateStats() {
+  document.getElementById('statContractors').textContent =
+    DATA.total_contractors.toLocaleString();
+
+  const states = new Set(DATA.contractors.map(c => c.state));
+  document.getElementById('statStates').textContent = states.size;
+
+  document.getElementById('statLinks').textContent =
+    DATA.total_relationships;
+
+  const totalObl = DATA.contractors.reduce((sum, c) => sum + (c.obligation || 0), 0);
+  document.getElementById('statObligation').textContent =
+    '$' + (totalObl / 1e9).toFixed(1) + 'B';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// THREAT DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+
+function populateThreatDashboard() {
+  const cc = DATA.contractors;
+
+  // Total exposed hosts
+  let totalHosts = 0;
+  let contractorsWithCVEs = 0;
+  let noDMARC = 0;
+  let riskyPortContractors = 0;
+  let weakSSL = 0;
+  let noSecHeaders = 0;
+  let totalRisk = 0;
+  let scoredCount = 0;
+
+  cc.forEach(c => {
+    const s = c.shodan || {};
+    const o = c.osint || {};
+    const dns = o.dns || {};
+    const web = o.web || {};
+
+    // Exposed hosts
+    totalHosts += (s.total_hosts || 0);
+
+    // CVEs
+    if ((s.vulns || []).length > 0) contractorsWithCVEs++;
+
+    // DMARC
+    const dmarc = dns.dmarc_policy;
+    if (dns.queried && (!dmarc || dmarc === 'not_set' || dmarc === 'none')) noDMARC++;
+
+    // Risky ports
+    if ((s.top_ports || []).some(p => RISKY_PORTS.has(p.port))) riskyPortContractors++;
+
+    // Weak SSL
+    const hosts = s.sample_hosts || [];
+    if (hosts.some(h => h.ssl_expires && new Date(h.ssl_expires) < new Date())) weakSSL++;
+
+    // No security headers
+    if (web.queried && typeof web.security_score === 'number' && web.security_score < 30) noSecHeaders++;
+
+    // Risk score
+    const risk = computeRiskScore(c);
+    c._riskScore = risk.score;
+    c._riskSeverity = risk.severity;
+    totalRisk += risk.score;
+    scoredCount++;
+  });
+
+  document.getElementById('tExposed').textContent = totalHosts.toLocaleString();
+  document.getElementById('tCriticalCVE').textContent = contractorsWithCVEs.toLocaleString();
+  document.getElementById('tNoDMARC').textContent = noDMARC.toLocaleString();
+  document.getElementById('tRiskyPorts').textContent = riskyPortContractors.toLocaleString();
+  document.getElementById('tWeakSSL').textContent = weakSSL.toLocaleString();
+  document.getElementById('tNoHeaders').textContent = noSecHeaders.toLocaleString();
+
+  // On-prem exposed
+  let onPremContractors = 0;
+  cc.forEach(c => {
+    const op = (c.osint || {}).onprem_network || {};
+    if (op.on_prem_count > 0) onPremContractors++;
+  });
+  document.getElementById('tOnPrem').textContent = onPremContractors.toLocaleString();
+
+  document.getElementById('tAvgRisk').textContent = scoredCount ? Math.round(totalRisk / scoredCount) : '—';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HEATMAP
+// ═══════════════════════════════════════════════════════════════
+
+function buildHeatmapData() {
+  return DATA.contractors
+    .filter(c => c._riskScore > 0)
+    .map(c => [c.lat, c.lon, c._riskScore / 100]);
+}
+
+function toggleHeatmap() {
+  const btn = document.getElementById('heatmapToggle');
+  heatmapVisible = !heatmapVisible;
+
+  if (heatmapVisible) {
+    if (!heatLayer) {
+      heatLayer = L.heatLayer(buildHeatmapData(), {
+        radius: 30,
+        blur: 20,
+        maxZoom: 12,
+        max: 1.0,
+        gradient: {
+          0.0: 'transparent',
+          0.2: 'rgba(255, 215, 64, 0.15)',
+          0.4: 'rgba(255, 145, 0, 0.3)',
+          0.6: 'rgba(255, 87, 34, 0.45)',
+          0.8: 'rgba(255, 23, 68, 0.6)',
+          1.0: 'rgba(255, 23, 68, 0.85)',
+        },
+      });
+    }
+    heatLayer.addTo(map);
+    btn.classList.add('active');
+  } else {
+    if (heatLayer) map.removeLayer(heatLayer);
+    btn.classList.remove('active');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LEGEND
+// ═══════════════════════════════════════════════════════════════
+
+function buildLegend() {
+  const container = document.getElementById('legendItems');
+  const cats = Object.entries(DATA.categories);
+
+  cats.sort((a, b) => (DATA.category_counts[b[0]] || 0) - (DATA.category_counts[a[0]] || 0));
+
+  for (const [cat, style] of cats) {
+    const count = DATA.category_counts[cat] || 0;
+    if (count === 0) continue;
+
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.dataset.category = cat;
+    item.innerHTML = `
+      <div class="legend-swatch">${createSwatchSVG(style.shape, style.color)}</div>
+      <span class="legend-label">${cat}</span>
+      <span class="legend-count">${count}</span>
+    `;
+    item.addEventListener('click', () => toggleCategoryFilter(cat, item));
+    container.appendChild(item);
+  }
+}
+
+function toggleCategoryFilter(cat, itemEl) {
+  if (activeFilters.has(cat)) {
+    activeFilters.delete(cat);
+    itemEl.classList.remove('dimmed');
+  } else {
+    activeFilters.add(cat);
+    itemEl.classList.add('dimmed');
+  }
+  refreshMarkerVisibility();
+}
+
+function refreshMarkerVisibility() {
+  markerCluster.clearLayers();
+  const visible = allMarkers.filter(m => !activeFilters.has(m._contractorCategory));
+  markerCluster.addLayers(visible);
+
+  // Update relationship line visibility
+  relationshipLines.forEach(line => {
+    const srcCat = DATA.contractors[line._srcIdx]?.category;
+    const tgtCat = DATA.contractors[line._tgtIdx]?.category;
+    if (activeFilters.has(srcCat) || activeFilters.has(tgtCat)) {
+      line.setStyle({ opacity: 0 });
+    } else {
+      line.setStyle({ opacity: 0.5 });
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MARKERS
+// ═══════════════════════════════════════════════════════════════
+
+function addMarkers() {
+  markerCluster = L.markerClusterGroup({
+    chunkedLoading: true,
+    maxClusterRadius: 50,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    disableClusteringAtZoom: 14,
+    iconCreateFunction: function(cluster) {
+      const count = cluster.getChildCount();
+      let sizeClass = 'small';
+      let size = 36;
+      if (count > 100) { sizeClass = 'large'; size = 48; }
+      else if (count > 30) { sizeClass = 'medium'; size = 42; }
+
+      return L.divIcon({
+        html: `<div><span>${count}</span></div>`,
+        className: `marker-cluster marker-cluster-${sizeClass}`,
+        iconSize: L.point(size, size),
+      });
+    }
+  });
+
+  DATA.contractors.forEach((c, idx) => {
+    const svg = createMarkerSVG(c.style.shape, c.style.color, 28);
+    const riskSev = c._riskSeverity || 'low';
+    const ringHtml = riskSev !== 'low'
+      ? `<div class="risk-ring ${riskSev}"></div>`
+      : '';
+    const icon = L.divIcon({
+      html: `<div style="position:relative;width:28px;height:28px">${svg}${ringHtml}</div>`,
+      className: '',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    });
+
+    const marker = L.marker([c.lat, c.lon], { icon });
+    marker._contractorIdx = idx;
+    marker._contractorCategory = c.category;
+
+    marker.on('click', () => openDetailPanel(idx));
+
+    allMarkers.push(marker);
+  });
+
+  markerCluster.addLayers(allMarkers);
+  map.addLayer(markerCluster);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RELATIONSHIP LINES
+// ═══════════════════════════════════════════════════════════════
+
+function addRelationshipLines() {
+  DATA.relationships.forEach(rel => {
+    const src = DATA.contractors[rel.source];
+    const tgt = DATA.contractors[rel.target];
+    if (!src || !tgt) return;
+
+    const line = L.polyline(
+      [[src.lat, src.lon], [tgt.lat, tgt.lon]],
+      {
+        color: '#00e5ff',
+        weight: 1.2,
+        opacity: 0.4,
+        dashArray: '6, 4',
+        className: 'relationship-line',
+      }
+    );
+
+    line._srcIdx = rel.source;
+    line._tgtIdx = rel.target;
+    line._contractId = rel.contract_id;
+
+    line.bindTooltip(
+      `<div style="font-family:JetBrains Mono,monospace;font-size:11px;">
+        <strong>Shared Contract</strong><br/>
+        ${src.name.substring(0, 30)}${src.name.length > 30 ? '…' : ''}<br/>
+        ↔ ${tgt.name.substring(0, 30)}${tgt.name.length > 30 ? '…' : ''}<br/>
+        <span style="color:#64748b">${rel.contract_id}</span>
+      </div>`,
+      { className: 'rel-tooltip', sticky: true }
+    );
+
+    line.addTo(map);
+    relationshipLines.push(line);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════════════════════════
+
+function openDetailPanel(idx) {
+  const c = DATA.contractors[idx];
+  if (!c) return;
+  selectedContractor = idx;
+
+  const panel = document.getElementById('detailPanel');
+
+  // Badge
+  const badge = document.getElementById('panelBadge');
+  badge.innerHTML = `${createSwatchSVG(c.style.shape, c.style.color)} ${c.category}`;
+  badge.style.background = c.style.color + '15';
+  badge.style.border = `1px solid ${c.style.color}40`;
+  badge.style.color = c.style.color;
+
+  // Name
+  document.getElementById('panelName').textContent = c.name;
+
+  // DBA
+  const dba = document.getElementById('panelDba');
+  dba.textContent = c.dba ? `DBA: ${c.dba}` : '';
+  dba.style.display = c.dba ? 'block' : 'none';
+
+  // Parent
+  const parent = document.getElementById('panelParent');
+  if (c.parent) {
+    parent.innerHTML = `Parent: <span>${c.parent}</span>`;
+    parent.style.display = 'block';
+  } else {
+    parent.style.display = 'none';
+  }
+
+  // Body
+  const body = document.getElementById('panelBody');
+  body.innerHTML = buildPanelBody(c);
+
+  // Show "View Network" button if contractor has domain data
+  const dd = c.osint?.domain_discovery?.domain;
+  const netBtn = document.getElementById('viewNetworkBtn');
+  netBtn.style.display = dd ? 'inline-block' : 'none';
+
+  panel.classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('detailPanel').classList.remove('open');
+  selectedContractor = null;
+}
+
+function buildPanelBody(c) {
+  let html = '';
+
+  // ── Risk Score Banner ──
+  const risk = computeRiskScore(c);
+  html += `
+  <div class="risk-score-banner risk-${risk.severity}">
+    <div class="risk-gauge">
+      ${buildRiskGaugeSVG(risk.score, risk.severity)}
+      <div class="risk-gauge-value ${risk.severity}">${risk.score}</div>
+    </div>
+    <div class="risk-details">
+      <div class="risk-label">Attack Surface Risk</div>
+      <div class="risk-severity ${risk.severity}">${risk.severity.toUpperCase()} RISK</div>
+      ${risk.factors.length ? `
+      <div class="risk-factors">
+        ${risk.factors.slice(0, 5).map(f =>
+          `<span class="risk-factor${f.level === 'warn' ? ' warn' : f.level === 'ok' ? ' ok' : ''}">${f.text}</span>`
+        ).join('')}
+      </div>` : ''}
+    </div>
+  </div>`;
+
+  // ── Financials ──
+  html += `
+  <div class="panel-section">
+    <div class="section-title">Financial Summary</div>
+    <div class="data-grid">
+      <div class="data-cell">
+        <span class="data-label">Federal Obligation</span>
+        <span class="data-value large highlight">${formatCompact(c.obligation)}</span>
+      </div>
+      <div class="data-cell">
+        <span class="data-label">Max Potential Award</span>
+        <span class="data-value large">${formatCompact(c.max_award)}</span>
+      </div>
+      <div class="data-cell">
+        <span class="data-label">Contracts</span>
+        <span class="data-value mono">${c.contract_count}</span>
+      </div>
+      <div class="data-cell">
+        <span class="data-label">Transactions</span>
+        <span class="data-value mono">${c.record_count}</span>
+      </div>
+    </div>
+  </div>`;
+
+  // ── Location ──
+  html += `
+  <div class="panel-section">
+    <div class="section-title">Location</div>
+    <div class="data-grid">
+      <div class="data-cell wide">
+        <span class="data-label">Address</span>
+        <span class="data-value">${c.address || 'N/A'}</span>
+      </div>
+      <div class="data-cell">
+        <span class="data-label">Coordinates</span>
+        <span class="data-value mono">${c.lat.toFixed(4)}, ${c.lon.toFixed(4)}</span>
+      </div>
+    </div>
+  </div>`;
+
+  // ── Classification ──
+  html += `
+  <div class="panel-section">
+    <div class="section-title">Classification</div>
+    <div class="data-grid">
+      <div class="data-cell wide">
+        <span class="data-label">NAICS</span>
+        <span class="data-value">${c.naics || 'N/A'}${c.naics_code ? ` <span class="data-value mono" style="color:var(--text-muted)">(${c.naics_code})</span>` : ''}</span>
+      </div>
+      <div class="data-cell wide">
+        <span class="data-label">Product/Service</span>
+        <span class="data-value">${c.psc || 'N/A'}</span>
+      </div>
+      <div class="data-cell">
+        <span class="data-label">Award Type</span>
+        <span class="data-value mono">${c.award_types || 'N/A'}</span>
+      </div>
+      <div class="data-cell">
+        <span class="data-label">Pricing</span>
+        <span class="data-value mono">${c.pricing_types || 'N/A'}</span>
+      </div>
+    </div>
+  </div>`;
+
+  // ── Business Profile ──
+  const flags = [];
+  if (c.small_business) flags.push('Small Business');
+  if (c.woman_owned) flags.push('Woman-Owned');
+  if (c.veteran_owned) flags.push('Veteran-Owned');
+  if (c.minority_owned) flags.push('Minority-Owned');
+  if (c.for_profit) flags.push('For-Profit');
+  if (c.nonprofit) flags.push('Nonprofit');
+
+  html += `
+  <div class="panel-section">
+    <div class="section-title">Business Profile</div>
+    <div class="data-grid">
+      <div class="data-cell wide">
+        <span class="data-label">Size Determination</span>
+        <span class="data-value">${c.business_size || 'N/A'}</span>
+      </div>
+      ${flags.length ? `
+      <div class="data-cell wide">
+        <span class="data-label">Designations</span>
+        <div class="tag-list">
+          ${flags.map(f => `<span class="tag active">${f}</span>`).join('')}
+        </div>
+      </div>` : ''}
+    </div>
+  </div>`;
+
+  // ── Performance Period ──
+  html += `
+  <div class="panel-section">
+    <div class="section-title">Performance Period</div>
+    <div class="data-grid">
+      <div class="data-cell">
+        <span class="data-label">Fiscal Years</span>
+        <span class="data-value mono">${c.fiscal_years || 'N/A'}</span>
+      </div>
+      <div class="data-cell">
+        <span class="data-label">Start</span>
+        <span class="data-value mono">${c.performance_start || 'N/A'}</span>
+      </div>
+      <div class="data-cell">
+        <span class="data-label">End</span>
+        <span class="data-value mono">${c.performance_end || 'N/A'}</span>
+      </div>
+    </div>
+  </div>`;
+
+  // ── Agencies ──
+  if (c.awarding_agencies.length || c.funding_agencies.length) {
+    html += `
+    <div class="panel-section">
+      <div class="section-title">Agencies</div>
+      <div class="data-grid">
+        ${c.awarding_agencies.length ? `
+        <div class="data-cell wide">
+          <span class="data-label">Awarding</span>
+          <div class="tag-list">
+            ${c.awarding_agencies.map(a => `<span class="tag">${a}</span>`).join('')}
+          </div>
+        </div>` : ''}
+        ${c.funding_agencies.length ? `
+        <div class="data-cell wide">
+          <span class="data-label">Funding</span>
+          <div class="tag-list">
+            ${c.funding_agencies.map(a => `<span class="tag">${a}</span>`).join('')}
+          </div>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // ── Contracts ──
+  if (c.contract_ids.length) {
+    html += `
+    <div class="panel-section">
+      <div class="section-title">Contract IDs</div>
+      <div class="tag-list">
+        ${c.contract_ids.map(id => `<span class="tag">${id}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // ── Key Personnel ──
+  if (c.personnel.length) {
+    html += `
+    <div class="panel-section">
+      <div class="section-title">Key Personnel</div>
+      <div class="personnel-list">
+        ${c.personnel.map(p => `<div class="person">${p}</div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // ── Role Description ──
+  if (c.role) {
+    const roleClean = c.role
+      .replace(/^Supports Department of Energy through work described as:\s*/i, '')
+      .replace(/IGF::CL,CT::IGF\s*/g, '')
+      .replace(/TAS::\d+\s*\d*::TAS\s*/g, '');
+    if (roleClean.trim()) {
+      html += `
+      <div class="panel-section">
+        <div class="section-title">Role for DOE</div>
+        <div class="role-text">${roleClean.substring(0, 600)}${roleClean.length > 600 ? '…' : ''}</div>
+      </div>`;
+    }
+  }
+
+  // ── Identifiers ──
+  html += `
+  <div class="panel-section">
+    <div class="section-title">Identifiers</div>
+    <div class="data-grid">
+      <div class="data-cell">
+        <span class="data-label">UEI</span>
+        <span class="data-value mono">${c.uei || 'N/A'}</span>
+      </div>
+      <div class="data-cell">
+        <span class="data-label">CAGE Code</span>
+        <span class="data-value mono">${c.cage || 'N/A'}</span>
+      </div>
+      ${c.phone ? `
+      <div class="data-cell">
+        <span class="data-label">Phone</span>
+        <span class="data-value mono">${c.phone}</span>
+      </div>` : ''}
+      ${c.email ? `
+      <div class="data-cell">
+        <span class="data-label">Email</span>
+        <span class="data-value mono">${c.email}</span>
+      </div>` : ''}
+    </div>
+  </div>`;
+
+  // ── Network Diagram ──
+  html += buildNetworkDiagram(c);
+
+  // ── On-Premises Network ──
+  html += buildOnPremSection(c);
+
+  // ── Dangerous Services ──
+  html += buildDangerousServicesSection(c);
+
+  // ── OSINT Intelligence (all layers) ──
+  html += buildOSINTSection(c);
+
+  // ── Shodan Intelligence (legacy) ──
+  html += buildShodanSection(c);
+
+  // ── Co-located Contractors ──
+  html += buildColocationSection(c);
+
+  return html;
+}
+
+function buildOnPremSection(c) {
+  const onprem = (c.osint || {}).onprem_network;
+  if (!onprem || !onprem.queried) return '';
+
+  const onCount = onprem.on_prem_count || 0;
+  const cloudCount = onprem.cloud_count || 0;
+  const total = onCount + cloudCount;
+
+  if (total === 0) return '';
+
+  const onPct = total > 0 ? Math.round(onCount / total * 100) : 0;
+  const cloudPct = 100 - onPct;
+
+  let html = '<div class="panel-section"><div class="section-title">On-Premises vs Cloud Infrastructure</div>';
+
+  // Split bar
+  html += `
+  <div style="display:flex;justify-content:space-between;font-family:JetBrains Mono,monospace;font-size:10px;margin-top:4px">
+    <span style="color:#ff1744">${onCount} ON-PREM (${onPct}%)</span>
+    <span style="color:var(--accent-cyan)">${cloudCount} CLOUD (${cloudPct}%)</span>
+  </div>
+  <div class="onprem-split">
+    <div class="onprem-split-bar on-prem" style="width:${onPct}%"></div>
+    <div class="onprem-split-bar cloud" style="width:${cloudPct}%"></div>
+  </div>`;
+
+  // ISP
+  if (onprem.inferred_isp) {
+    html += `<div style="font-size:11px;color:var(--text-secondary);margin:4px 0">
+      <span style="color:var(--text-muted)">Inferred ISP:</span> ${escapeHtml(onprem.inferred_isp)}
+    </div>`;
+  }
+
+  // On-prem IPs
+  if (onCount > 0) {
+    html += '<div style="margin-top:8px;font-family:JetBrains Mono,monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase">On-Premises IPs</div>';
+    html += '<div class="onprem-ip-list">';
+    (onprem.on_prem_ips || []).slice(0, 15).forEach(ip => {
+      const classified = (onprem.classified_ips || []).find(c => c.ip === ip);
+      const sources = classified ? (classified.sources || []) : [];
+      html += `
+      <div class="onprem-ip-row">
+        <span class="ip-badge on-prem">on-prem</span>
+        <span class="ip-addr">${escapeHtml(ip)}</span>
+        ${sources.map(s => `<span class="ip-source-tag">${s.replace('_', ' ')}</span>`).join('')}
+      </div>`;
+    });
+    if (onCount > 15) html += `<div style="font-size:10px;color:var(--text-muted);padding:4px">...and ${onCount - 15} more</div>`;
+    html += '</div>';
+  }
+
+  // Cloud IPs (collapsed)
+  if (cloudCount > 0) {
+    html += '<div style="margin-top:8px;font-family:JetBrains Mono,monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase">Cloud / Hosted IPs</div>';
+    html += '<div class="onprem-ip-list">';
+    (onprem.cloud_ips || []).slice(0, 8).forEach(entry => {
+      const ip = entry.ip || entry;
+      const provider = entry.provider || '?';
+      html += `
+      <div class="onprem-ip-row">
+        <span class="ip-badge cloud">${escapeHtml(provider)}</span>
+        <span class="ip-addr">${escapeHtml(ip)}</span>
+      </div>`;
+    });
+    if (cloudCount > 8) html += `<div style="font-size:10px;color:var(--text-muted);padding:4px">...and ${cloudCount - 8} more</div>`;
+    html += '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function buildDangerousServicesSection(c) {
+  const sr = (c.osint || {}).service_risk;
+
+  // If no enrichment data, classify on-the-fly from Shodan data
+  const services = sr ? sr.dangerous_services : classifyServicesClientSide(c);
+  if (!services || services.length === 0) return '';
+
+  const dangerColors = { critical: '#ff1744', high: '#ff9100', medium: '#ffd740' };
+  const dangerIcons = { critical: '\u26d4', high: '\u26a0', medium: '\u2139' };
+
+  let html = '<div class="panel-section"><div class="section-title">Dangerous Services Exposed</div>';
+
+  services.forEach(svc => {
+    const color = dangerColors[svc.danger] || '#64748b';
+    const icon = dangerIcons[svc.danger] || '';
+    html += `
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-dim)">
+      <span style="font-size:14px;flex-shrink:0">${icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="port-badge${svc.danger === 'critical' ? ' risky' : ''}">${svc.port}</span>
+          <span style="font-weight:600;font-size:12px;color:${color}">${svc.name}</span>
+          <span style="font-family:JetBrains Mono,monospace;font-size:8px;padding:1px 5px;border-radius:2px;background:${color}15;border:1px solid ${color}30;color:${color};text-transform:uppercase;letter-spacing:1px">${svc.danger}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:2px">${svc.reason}</div>
+      </div>
+    </div>`;
+  });
+
+  html += '</div>';
+  return html;
+}
+
+// Client-side service classification when pipeline data isn't available
+function classifyServicesClientSide(c) {
+  const dangerousMap = {
+    3389: {name:'RDP', danger:'critical', reason:'Remote Desktop — BlueKeep, brute force, lateral movement'},
+    445:  {name:'SMB', danger:'critical', reason:'Server Message Block — EternalBlue, WannaCry, ransomware vector'},
+    1433: {name:'MSSQL', danger:'critical', reason:'Microsoft SQL Server — default credentials, SQL injection pivot'},
+    3306: {name:'MySQL', danger:'critical', reason:'MySQL — often has weak/no auth when exposed'},
+    5432: {name:'PostgreSQL', danger:'critical', reason:'PostgreSQL — database exfiltration risk'},
+    27017:{name:'MongoDB', danger:'critical', reason:'MongoDB — frequently left without authentication'},
+    6379: {name:'Redis', danger:'critical', reason:'Redis — no auth by default, RCE via SLAVEOF'},
+    9200: {name:'Elasticsearch', danger:'critical', reason:'Elasticsearch — unauthenticated data access by default'},
+    5900: {name:'VNC', danger:'critical', reason:'VNC — remote framebuffer, weak auth common'},
+    2375: {name:'Docker API', danger:'critical', reason:'Docker daemon — unauthenticated container escape'},
+    21:   {name:'FTP', danger:'high', reason:'FTP — cleartext credentials, anonymous access'},
+    23:   {name:'Telnet', danger:'high', reason:'Telnet — cleartext everything, default credentials on IoT'},
+    25:   {name:'SMTP', danger:'high', reason:'SMTP — open relay testing, email spoofing'},
+    110:  {name:'POP3', danger:'high', reason:'POP3 — cleartext email retrieval'},
+    143:  {name:'IMAP', danger:'high', reason:'IMAP — cleartext email access'},
+    161:  {name:'SNMP', danger:'high', reason:'SNMP — community strings leak configs and credentials'},
+    389:  {name:'LDAP', danger:'high', reason:'LDAP — directory enumeration, credential harvesting'},
+    11211:{name:'Memcached', danger:'high', reason:'Memcached — DDoS amplification, data exfiltration'},
+    8080: {name:'HTTP-Proxy', danger:'medium', reason:'HTTP proxy — often dev servers, admin panels'},
+    8443: {name:'HTTPS-Alt', danger:'medium', reason:'HTTPS alt — management interfaces'},
+  };
+
+  const ports = new Set();
+  const s = c.shodan || {};
+  (s.top_ports || []).forEach(p => { if (p.port) ports.add(p.port); });
+  (s.sample_hosts || []).forEach(h => { if (h.port) ports.add(h.port); });
+
+  const dangerOrder = {critical: 0, high: 1, medium: 2};
+  const results = [];
+  ports.forEach(port => {
+    const svc = dangerousMap[port];
+    if (svc) results.push({port, ...svc});
+  });
+  results.sort((a, b) => (dangerOrder[a.danger] || 99) - (dangerOrder[b.danger] || 99));
+  return results;
+}
+
+function buildOSINTSection(c) {
+  const o = c.osint;
+  if (!o) return '';
+
+  let html = '';
+  const dd = o.domain_discovery || {};
+  const dns = o.dns || {};
+  const web = o.web || {};
+
+  // Only show if we have data from any layer
+  const hasDNS = dns.queried && dns.technologies_detected && dns.technologies_detected.length > 0;
+  const hasWeb = web.queried && web.technologies_detected && web.technologies_detected.length > 0;
+  const hasDomain = dd.domain;
+
+  if (!hasDNS && !hasWeb && !hasDomain) return '';
+
+  // ── Domain & Infrastructure Overview ──
+  html += '<div class="panel-section"><div class="section-title">Infrastructure Intelligence</div>';
+
+  // Domain
+  if (hasDomain) {
+    const dv = o.domain_verify || {};
+    const conf = dv.confidence || 0;
+    const verdict = dv.verdict || 'pending';
+    const verdictColors = {verified: '#00e676', likely: '#ffd740', uncertain: '#ff9100', unverified: '#ff1744', pending: '#64748b'};
+    const verdictIcons = {verified: '\u2714', likely: '\u2714', uncertain: '?', unverified: '\u2718', pending: '\u2022'};
+    const vc = verdictColors[verdict] || '#64748b';
+    const vi = verdictIcons[verdict] || '';
+
+    html += `<div style="margin-bottom:12px">
+      <span class="data-label">Discovered Domain</span>
+      <div style="margin-top:4px;display:flex;align-items:center;gap:8px">
+        <span class="data-value mono highlight">${escapeHtml(dd.domain)}</span>
+        <span style="font-size:10px;padding:2px 6px;border-radius:3px;background:${vc}15;border:1px solid ${vc}40;color:${vc};font-family:JetBrains Mono,monospace">${vi} ${verdict} ${conf}%</span>
+      </div>
+      ${dv.is_parking ? '<div style="font-size:11px;color:#ff1744;margin-top:4px">\u26a0 Domain appears to be parked/for sale</div>' : ''}
+      ${dv.is_redirect_away ? '<div style="font-size:11px;color:#ff9100;margin-top:4px">\u26a0 Redirects to a different domain</div>' : ''}
+    </div>`;
+  }
+
+  // DNS — Mail, DNS Provider, DMARC
+  if (hasDNS) {
+    const gridItems = [];
+
+    if (dns.mail_provider && dns.mail_provider !== 'Unknown') {
+      gridItems.push({label: 'Email Provider', value: dns.mail_provider, highlight: true});
+    }
+    if (dns.dns_provider && dns.dns_provider !== 'Unknown') {
+      gridItems.push({label: 'DNS Provider', value: dns.dns_provider});
+    }
+    if (dns.cdn && dns.cdn !== 'Unknown' && dns.cdn !== 'None') {
+      gridItems.push({label: 'CDN', value: dns.cdn});
+    }
+    if (dns.dmarc_policy) {
+      const dmarcColors = {reject: '#00e676', quarantine: '#ffd740', none: '#ff1744', not_set: '#ff1744'};
+      const color = dmarcColors[dns.dmarc_policy] || 'var(--text-secondary)';
+      gridItems.push({label: 'DMARC Policy', value: dns.dmarc_policy, color});
+    }
+
+    if (gridItems.length) {
+      html += '<div class="data-grid" style="margin-bottom:12px">';
+      gridItems.forEach(item => {
+        const style = item.highlight ? 'color:var(--accent-cyan);font-weight:600' : item.color ? 'color:' + item.color : '';
+        html += `<div class="data-cell">
+          <span class="data-label">${item.label}</span>
+          <span class="data-value" style="${style}">${escapeHtml(item.value)}</span>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    // Verification tokens
+    if (dns.verification_tokens && dns.verification_tokens.length) {
+      html += `<div style="margin-bottom:12px">
+        <span class="data-label">Service Integrations (DNS Verification Tokens)</span>
+        <div class="tag-list" style="margin-top:4px">
+          ${dns.verification_tokens.map(t => `<span class="tag active">${escapeHtml(t.service)}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    // SPF includes
+    if (dns.spf_includes && dns.spf_includes.length) {
+      html += `<div style="margin-bottom:12px">
+        <span class="data-label">Email Infrastructure (SPF)</span>
+        <div class="tag-list" style="margin-top:4px">
+          ${dns.spf_includes.map(s => `<span class="tag">${escapeHtml(s)}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+  }
+
+  // Web fingerprint
+  if (hasWeb) {
+    const webItems = [];
+    if (web.server) webItems.push({label: 'Web Server', value: web.server});
+    if (web.cdn_detected && web.cdn_detected !== 'None') webItems.push({label: 'CDN', value: web.cdn_detected});
+    if (web.cms) webItems.push({label: 'CMS', value: web.cms});
+    if (web.powered_by) webItems.push({label: 'Powered By', value: web.powered_by});
+
+    if (webItems.length) {
+      html += '<div class="data-grid" style="margin-bottom:12px">';
+      webItems.forEach(item => {
+        html += `<div class="data-cell">
+          <span class="data-label">${item.label}</span>
+          <span class="data-value mono">${escapeHtml(item.value)}</span>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    // JS frameworks
+    if (web.js_frameworks && web.js_frameworks.length) {
+      html += `<div style="margin-bottom:12px">
+        <span class="data-label">Frontend Frameworks</span>
+        <div class="tag-list" style="margin-top:4px">
+          ${web.js_frameworks.map(f => `<span class="tag active">${escapeHtml(f)}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    // Security headers score
+    if (web.security_headers) {
+      const sh = web.security_headers;
+      const score = web.security_score || 0;
+      const scoreColor = score >= 3 ? '#00e676' : score >= 2 ? '#ffd740' : '#ff1744';
+      html += `<div style="margin-bottom:12px">
+        <span class="data-label">Security Headers</span>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+          <span style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:${scoreColor}">${score}/4</span>
+          <span class="tag${sh.hsts ? ' active' : ''}" style="${sh.hsts ? '' : 'opacity:0.3'}">HSTS</span>
+          <span class="tag${sh.csp ? ' active' : ''}" style="${sh.csp ? '' : 'opacity:0.3'}">CSP</span>
+          <span class="tag${sh.x_frame ? ' active' : ''}" style="${sh.x_frame ? '' : 'opacity:0.3'}">X-Frame</span>
+          <span class="tag${sh.x_content_type ? ' active' : ''}" style="${sh.x_content_type ? '' : 'opacity:0.3'}">X-Content-Type</span>
+        </div>
+      </div>`;
+    }
+  }
+
+  // Combined technology stack
+  const allTech = new Set();
+  (dns.technologies_detected || []).forEach(t => allTech.add(t));
+  (web.technologies_detected || []).forEach(t => allTech.add(t));
+  if (allTech.size > 0) {
+    html += `<div style="margin-bottom:8px">
+      <span class="data-label">Full Technology Stack</span>
+      <div class="tag-list" style="margin-top:4px">
+        ${[...allTech].sort().map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // ASN / IP Enumeration data
+  const asn = o.asn || {};
+  if (asn.queried && (asn.total_ports > 0 || asn.asn)) {
+    html += `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-dim)">
+      <span class="data-label">IP / ASN Intelligence (InternetDB)</span>`;
+
+    if (asn.asn && asn.asn.number) {
+      html += `<div class="data-grid" style="margin-top:4px;margin-bottom:8px">
+        <div class="data-cell">
+          <span class="data-label">ASN</span>
+          <span class="data-value mono highlight">${escapeHtml(asn.asn.number)}</span>
+        </div>
+        <div class="data-cell">
+          <span class="data-label">Network</span>
+          <span class="data-value mono">${escapeHtml(asn.asn.name || asn.asn.description || '')}</span>
+        </div>
+        ${asn.asn.prefix ? `<div class="data-cell">
+          <span class="data-label">Prefix</span>
+          <span class="data-value mono">${escapeHtml(asn.asn.prefix)}</span>
+        </div>` : ''}
+      </div>`;
+    }
+
+    if (asn.all_ports && asn.all_ports.length) {
+      const riskyPorts = new Set([21,23,25,110,143,445,1433,1521,3306,3389,5432,5900,6379,8080,9200,11211,27017]);
+      html += `<div style="margin-bottom:8px">
+        <span class="data-label">Open Ports (${asn.all_ports.length})</span>
+        <div class="port-badges" style="margin-top:4px">
+          ${asn.all_ports.slice(0, 20).map(p =>
+            '<span class="port-badge' + (riskyPorts.has(p) ? ' risky' : '') + '">' + p + '</span>'
+          ).join('')}
+          ${asn.all_ports.length > 20 ? '<span style="font-size:10px;color:var(--text-muted)">+' + (asn.all_ports.length - 20) + ' more</span>' : ''}
+        </div>
+      </div>`;
+    }
+
+    if (asn.all_vulns && asn.all_vulns.length) {
+      html += `<div style="margin-bottom:8px">
+        <span class="data-label">Vulnerabilities (${asn.all_vulns.length})</span>
+        <div class="vuln-list" style="margin-top:4px">
+          ${asn.all_vulns.slice(0, 8).map(v => {
+            const severity = getCVESeverity(v, c);
+            const cvssData = getCVSSScore(v, c);
+            const scoreTag = cvssData ? ' <span style="opacity:0.7;font-size:9px">(' + cvssData.base_score.toFixed(1) + ')</span>' : '';
+            return '<span class="vuln-badge ' + severity + '">' + escapeHtml(v) + scoreTag + '</span>';
+          }).join('')}
+          ${asn.all_vulns.length > 8 ? '<div style="font-size:10px;color:var(--text-muted)">+' + (asn.all_vulns.length - 8) + ' more</div>' : ''}
+        </div>
+      </div>`;
+    }
+
+    if (asn.hosts && asn.hosts.length) {
+      html += `<div style="margin-bottom:4px">
+        <span class="data-label">Hosts</span>
+        <div style="margin-top:4px">
+          ${asn.hosts.slice(0, 5).map(h => {
+            const ports = (h.ports || []).slice(0, 6).join(', ');
+            const vulnCount = (h.vulns || []).length;
+            return '<div class="host-card"><span class="host-ip">' + escapeHtml(h.ip) + '</span>' +
+              '<div class="host-meta">ports: ' + ports + (vulnCount ? ' \u2022 ' + vulnCount + ' CVEs' : '') +
+              (h.reverse_dns ? ' \u2022 ' + escapeHtml(h.reverse_dns) : '') + '</div></div>';
+          }).join('')}
+        </div>
+      </div>`;
+    }
+
+    html += '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function buildShodanSection(c) {
+  const s = c.shodan;
+
+  // No Shodan data at all
+  if (!s || !s.queried) {
+    return `
+    <div class="panel-section">
+      <div class="section-title">Shodan Intelligence</div>
+      <div class="shodan-empty">Not yet scanned. Run enrich_shodan.py to populate.</div>
+    </div>`;
+  }
+
+  // Queried but no results
+  if (s.total_hosts === 0) {
+    return `
+    <div class="panel-section">
+      <div class="section-title">Shodan Intelligence</div>
+      <div class="shodan-empty">No internet-facing hosts found for this organization.</div>
+    </div>`;
+  }
+
+  let html = '<div class="panel-section"><div class="section-title">Shodan Intelligence</div>';
+
+  // Exposure summary
+  const vulnCount = (s.vulns || []).length;
+  const level = vulnCount > 10 ? 'high' : vulnCount > 3 ? 'medium' : 'low';
+  const levelClass = vulnCount > 10 ? '' : vulnCount > 3 ? 'medium' : 'low';
+  const icon = vulnCount > 10 ? '\u26a0' : vulnCount > 3 ? '\u26a0' : '\u2714';
+
+  html += `
+  <div class="shodan-exposure ${levelClass}">
+    <div class="exposure-icon">${icon}</div>
+    <div class="exposure-detail">
+      <div class="exposure-count">${s.total_hosts.toLocaleString()}</div>
+      <div class="exposure-label">Exposed hosts</div>
+    </div>
+    <div class="exposure-detail" style="text-align:right">
+      <div class="exposure-count">${vulnCount}</div>
+      <div class="exposure-label">Known CVEs</div>
+    </div>
+  </div>`;
+
+  // Ports
+  if (s.top_ports && s.top_ports.length) {
+    const riskyPorts = new Set([21, 23, 25, 110, 143, 445, 1433, 1521, 3306, 3389, 5432, 5900, 6379, 8080, 8443, 9200, 11211, 27017]);
+    html += `<div style="margin-bottom:12px">
+      <span class="data-label">Open Ports</span>
+      <div class="port-badges" style="margin-top:4px">
+        ${s.top_ports.map(p =>
+          `<span class="port-badge${riskyPorts.has(p.port) ? ' risky' : ''}">${p.port}<span class="vuln-count" style="margin-left:3px">\u00d7${p.count}</span></span>`
+        ).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Services
+  if (s.top_services && s.top_services.length) {
+    html += `<div style="margin-bottom:12px">
+      <span class="data-label">Services Detected</span>
+      <div style="margin-top:4px">
+        ${s.top_services.slice(0, 8).map(svc =>
+          `<div class="service-row"><span class="service-name">${escapeHtml(svc.name)}</span><span class="service-count">${svc.count}</span></div>`
+        ).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Vulnerabilities
+  if (s.vulns && s.vulns.length) {
+    html += `<div style="margin-bottom:12px">
+      <span class="data-label">Vulnerabilities</span>
+      <div class="vuln-list" style="margin-top:4px">
+        ${s.vulns.slice(0, 12).map(v => {
+          const severity = getCVESeverity(v.cve, c);
+          const cvssData = getCVSSScore(v.cve, c);
+          const scoreTag = cvssData ? ` <span style="opacity:0.7;font-size:9px">(${cvssData.base_score.toFixed(1)})</span>` : '';
+          return `<span class="vuln-badge ${severity}">${v.cve}${scoreTag}<span class="vuln-count">\u00d7${v.count}</span></span>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Domains found
+  if (s.domains_found && s.domains_found.length) {
+    html += `<div style="margin-bottom:12px">
+      <span class="data-label">Domains</span>
+      <div class="tag-list" style="margin-top:4px">
+        ${s.domains_found.map(d => `<span class="tag">${escapeHtml(d)}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // ASNs
+  if (s.asns && s.asns.length) {
+    html += `<div style="margin-bottom:12px">
+      <span class="data-label">Autonomous Systems</span>
+      <div class="tag-list" style="margin-top:4px">
+        ${s.asns.map(a => `<span class="tag">${escapeHtml(a)}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Sample hosts
+  if (s.sample_hosts && s.sample_hosts.length) {
+    html += `<div style="margin-bottom:8px">
+      <span class="data-label">Sample Hosts</span>
+      <div style="margin-top:4px">
+        ${s.sample_hosts.slice(0, 5).map(h => {
+          const parts = [`<span class="host-ip">${h.ip}:${h.port}</span>`];
+          const meta = [];
+          if (h.product) meta.push(h.product + (h.version ? ' ' + h.version : ''));
+          if (h.http_title) meta.push('"' + h.http_title.substring(0, 40) + '"');
+          if (h.os) meta.push(h.os);
+          if (h.hostnames && h.hostnames.length) meta.push(h.hostnames[0]);
+          return `<div class="host-card">${parts.join('')}${meta.length ? '<div class="host-meta">' + escapeHtml(meta.join(' \u2022 ')) + '</div>' : ''}</div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Query info
+  html += `<div style="margin-top:8px;font-size:10px;color:var(--text-muted);font-family:JetBrains Mono,monospace;">
+    Query: ${escapeHtml(s.query_used || 'N/A')} \u2022 ${s.query_time || ''}
+  </div>`;
+
+  html += '</div>';
+  return html;
+}
+
+function getCVESeverity(cve, contractor) {
+  // Use real CVSS data if available from NVD enrichment
+  if (contractor) {
+    const nvd = (contractor.osint || {}).nvd_cvss || {};
+    const scores = nvd.scores || {};
+    const cveId = typeof cve === 'string' ? cve : (cve.cve || cve);
+    const scoreData = scores[cveId];
+    if (scoreData && scoreData.severity) {
+      return scoreData.severity;
+    }
+  }
+  // Fallback: year-based heuristic
+  const cveStr = typeof cve === 'string' ? cve : (cve.cve || '');
+  const year = parseInt(cveStr.replace('CVE-', '').split('-')[0]);
+  if (year >= 2023) return 'critical';
+  if (year >= 2021) return 'high';
+  if (year >= 2018) return 'medium';
+  return 'low';
+}
+
+function getCVSSScore(cve, contractor) {
+  if (!contractor) return null;
+  const nvd = (contractor.osint || {}).nvd_cvss || {};
+  const scores = nvd.scores || {};
+  const cveId = typeof cve === 'string' ? cve : (cve.cve || cve);
+  return scores[cveId] || null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NETWORK DIAGRAM
+// ═══════════════════════════════════════════════════════════════
+
+function buildNetworkDiagram(c) {
+  const o = c.osint || {};
+  const s = c.shodan || {};
+  const dns = o.dns || {};
+  const web = o.web || {};
+  const ct = o.ct || {};
+  const dd = o.domain_discovery || {};
+
+  const domain = dd.domain;
+  if (!domain) return '';
+
+  // Collect nodes and edges for the diagram
+  const nodes = [];
+  const edges = [];
+  let nodeId = 0;
+
+  // Central domain node
+  const centralId = nodeId++;
+  nodes.push({ id: centralId, label: domain, type: 'domain', x: 200, y: 30 });
+
+  // Layer 1: Infrastructure services (row below domain)
+  const infraNodes = [];
+
+  // Mail provider
+  if (dns.mail_provider && dns.mail_provider !== 'Unknown') {
+    const id = nodeId++;
+    infraNodes.push({ id, label: dns.mail_provider, type: 'mail', sub: 'Email' });
+    edges.push({ from: centralId, to: id, label: 'MX' });
+  }
+
+  // DNS provider
+  if (dns.dns_provider && dns.dns_provider !== 'Unknown') {
+    const id = nodeId++;
+    infraNodes.push({ id, label: dns.dns_provider, type: 'dns_prov', sub: 'DNS' });
+    edges.push({ from: centralId, to: id, label: 'NS' });
+  }
+
+  // CDN
+  const cdn = (web.cdn_detected && web.cdn_detected !== 'None' && web.cdn_detected) ||
+              (dns.cdn && dns.cdn !== 'Unknown' && dns.cdn !== 'None' && dns.cdn);
+  if (cdn) {
+    const id = nodeId++;
+    infraNodes.push({ id, label: cdn, type: 'cdn', sub: 'CDN' });
+    edges.push({ from: centralId, to: id, label: 'CNAME' });
+  }
+
+  // Web server
+  if (web.server) {
+    const serverShort = web.server.split('/')[0];
+    const id = nodeId++;
+    infraNodes.push({ id, label: serverShort, type: 'server', sub: web.cms || 'Web' });
+    edges.push({ from: cdn ? infraNodes.find(n => n.type === 'cdn').id : centralId, to: id, label: cdn ? '' : 'HTTPS' });
+  }
+
+  // Position infra nodes in a row
+  const infraY = 90;
+  const infraSpacing = 400 / Math.max(infraNodes.length, 1);
+  infraNodes.forEach((n, i) => {
+    n.x = 15 + infraSpacing * i + infraSpacing / 2;
+    n.y = infraY;
+    nodes.push(n);
+  });
+
+  // Layer 2: CT subdomains / Shodan hosts (bottom rows)
+  const subNodes = [];
+
+  // CT infrastructure hints
+  const hints = ct.infrastructure_hints || {};
+  const hintTypes = [
+    { key: 'vpn', color: '#ff1744', icon: 'VPN' },
+    { key: 'email', color: '#ffd740', icon: 'MAIL' },
+    { key: 'dev_ci', color: '#7c4dff', icon: 'DEV' },
+    { key: 'auth', color: '#00e5ff', icon: 'AUTH' },
+    { key: 'cloud', color: '#00e676', icon: 'CLOUD' },
+  ];
+
+  hintTypes.forEach(ht => {
+    const subs = (hints[ht.key] || []).slice(0, 3);
+    subs.forEach(sub => {
+      const id = nodeId++;
+      // Shorten subdomain: "vpn.company.com" -> "vpn"
+      const shortLabel = sub.replace('.' + domain, '').replace(/\..+$/, '');
+      subNodes.push({ id, label: shortLabel, type: ht.key, color: ht.color, sub: ht.icon, fullName: sub });
+      edges.push({ from: centralId, to: id, label: '', dashed: true });
+    });
+  });
+
+  // Shodan sample hosts (if no CT data)
+  if (subNodes.length === 0 && s.sample_hosts && s.sample_hosts.length) {
+    s.sample_hosts.slice(0, 5).forEach(h => {
+      const id = nodeId++;
+      const label = h.ip + ':' + h.port;
+      subNodes.push({ id, label, type: 'host', color: '#b0bec5', sub: h.product || '' });
+      edges.push({ from: centralId, to: id, label: String(h.port), dashed: true });
+    });
+  }
+
+  // A record IPs (if nothing else)
+  if (subNodes.length === 0 && dns.a_records && dns.a_records.length) {
+    dns.a_records.slice(0, 4).forEach(ip => {
+      const id = nodeId++;
+      subNodes.push({ id, label: ip, type: 'ip', color: '#64748b', sub: 'A record' });
+      edges.push({ from: centralId, to: id, label: 'A' });
+    });
+  }
+
+  // Position sub nodes
+  const subY = 155;
+  const subSpacing = 400 / Math.max(subNodes.length, 1);
+  subNodes.forEach((n, i) => {
+    n.x = 15 + subSpacing * i + subSpacing / 2;
+    n.y = subY;
+    nodes.push(n);
+  });
+
+  // If we have nothing beyond the central node, skip diagram
+  if (nodes.length <= 1) return '';
+
+  // Calculate SVG height based on layers
+  const svgH = subNodes.length > 0 ? 200 : 130;
+
+  // Render SVG
+  let svg = `<svg viewBox="0 0 415 ${svgH}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<defs>
+    <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+      <polygon points="0 0, 6 2, 0 4" fill="rgba(0,229,255,0.4)"/>
+    </marker>
+  </defs>`;
+
+  // Draw edges
+  edges.forEach(e => {
+    const from = nodes.find(n => n.id === e.from);
+    const to = nodes.find(n => n.id === e.to);
+    if (!from || !to) return;
+    const dash = e.dashed ? 'stroke-dasharray="3,2"' : '';
+    svg += `<line x1="${from.x}" y1="${from.y + 12}" x2="${to.x}" y2="${to.y - 12}"
+      stroke="rgba(0,229,255,0.25)" stroke-width="1" ${dash} marker-end="url(#arrowhead)"/>`;
+    if (e.label) {
+      const mx = (from.x + to.x) / 2;
+      const my = (from.y + to.y) / 2 + 4;
+      svg += `<text x="${mx}" y="${my}" text-anchor="middle" class="net-node-sub">${escapeHtml(e.label)}</text>`;
+    }
+  });
+
+  // Node colors
+  const typeColors = {
+    domain: '#00e5ff', mail: '#ffd740', dns_prov: '#76ff03', cdn: '#ff9100',
+    server: '#e040fb', vpn: '#ff1744', email: '#ffd740', dev_ci: '#7c4dff',
+    auth: '#00e5ff', cloud: '#00e676', host: '#b0bec5', ip: '#64748b',
+  };
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const color = n.color || typeColors[n.type] || '#b0bec5';
+    const rx = n.type === 'domain' ? 12 : 8;
+    const ry = n.type === 'domain' ? 12 : 8;
+    // Node circle/diamond
+    if (n.type === 'domain') {
+      svg += `<rect x="${n.x - 50}" y="${n.y - 12}" width="100" height="24" rx="4"
+        fill="${color}15" stroke="${color}" stroke-width="1.2"/>`;
+      svg += `<text x="${n.x}" y="${n.y + 4}" text-anchor="middle" class="net-node-label" fill="${color}" style="font-weight:600">${escapeHtml(n.label)}</text>`;
+    } else {
+      svg += `<circle cx="${n.x}" cy="${n.y}" r="${rx}" fill="${color}20" stroke="${color}" stroke-width="1"/>`;
+      // Label below
+      svg += `<text x="${n.x}" y="${n.y + rx + 10}" text-anchor="middle" class="net-node-label">${escapeHtml(n.label.substring(0, 14))}</text>`;
+      if (n.sub) {
+        svg += `<text x="${n.x}" y="${n.y + rx + 19}" text-anchor="middle" class="net-node-sub">${escapeHtml(n.sub)}</text>`;
+      }
+    }
+  });
+
+  svg += '</svg>';
+
+  return `
+  <div class="panel-section">
+    <div class="section-title">Network Topology</div>
+    <div class="net-diagram">${svg}</div>
+  </div>`;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// CO-LOCATION
+// ═══════════════════════════════════════════════════════════════
+
+function buildColocationSection(c) {
+  if (!c.address || !DATA) return '';
+
+  // Find other contractors at the same address (by city + zip)
+  const colocated = DATA.contractors.filter(other =>
+    other.id !== c.id &&
+    other.city === c.city &&
+    other.zip === c.zip &&
+    other.address === c.address
+  );
+
+  if (colocated.length === 0) return '';
+
+  return `
+  <div class="panel-section">
+    <div class="section-title">Co-Located at This Address (${colocated.length})</div>
+    <div>
+      ${colocated.slice(0, 15).map(co => `
+        <div class="coloc-item" onclick="openDetailPanel(${DATA.contractors.indexOf(co)})">
+          <div style="width:10px;height:10px;border-radius:2px;background:${co.style.color};flex-shrink:0"></div>
+          <span class="coloc-name">${escapeHtml(co.name.substring(0, 40))}</span>
+          <span class="coloc-cat">${co.category.substring(0, 15)}</span>
+        </div>
+      `).join('')}
+      ${colocated.length > 15 ? `<div style="padding:4px 8px;font-size:11px;color:var(--text-muted)">+${colocated.length - 15} more</div>` : ''}
+    </div>
+  </div>`;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// CO-LOCATION MAP OVERLAY
+// ═══════════════════════════════════════════════════════════════
+
+let colocationLines = [];
+
+function addColocationOverlay() {
+  if (!DATA) return;
+
+  // Group contractors by address
+  const addrMap = {};
+  DATA.contractors.forEach((c, idx) => {
+    if (!c.address) return;
+    const key = c.city + '|' + c.zip;
+    if (!addrMap[key]) addrMap[key] = [];
+    addrMap[key].push(idx);
+  });
+
+  // Draw lines between co-located contractors (only groups of 2-10 to avoid noise)
+  Object.values(addrMap).forEach(group => {
+    if (group.length < 2 || group.length > 10) return;
+    // Connect first to all others (star topology)
+    const anchor = DATA.contractors[group[0]];
+    for (let i = 1; i < group.length; i++) {
+      const other = DATA.contractors[group[i]];
+      const line = L.polyline(
+        [[anchor.lat, anchor.lon], [other.lat, other.lon]],
+        {
+          color: '#ffd740',
+          weight: 1,
+          opacity: 0.25,
+          dashArray: '2, 4',
+        }
+      );
+      line.bindTooltip(
+        `<div style="font-family:JetBrains Mono,monospace;font-size:11px;">
+          <strong>Co-located</strong><br/>
+          ${anchor.name.substring(0, 30)}<br/>
+          ${other.name.substring(0, 30)}<br/>
+          <span style="color:#64748b">${anchor.city}, ${anchor.state}</span>
+        </div>`,
+        { className: 'rel-tooltip', sticky: true }
+      );
+      line.addTo(map);
+      colocationLines.push(line);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// D3 INTERACTIVE NETWORK GRAPH
+// ═══════════════════════════════════════════════════════════════
+
+function openNetGraph() {
+  if (selectedContractor === null) return;
+  const c = DATA.contractors[selectedContractor];
+  if (!c) return;
+
+  const overlay = document.getElementById('netGraphOverlay');
+  overlay.style.display = 'block';
+  document.getElementById('netGraphTitle').textContent = c.name;
+
+  const dd = c.osint?.domain_discovery || {};
+  document.getElementById('netGraphSubtitle').textContent = dd.domain || '';
+
+  renderNetworkGraph(c);
+}
+
+function closeNetGraph() {
+  document.getElementById('netGraphOverlay').style.display = 'none';
+  d3.select('#netGraphSVG').selectAll('*').remove();
+}
+
+function renderNetworkGraph(c) {
+  const svg = d3.select('#netGraphSVG');
+  svg.selectAll('*').remove();
+
+  const width = window.innerWidth;
+  const height = window.innerHeight - 70;
+  svg.attr('viewBox', [0, 0, width, height]);
+
+  const tooltip = document.getElementById('ngTooltip');
+  const o = c.osint || {};
+  const s = c.shodan || {};
+  const dd = o.domain_discovery || {};
+  const dns = o.dns || {};
+  const ct = o.ct || {};
+  const web = o.web || {};
+  const asn = o.asn || {};
+  const dv = o.domain_verify || {};
+
+  const domain = dd.domain;
+  if (!domain) return;
+
+  // Build graph data
+  const nodes = [];
+  const links = [];
+  let nid = 0;
+
+  const typeColors = {
+    domain: '#00e5ff', mail: '#ffd740', dns_prov: '#76ff03', cdn: '#ff9100',
+    server: '#e040fb', vpn: '#ff1744', email_sub: '#ffd740', dev_ci: '#7c4dff',
+    auth: '#00e5ff', cloud: '#00e676', host: '#b0bec5', ip: '#64748b',
+    subdomain: '#94a3b8', port: '#ff9100', vuln: '#ff1744',
+  };
+
+  // Central domain node
+  const domainNode = {id: nid++, label: domain, type: 'domain', size: 20,
+    detail: `Confidence: ${dv.confidence || '?'}% (${dv.verdict || 'pending'})`};
+  nodes.push(domainNode);
+
+  // Infrastructure services
+  if (dns.mail_provider && dns.mail_provider !== 'Unknown') {
+    const n = {id: nid++, label: dns.mail_provider, type: 'mail', size: 12, detail: 'Email Provider'};
+    nodes.push(n);
+    links.push({source: domainNode.id, target: n.id, label: 'MX'});
+  }
+  if (dns.dns_provider && dns.dns_provider !== 'Unknown') {
+    const n = {id: nid++, label: dns.dns_provider, type: 'dns_prov', size: 12, detail: 'DNS Provider'};
+    nodes.push(n);
+    links.push({source: domainNode.id, target: n.id, label: 'NS'});
+  }
+  const cdn = (web.cdn_detected && web.cdn_detected !== 'None' ? web.cdn_detected : null) ||
+              (dns.cdn && dns.cdn !== 'Unknown' && dns.cdn !== 'None' ? dns.cdn : null);
+  if (cdn) {
+    const n = {id: nid++, label: cdn, type: 'cdn', size: 12, detail: 'CDN'};
+    nodes.push(n);
+    links.push({source: domainNode.id, target: n.id, label: 'CNAME'});
+  }
+  if (web.server) {
+    const n = {id: nid++, label: web.server.split('/')[0], type: 'server', size: 10,
+      detail: [web.server, web.cms, web.powered_by].filter(Boolean).join(' | ')};
+    nodes.push(n);
+    links.push({source: cdn ? nodes.find(x=>x.type==='cdn').id : domainNode.id, target: n.id, label: 'HTTPS'});
+  }
+
+  // CT subdomains
+  const hints = ct.infrastructure_hints || {};
+  const hintMap = {vpn:'vpn', email:'email_sub', dev_ci:'dev_ci', auth:'auth', cloud:'cloud'};
+  Object.entries(hintMap).forEach(([key, type]) => {
+    (hints[key] || []).slice(0, 5).forEach(sub => {
+      const short = sub.replace('.' + domain, '').replace(/\..+$/, '');
+      const n = {id: nid++, label: short, type, size: 8, detail: sub};
+      nodes.push(n);
+      links.push({source: domainNode.id, target: n.id, dashed: true});
+    });
+  });
+
+  // Other CT subdomains (not in hint categories)
+  const hintSubs = new Set(Object.values(hints).flat());
+  (ct.unique_subdomains || []).filter(s => !hintSubs.has(s) && s !== domain && !s.startsWith('*')).slice(0, 15).forEach(sub => {
+    const short = sub.replace('.' + domain, '');
+    const n = {id: nid++, label: short, type: 'subdomain', size: 6, detail: sub};
+    nodes.push(n);
+    links.push({source: domainNode.id, target: n.id, dashed: true, weak: true});
+  });
+
+  // ASN hosts / IPs
+  if (asn.hosts && asn.hosts.length) {
+    asn.hosts.forEach(h => {
+      const vulnCount = (h.vulns || []).length;
+      const n = {id: nid++, label: h.ip, type: vulnCount > 0 ? 'vuln' : 'ip', size: vulnCount > 0 ? 10 : 8,
+        detail: `Ports: ${(h.ports||[]).join(', ')}\nVulns: ${vulnCount}\n${h.reverse_dns || ''}`};
+      nodes.push(n);
+      links.push({source: domainNode.id, target: n.id, label: 'A', risky: vulnCount > 0});
+
+      // Port nodes for this IP (top 5)
+      (h.ports || []).slice(0, 5).forEach(p => {
+        const pn = {id: nid++, label: String(p), type: 'port', size: 5, detail: `Port ${p} on ${h.ip}`};
+        nodes.push(pn);
+        links.push({source: n.id, target: pn.id, weak: true});
+      });
+    });
+  } else if (dns.a_records && dns.a_records.length) {
+    dns.a_records.slice(0, 4).forEach(ip => {
+      const n = {id: nid++, label: ip, type: 'ip', size: 8, detail: 'DNS A Record'};
+      nodes.push(n);
+      links.push({source: domainNode.id, target: n.id, label: 'A'});
+    });
+  }
+
+  // Shodan sample hosts (if no ASN data)
+  if (!asn.hosts?.length && s.sample_hosts?.length) {
+    s.sample_hosts.slice(0, 5).forEach(h => {
+      const n = {id: nid++, label: `${h.ip}:${h.port}`, type: 'host', size: 8,
+        detail: [h.product, h.version, h.http_title].filter(Boolean).join(' | ')};
+      nodes.push(n);
+      links.push({source: domainNode.id, target: n.id, dashed: true});
+    });
+  }
+
+  // D3 force simulation
+  const simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d => d.id).distance(d => d.weak ? 40 : 80))
+    .force('charge', d3.forceManyBody().strength(d => d.type === 'domain' ? -400 : d.type === 'port' ? -20 : -100))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(d => d.size + 8));
+
+  // Zoom
+  const g = svg.append('g');
+  svg.call(d3.zoom()
+    .scaleExtent([0.2, 5])
+    .on('zoom', (event) => g.attr('transform', event.transform)));
+
+  // Links
+  const link = g.append('g').selectAll('line')
+    .data(links).join('line')
+    .attr('class', d => d.risky ? 'ng-link-risky' : 'ng-link')
+    .attr('stroke-dasharray', d => d.dashed ? '4,3' : null)
+    .attr('stroke-opacity', d => d.weak ? 0.08 : null);
+
+  // Link labels
+  const linkLabel = g.append('g').selectAll('text')
+    .data(links.filter(d => d.label)).join('text')
+    .attr('class', 'ng-label')
+    .attr('text-anchor', 'middle')
+    .attr('font-size', '8px')
+    .text(d => d.label);
+
+  // Nodes
+  const node = g.append('g').selectAll('g')
+    .data(nodes).join('g')
+    .attr('class', 'ng-node')
+    .call(d3.drag()
+      .on('start', (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on('end', (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+    );
+
+  node.append('circle')
+    .attr('r', d => d.size)
+    .attr('fill', d => (typeColors[d.type] || '#b0bec5') + '30')
+    .attr('stroke', d => typeColors[d.type] || '#b0bec5')
+    .attr('stroke-width', d => d.type === 'domain' ? 2 : 1);
+
+  // Glow for domain node
+  node.filter(d => d.type === 'domain').select('circle')
+    .attr('filter', 'url(#domainGlow)');
+
+  // Add glow filter
+  const defs = svg.append('defs');
+  const filter = defs.append('filter').attr('id', 'domainGlow').attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
+  filter.append('feGaussianBlur').attr('stdDeviation', '4').attr('result', 'blur');
+  const merge = filter.append('feMerge');
+  merge.append('feMergeNode').attr('in', 'blur');
+  merge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+  // Labels
+  node.append('text')
+    .attr('class', d => d.type === 'domain' ? 'ng-label ng-label-primary' : 'ng-label')
+    .attr('dy', d => d.size + 14)
+    .attr('text-anchor', 'middle')
+    .text(d => d.label.length > 20 ? d.label.substring(0, 18) + '...' : d.label);
+
+  // Tooltip on hover
+  node.on('mouseover', (event, d) => {
+    tooltip.style.display = 'block';
+    tooltip.innerHTML = `<strong>${d.label}</strong><br/><span style="color:var(--text-muted)">${d.type}</span>${d.detail ? '<br/>' + d.detail.replace(/\n/g, '<br/>') : ''}`;
+  })
+  .on('mousemove', (event) => {
+    tooltip.style.left = (event.clientX + 12) + 'px';
+    tooltip.style.top = (event.clientY - 10) + 'px';
+  })
+  .on('mouseout', () => { tooltip.style.display = 'none'; });
+
+  // Tick
+  simulation.on('tick', () => {
+    link
+      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+    linkLabel
+      .attr('x', d => (d.source.x + d.target.x) / 2)
+      .attr('y', d => (d.source.y + d.target.y) / 2);
+    node.attr('transform', d => `translate(${d.x},${d.y})`);
+  });
+}
+
+// Close with Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('netGraphOverlay').style.display !== 'none') {
+    closeNetGraph();
+    e.stopPropagation();
+  }
+});
+
+
+function formatCompact(val) {
+  if (!val || val === 0) return 'N/A';
+  const abs = Math.abs(val);
+  const sign = val < 0 ? '-' : '';
+  if (abs >= 1e12) return sign + '$' + (abs / 1e12).toFixed(1) + 'T';
+  if (abs >= 1e9) return sign + '$' + (abs / 1e9).toFixed(1) + 'B';
+  if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return sign + '$' + (abs / 1e3).toFixed(0) + 'K';
+  return sign + '$' + abs.toFixed(0);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════════════════════════
+
+function setupSearch() {
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+  let debounceTimer = null;
+
+  input.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const q = input.value.trim().toLowerCase();
+      if (q.length < 2) {
+        results.classList.remove('visible');
+        return;
+      }
+
+      const matches = DATA.contractors
+        .map((c, idx) => ({ c, idx }))
+        .filter(({ c }) =>
+          c.name.toLowerCase().includes(q) ||
+          (c.dba && c.dba.toLowerCase().includes(q)) ||
+          c.city.toLowerCase().includes(q) ||
+          c.state.toLowerCase().includes(q) ||
+          c.naics.toLowerCase().includes(q) ||
+          c.category.toLowerCase().includes(q) ||
+          (c.parent && c.parent.toLowerCase().includes(q))
+        )
+        .slice(0, 20);
+
+      if (matches.length === 0) {
+        results.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:12px;text-align:center;">No results found</div>';
+      } else {
+        results.innerHTML = matches.map(({ c, idx }) => `
+          <div class="search-result" data-idx="${idx}">
+            <div class="sr-swatch" style="background:${c.style.color}; border-radius:${c.style.shape === 'circle' ? '50%' : '2px'}"></div>
+            <span class="sr-name">${highlightMatch(c.name, q)}</span>
+            <span class="sr-location">${c.city}, ${c.state}</span>
+          </div>
+        `).join('');
+      }
+
+      results.classList.add('visible');
+    }, 150);
+  });
+
+  results.addEventListener('click', (e) => {
+    const item = e.target.closest('.search-result');
+    if (!item) return;
+    const idx = parseInt(item.dataset.idx);
+    const c = DATA.contractors[idx];
+    if (c) {
+      map.flyTo([c.lat, c.lon], 13, { duration: 1.2 });
+      openDetailPanel(idx);
+      results.classList.remove('visible');
+      input.value = c.name;
+    }
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-container')) {
+      results.classList.remove('visible');
+    }
+  });
+
+  // Keyboard navigation
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      results.classList.remove('visible');
+      input.blur();
+    }
+  });
+}
+
+function highlightMatch(text, query) {
+  const idx = text.toLowerCase().indexOf(query);
+  if (idx === -1) return escapeHtml(text);
+  return escapeHtml(text.substring(0, idx)) +
+    '<strong style="color:var(--accent-cyan)">' +
+    escapeHtml(text.substring(idx, idx + query.length)) +
+    '</strong>' +
+    escapeHtml(text.substring(idx + query.length));
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════════════
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closePanel();
+  if (e.key === '/' && !e.target.closest('input')) {
+    e.preventDefault();
+    document.getElementById('searchInput').focus();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// TOOLTIP STYLES (injected)
+// ═══════════════════════════════════════════════════════════════
+
+const tooltipStyle = document.createElement('style');
+tooltipStyle.textContent = `
+  .rel-tooltip {
+    background: var(--bg-glass) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid var(--border-active) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+    padding: 8px 12px !important;
+    color: var(--text-primary) !important;
+  }
+  .rel-tooltip .leaflet-tooltip-content { margin: 0 !important; }
+  .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before,
+  .leaflet-tooltip-left:before, .leaflet-tooltip-right:before {
+    border-color: transparent !important;
+  }
+`;
+document.head.appendChild(tooltipStyle);
+
+// ═══════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

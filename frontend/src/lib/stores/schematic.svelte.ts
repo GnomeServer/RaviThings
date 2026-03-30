@@ -16,6 +16,13 @@ export interface InputNode {
 	feeds_into: string[];
 }
 
+export interface ContractorParticipation {
+	name: string;
+	role: string;
+	contract_value: number;
+	significance_pct: number;
+}
+
 export interface ProcessStep {
 	id: string;
 	name: string;
@@ -26,6 +33,8 @@ export interface ProcessStep {
 	outputs_to: string[];
 	doe_contractors: string[];
 	investment: string;
+	contractor_details: ContractorParticipation[];
+	step_total_capital: number;
 }
 
 export interface OutputNode {
@@ -77,7 +86,16 @@ function normalize(raw: Record<string, unknown>): ProcessSchematic {
 			inputs_from: Array.isArray(s.inputs_from) ? s.inputs_from : [],
 			outputs_to: Array.isArray(s.outputs_to) ? s.outputs_to : [],
 			doe_contractors: Array.isArray(s.doe_contractors) ? s.doe_contractors : [],
-			investment: (s.investment as string) ?? ''
+			investment: (s.investment as string) ?? '',
+			contractor_details: (Array.isArray(s.contractor_details) ? s.contractor_details : []).map(
+				(c: Record<string, unknown>) => ({
+					name: String(c.name ?? 'Unknown'),
+					role: String(c.role ?? ''),
+					contract_value: Number(c.contract_value) || 0,
+					significance_pct: Number(c.significance_pct) || 0,
+				})
+			),
+			step_total_capital: Number(s.step_total_capital) || 0,
 		})
 	) as ProcessStep[];
 
