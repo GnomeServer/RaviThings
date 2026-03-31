@@ -4030,30 +4030,76 @@ async function sendAtlasChat() {
   document.getElementById('atlasChatSend').disabled = true;
   showAtlasTyping();
 
-  // Build context: top-risk contractors + currently visible contractors
+  // Build rich data context: query-relevant + top-risk + visible contractors
   let dataContext = '';
   if (DATA && DATA.contractors) {
-    // Compute risk scores and sort
-    const scored = DATA.contractors.map((c, i) => ({
-      idx: i, name: c.name, city: c.city, state: c.state,
-      lat: c.lat, lon: c.lon, category: c.category,
-      risk: computeRiskScore(c),
-      sip: (c.osint || {}).shodan_ip || {},
-      sr: (c.osint || {}).service_risk || {},
-      dns: (c.osint || {}).dns || {},
-    })).sort((a, b) => b.risk - a.risk);
+    const q = query.toLowerCase();
 
-    // Top 20 highest risk
-    const top20 = scored.slice(0, 20).map(c => {
-      const crit = c.sip.aggregate ? c.sip.aggregate.critical_findings || [] : [];
-      const critStr = crit.map(f => `${f.service}@${f.ip}:${f.port}`).join(', ');
-      return `[${c.idx}] ${c.name} (${c.city}, ${c.state}) risk=${c.risk} ` +
-        `danger=${c.sr.max_danger || 'none'} dmarc=${c.dns.dmarc_policy || '?'} ` +
-        `hosts=${c.sip.ips_enriched || 0}` +
-        (critStr ? ` CRITICAL:[${critStr}]` : '');
-    }).join('\n');
+    // Helper: summarize one contractor
+    function summarizeContractor(c, i) {
+      const o = c.osint || {};
+      const sr = o.service_risk || {};
+      const dns = o.dns || {};
+      const sip = o.shodan_ip || {};
+      const nvd = o.nvd_cvss || {};
+      const onp = o.onprem_network || {};
+      const risk = computeRiskScore(c);
+      const crit = (sip.aggregate || {}).critical_findings || [];
+      const critStr = crit.slice(0, 5).map(f => `${f.service}:${f.port}`).join(', ');
+      const hosts = (sip.hosts || []).slice(0, 3).map(h =>
+        `${h.ip}[${(h.ports||[]).join(',')}]`
+      ).join(' ');
+      return `[${i}] ${c.name} | ${c.city}, ${c.state} | cat=${c.category} | risk=${risk} | ` +
+        `danger=${sr.max_danger||'none'} | dmarc=${dns.dmarc_policy||'?'} | ` +
+        `hosts_enriched=${sip.ips_enriched||0} onprem=${onp.on_prem_count||0} | ` +
+        `max_cvss=${nvd.max_score||'?'} vulns=${(sip.aggregate||{}).total_vulns||0}` +
+        (critStr ? ` | EXPOSED:[${critStr}]` : '') +
+        (hosts ? ` | IPs:${hosts}` : '');
+    }
 
-    dataContext = `\n\nTOP 20 HIGHEST-RISK CONTRACTORS (use open_panel with the [index] to show them):\n${top20}`;
+    // 1. Query-relevant contractors (name/city/state/category match)
+    const queryMatches = [];
+    for (let i = 0; i < DATA.contractors.length && queryMatches.length < 30; i++) {
+      const c = DATA.contractors[i];
+      const searchable = `${c.name} ${c.city} ${c.state} ${c.category}`.toLowerCase();
+      if (q.split(/\s+/).some(w => w.length > 2 && searchable.includes(w))) {
+        queryMatches.push(summarizeContractor(c, i));
+      }
+    }
+
+    // 2. Top 30 by risk score
+    const scored = DATA.contractors.map((c, i) => ({ c, i, risk: computeRiskScore(c) }))
+      .sort((a, b) => b.risk - a.risk);
+    const top30 = scored.slice(0, 30).map(({c, i}) => summarizeContractor(c, i));
+
+    // 3. Currently visible on map (if filtered)
+    const visible = [];
+    if (typeof markers !== 'undefined') {
+      let visCount = 0;
+      markers.eachLayer(m => { if (m._icon) visCount++; });
+      if (visCount < 100 && visCount > 0) {
+        markers.eachLayer(m => {
+          if (m._icon && m.contractorIndex !== undefined && visible.length < 20) {
+            const c = DATA.contractors[m.contractorIndex];
+            visible.push(summarizeContractor(c, m.contractorIndex));
+          }
+        });
+      }
+    }
+
+    // Deduplicate and assemble
+    const seen = new Set();
+    const allLines = [];
+    for (const line of [...queryMatches, ...top30, ...visible]) {
+      const idx = line.match(/^\[(\d+)\]/)?.[1];
+      if (idx && !seen.has(idx)) {
+        seen.add(idx);
+        allLines.push(line);
+      }
+    }
+
+    dataContext = '\n\nCONTRACTOR DATA (ONLY reference contractors listed here — do NOT invent names or data):\n' +
+      allLines.slice(0, 60).join('\n');
   }
 
   // Prepare request
