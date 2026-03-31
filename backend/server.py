@@ -608,6 +608,7 @@ RULES:
         query: str
         messages: list[dict] = []
         contractor_count: int = 0
+        data_context: str = ""
 
     @app.post("/api/atlas-chat")
     async def atlas_chat(req: AtlasChatRequest):
@@ -622,8 +623,13 @@ RULES:
             for c in results.contracts[:20]
         )
 
+        # Inject live data context (risk scores, top contractors)
+        system_content = _ATLAS_SYSTEM_PROMPT
+        if req.data_context:
+            system_content += req.data_context
+
         messages = [
-            {"role": "system", "content": _ATLAS_SYSTEM_PROMPT},
+            {"role": "system", "content": system_content},
             {"role": "user", "content": (
                 f"Contractor dataset: {req.contractor_count} DOE contractors\n\n"
                 f"RELEVANT CONTRACT DATA:\n{contract_context}\n\n"

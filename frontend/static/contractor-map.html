@@ -1642,6 +1642,109 @@
     50% { opacity: 0.6; transform: scale(1.04); box-shadow: 0 0 15px rgba(255,23,68,0.8), 0 0 30px rgba(255,23,68,0.3); }
   }
 
+  /* ─── CVE POPUP ─── */
+  #cvePopup {
+    position: fixed;
+    z-index: 3000;
+    width: 380px;
+    max-height: 280px;
+    background: rgba(4, 8, 16, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,23,68,0.2);
+    border-left: 3px solid #ff1744;
+    border-radius: var(--hud-radius);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(255,23,68,0.06);
+    padding: 14px 16px;
+    display: none;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,23,68,0.15) transparent;
+  }
+
+  #cvePopup.visible { display: block; }
+
+  .cve-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .cve-popup-id {
+    font-weight: 700;
+    font-size: 13px;
+    color: #ff1744;
+    text-shadow: 0 0 6px rgba(255,23,68,0.3);
+  }
+
+  .cve-popup-score {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: var(--hud-radius);
+  }
+
+  .cve-popup-score.critical { background: rgba(213,0,0,0.15); color: #ff1744; border: 1px solid rgba(213,0,0,0.25); }
+  .cve-popup-score.high { background: rgba(255,109,0,0.1); color: #ff6d00; border: 1px solid rgba(255,109,0,0.2); }
+  .cve-popup-score.medium { background: rgba(255,209,64,0.08); color: #ffd740; border: 1px solid rgba(255,209,64,0.15); }
+  .cve-popup-score.low { background: rgba(0,230,118,0.06); color: #00e676; border: 1px solid rgba(0,230,118,0.1); }
+
+  .cve-popup-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px;
+    transition: color 0.15s;
+  }
+  .cve-popup-close:hover { color: #ff1744; }
+
+  .cve-popup-desc {
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+
+  .cve-popup-loading {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .cve-popup-links {
+    display: flex;
+    gap: 6px;
+  }
+
+  .cve-popup-links a {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 3px 8px;
+    border-radius: var(--hud-radius);
+    border: 1px solid rgba(0,229,255,0.15);
+    color: var(--accent-cyan);
+    transition: all 0.15s;
+  }
+  .cve-popup-links a:hover {
+    background: rgba(0,229,255,0.06);
+    border-color: var(--accent-cyan);
+  }
+
+  .cve-clickable {
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cve-clickable:hover {
+    filter: brightness(1.3);
+    text-decoration: underline;
+  }
+
   /* ─── RESPONSIVE ─── */
   @media (max-width: 768px) {
     #detailPanel { width: 100%; right: -100%; }
@@ -1793,6 +1896,9 @@
   <svg id="netGraphSVG"></svg>
 </div>
 <div class="ng-tooltip" id="ngTooltip"></div>
+
+<!-- CVE Popup -->
+<div id="cvePopup"></div>
 
 <!-- Map container -->
 <div id="map"></div>
@@ -2389,6 +2495,7 @@ function openDetailPanel(idx) {
   const c = DATA.contractors[idx];
   if (!c) return;
   selectedContractor = idx;
+  _lastOpenedContractor = c;
 
   const panel = document.getElementById('detailPanel');
 
@@ -2666,7 +2773,10 @@ function buildPanelBody(c) {
   // ── OSINT Intelligence (all layers) ──
   html += buildOSINTSection(c);
 
-  // ── Shodan Intelligence (legacy) ──
+  // ── Per-IP Host Intelligence (Shodan IP) ──
+  html += buildHostIntelSection(c);
+
+  // ── Shodan Intelligence (legacy org-name search) ──
   html += buildShodanSection(c);
 
   // ── Co-located Contractors ──
@@ -3045,6 +3155,240 @@ function buildOSINTSection(c) {
   return html;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// CVE POPUP
+// ═══════════════════════════════════════════════════════════════
+
+const _cveDescCache = {};
+
+function showCvePopup(cveId, event) {
+  const popup = document.getElementById('cvePopup');
+  if (!popup) return;
+
+  // Position near the click
+  const rect = event.target.getBoundingClientRect();
+  let top = rect.bottom + 8;
+  let left = rect.left;
+
+  // Keep within viewport
+  if (top + 280 > window.innerHeight) top = rect.top - 280;
+  if (left + 380 > window.innerWidth) left = window.innerWidth - 390;
+  if (left < 10) left = 10;
+
+  popup.style.top = top + 'px';
+  popup.style.left = left + 'px';
+
+  // Check local NVD cache first
+  const currentContractor = _lastOpenedContractor;
+  const nvdScores = currentContractor?.osint?.nvd_cvss?.scores || {};
+  const cached = nvdScores[cveId] || nvdScores[cveId.toUpperCase()] || _cveDescCache[cveId];
+
+  let scoreHtml = '';
+  let descHtml = '';
+
+  if (cached) {
+    const score = cached.score || cached.cvss_score;
+    const sev = cached.severity || (score >= 9 ? 'critical' : score >= 7 ? 'high' : score >= 4 ? 'medium' : 'low');
+    if (score) scoreHtml = `<span class="cve-popup-score ${sev}">CVSS ${score}</span>`;
+    if (cached.description) {
+      descHtml = `<div class="cve-popup-desc">${escapeHtml(cached.description)}</div>`;
+    }
+  }
+
+  popup.innerHTML = `
+    <div class="cve-popup-header">
+      <span class="cve-popup-id">${escapeHtml(cveId)}</span>
+      ${scoreHtml}
+      <button class="cve-popup-close" onclick="closeCvePopup()">✕</button>
+    </div>
+    ${descHtml || '<div class="cve-popup-loading">Loading description from NVD...</div>'}
+    <div class="cve-popup-links">
+      <a href="https://nvd.nist.gov/vuln/detail/${encodeURIComponent(cveId)}" target="_blank" rel="noopener">NVD</a>
+      <a href="https://www.cvedetails.com/cve/${encodeURIComponent(cveId)}/" target="_blank" rel="noopener">CVE Details</a>
+      <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=${encodeURIComponent(cveId)}" target="_blank" rel="noopener">MITRE</a>
+    </div>
+  `;
+
+  popup.classList.add('visible');
+
+  // Fetch from NVD if no description yet
+  if (!descHtml) {
+    fetchCveDescription(cveId, popup);
+  }
+}
+
+async function fetchCveDescription(cveId, popup) {
+  try {
+    const resp = await fetch(`https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${encodeURIComponent(cveId.toUpperCase())}`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    const vuln = data.vulnerabilities?.[0]?.cve;
+    if (!vuln) return;
+
+    const desc = vuln.descriptions?.find(d => d.lang === 'en')?.value || '';
+    const metrics = vuln.metrics?.cvssMetricV31?.[0] || vuln.metrics?.cvssMetricV30?.[0] || vuln.metrics?.cvssMetricV2?.[0];
+    const score = metrics?.cvssData?.baseScore;
+    const severity = metrics?.cvssData?.baseSeverity?.toLowerCase() || (score >= 9 ? 'critical' : score >= 7 ? 'high' : score >= 4 ? 'medium' : 'low');
+
+    // Cache it
+    _cveDescCache[cveId] = { score, severity, description: desc };
+
+    // Update popup if still visible
+    if (popup.classList.contains('visible')) {
+      const scoreHtml = score ? `<span class="cve-popup-score ${severity}">CVSS ${score}</span>` : '';
+      popup.querySelector('.cve-popup-id').insertAdjacentHTML('afterend', scoreHtml);
+      const loading = popup.querySelector('.cve-popup-loading');
+      if (loading) {
+        loading.outerHTML = desc
+          ? `<div class="cve-popup-desc">${escapeHtml(desc)}</div>`
+          : `<div class="cve-popup-desc" style="color:var(--text-muted)">No description available.</div>`;
+      }
+    }
+  } catch (e) {
+    const loading = popup?.querySelector('.cve-popup-loading');
+    if (loading) loading.textContent = 'Could not fetch CVE details.';
+  }
+}
+
+function closeCvePopup() {
+  const popup = document.getElementById('cvePopup');
+  if (popup) popup.classList.remove('visible');
+}
+
+// Close popup when clicking outside
+document.addEventListener('click', (e) => {
+  const popup = document.getElementById('cvePopup');
+  if (popup?.classList.contains('visible') && !popup.contains(e.target) && !e.target.classList.contains('cve-clickable')) {
+    closeCvePopup();
+  }
+});
+
+let _lastOpenedContractor = null;
+
+
+function buildHostIntelSection(c) {
+  const sip = (c.osint || {}).shodan_ip;
+  if (!sip || !sip.queried || !sip.hosts || sip.hosts.length === 0) {
+    return '';  // No per-IP data — don't show empty section
+  }
+
+  const agg = sip.aggregate || {};
+  const critFindings = agg.critical_findings || [];
+  const sslIssues = agg.ssl_issues || [];
+  const totalVulns = agg.total_vulns || 0;
+  const hosts = sip.hosts;
+
+  let html = '<div class="panel-section">';
+  html += `<div class="section-title">Host Intelligence (${hosts.length} hosts)</div>`;
+
+  // Aggregate banner — critical findings + stats
+  if (critFindings.length > 0 || totalVulns > 0) {
+    html += `<div class="shodan-exposure" style="border-left-color:#ff1744">
+      <div class="exposure-icon">\u26a0</div>
+      <div class="exposure-detail">
+        <div class="exposure-count">${hosts.length}</div>
+        <div class="exposure-label">Hosts Scanned</div>
+      </div>
+      <div class="exposure-detail" style="text-align:center">
+        <div class="exposure-count" style="color:#ff1744">${critFindings.length}</div>
+        <div class="exposure-label">Critical</div>
+      </div>
+      <div class="exposure-detail" style="text-align:right">
+        <div class="exposure-count" style="color:#ffd740">${totalVulns}</div>
+        <div class="exposure-label">CVEs</div>
+      </div>
+    </div>`;
+  }
+
+  // Critical findings callout
+  if (critFindings.length > 0) {
+    html += '<div style="margin-bottom:10px">';
+    html += '<span class="data-label" style="color:#ff1744">Critical Exposures</span>';
+    html += '<div style="margin-top:4px">';
+    for (const cf of critFindings) {
+      html += `<div class="vuln-badge critical" style="margin-bottom:3px;display:flex">
+        <span>${cf.ip}:${cf.port}</span>
+        <span style="margin-left:auto;font-weight:700">${cf.service}</span>
+        ${cf.product ? `<span class="vuln-count">${cf.product}</span>` : ''}
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+
+  // SSL issues
+  if (sslIssues.length > 0) {
+    html += '<div style="margin-bottom:10px">';
+    html += '<span class="data-label" style="color:#ff9100">SSL Issues</span>';
+    html += '<div style="margin-top:4px">';
+    for (const si of sslIssues) {
+      html += `<div class="vuln-badge high" style="margin-bottom:3px">
+        <span>${si.ip}:${si.port}</span>
+        <span style="margin-left:6px">${si.issue === 'expired' ? 'EXPIRED' : si.issue}</span>
+        <span class="vuln-count">${si.subject}</span>
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+
+  // Per-host cards
+  for (const host of hosts) {
+    const svcs = host.services || [];
+    const hvulns = host.vulns || [];
+    const hostnames = (host.hostnames || []).join(', ');
+
+    html += `<div class="host-card" style="margin-bottom:6px;border-left-color:${hvulns.length > 5 ? '#ff1744' : hvulns.length > 0 ? '#ff9100' : 'rgba(0,229,255,0.15)'}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span class="host-ip">${host.ip}</span>
+        ${host.org ? `<span class="host-meta">${host.org}</span>` : ''}
+        ${host.os ? `<span class="ip-badge on-prem" style="background:rgba(124,77,255,0.1);border-color:rgba(124,77,255,0.2);color:#b388ff">${host.os}</span>` : ''}
+      </div>`;
+
+    if (hostnames) {
+      html += `<div class="host-meta" style="margin-bottom:4px">${hostnames}</div>`;
+    }
+
+    // Services table
+    if (svcs.length > 0) {
+      html += '<div style="display:flex;flex-direction:column;gap:2px;margin:4px 0">';
+      for (const svc of svcs.slice(0, 10)) {
+        const product = [svc.product, svc.version].filter(Boolean).join(' ');
+        const httpTitle = svc.http_title ? ` [${svc.http_title.substring(0, 35)}]` : '';
+        const sslInfo = svc.ssl_expired ? ' <span style="color:#ff1744">SSL EXPIRED</span>' :
+                        svc.ssl_subject ? ` <span style="color:var(--text-muted)">SSL:${svc.ssl_subject.substring(0, 25)}</span>` : '';
+
+        const isRisky = [21, 23, 445, 1433, 3306, 3389, 5432, 5900, 6379, 9200, 11211, 27017].includes(svc.port);
+
+        html += `<div class="service-row" style="${isRisky ? 'background:rgba(255,23,68,0.05);border-left:2px solid #ff1744' : ''}">
+          <span class="port-badge${isRisky ? ' risky' : ''}" style="min-width:45px;text-align:center">${svc.port}/${svc.transport}</span>
+          <span style="flex:1;font-size:10px;color:var(--text-primary)">${product}${httpTitle}${sslInfo}</span>
+        </div>`;
+      }
+      if (svcs.length > 10) {
+        html += `<div style="font-size:9px;color:var(--text-muted);padding:2px 8px">+ ${svcs.length - 10} more services</div>`;
+      }
+      html += '</div>';
+    }
+
+    // Vulns summary
+    if (hvulns.length > 0) {
+      html += `<div style="margin-top:3px">
+        <span class="data-label">CVEs (${hvulns.length})</span>
+        <div class="port-badges" style="margin-top:2px">
+          ${hvulns.slice(0, 8).map(v => `<span class="port-badge risky cve-clickable" style="font-size:8px" onclick="showCvePopup('${v}',event)">${v}</span>`).join('')}
+          ${hvulns.length > 8 ? `<span class="port-badge" style="font-size:8px">+${hvulns.length - 8} more</span>` : ''}
+        </div>
+      </div>`;
+    }
+
+    html += '</div>';  // Close host-card
+  }
+
+  html += '</div>';  // Close panel-section
+  return html;
+}
+
+
 function buildShodanSection(c) {
   const s = c.shodan;
 
@@ -3121,7 +3465,7 @@ function buildShodanSection(c) {
           const severity = getCVESeverity(v.cve, c);
           const cvssData = getCVSSScore(v.cve, c);
           const scoreTag = cvssData ? ` <span style="opacity:0.7;font-size:9px">(${cvssData.base_score.toFixed(1)})</span>` : '';
-          return `<span class="vuln-badge ${severity}">${v.cve}${scoreTag}<span class="vuln-count">\u00d7${v.count}</span></span>`;
+          return `<span class="vuln-badge ${severity} cve-clickable" onclick="showCvePopup('${v.cve}',event)">${v.cve}${scoreTag}<span class="vuln-count">\u00d7${v.count}</span></span>`;
         }).join('')}
       </div>
     </div>`;
@@ -3905,11 +4249,84 @@ async function sendAtlasChat() {
   document.getElementById('atlasChatSend').disabled = true;
   showAtlasTyping();
 
+  // Build rich data context: query-relevant + top-risk + visible contractors
+  let dataContext = '';
+  if (DATA && DATA.contractors) {
+    const q = query.toLowerCase();
+
+    // Helper: summarize one contractor
+    function summarizeContractor(c, i) {
+      const o = c.osint || {};
+      const sr = o.service_risk || {};
+      const dns = o.dns || {};
+      const sip = o.shodan_ip || {};
+      const nvd = o.nvd_cvss || {};
+      const onp = o.onprem_network || {};
+      const risk = computeRiskScore(c);
+      const crit = (sip.aggregate || {}).critical_findings || [];
+      const critStr = crit.slice(0, 5).map(f => `${f.service}:${f.port}`).join(', ');
+      const hosts = (sip.hosts || []).slice(0, 3).map(h =>
+        `${h.ip}[${(h.ports||[]).join(',')}]`
+      ).join(' ');
+      return `[${i}] ${c.name} | ${c.city}, ${c.state} | cat=${c.category} | risk=${risk} | ` +
+        `danger=${sr.max_danger||'none'} | dmarc=${dns.dmarc_policy||'?'} | ` +
+        `hosts_enriched=${sip.ips_enriched||0} onprem=${onp.on_prem_count||0} | ` +
+        `max_cvss=${nvd.max_score||'?'} vulns=${(sip.aggregate||{}).total_vulns||0}` +
+        (critStr ? ` | EXPOSED:[${critStr}]` : '') +
+        (hosts ? ` | IPs:${hosts}` : '');
+    }
+
+    // 1. Query-relevant contractors (name/city/state/category match)
+    const queryMatches = [];
+    for (let i = 0; i < DATA.contractors.length && queryMatches.length < 30; i++) {
+      const c = DATA.contractors[i];
+      const searchable = `${c.name} ${c.city} ${c.state} ${c.category}`.toLowerCase();
+      if (q.split(/\s+/).some(w => w.length > 2 && searchable.includes(w))) {
+        queryMatches.push(summarizeContractor(c, i));
+      }
+    }
+
+    // 2. Top 30 by risk score
+    const scored = DATA.contractors.map((c, i) => ({ c, i, risk: computeRiskScore(c) }))
+      .sort((a, b) => b.risk - a.risk);
+    const top30 = scored.slice(0, 30).map(({c, i}) => summarizeContractor(c, i));
+
+    // 3. Currently visible on map (if filtered)
+    const visible = [];
+    if (typeof markers !== 'undefined') {
+      let visCount = 0;
+      markers.eachLayer(m => { if (m._icon) visCount++; });
+      if (visCount < 100 && visCount > 0) {
+        markers.eachLayer(m => {
+          if (m._icon && m.contractorIndex !== undefined && visible.length < 20) {
+            const c = DATA.contractors[m.contractorIndex];
+            visible.push(summarizeContractor(c, m.contractorIndex));
+          }
+        });
+      }
+    }
+
+    // Deduplicate and assemble
+    const seen = new Set();
+    const allLines = [];
+    for (const line of [...queryMatches, ...top30, ...visible]) {
+      const idx = line.match(/^\[(\d+)\]/)?.[1];
+      if (idx && !seen.has(idx)) {
+        seen.add(idx);
+        allLines.push(line);
+      }
+    }
+
+    dataContext = '\n\nCONTRACTOR DATA (ONLY reference contractors listed here — do NOT invent names or data):\n' +
+      allLines.slice(0, 60).join('\n');
+  }
+
   // Prepare request
   const payload = {
     query: query,
     messages: atlasChatMessages.slice(-10),
     contractor_count: DATA ? DATA.contractors.length : 0,
+    data_context: dataContext,
   };
 
   try {

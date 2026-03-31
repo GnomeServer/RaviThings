@@ -34,6 +34,7 @@ from osint.asn_enum import enrich_asn
 from osint.nvd_cvss import enrich_nvd_cvss, collect_cve_ids
 from osint.service_risk import classify_services
 from osint.onprem_network import identify_onprem_network
+from osint.shodan_ip import enrich_contractor_ips
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -422,6 +423,65 @@ def run_layer_service_risk(contractors, force=False, limit=0):
     print(f'  Processed: {processed}, Flagged: {flagged} with dangerous services')
 
 
+def run_layer_shodan_ip(contractors, api, force=False, limit=0):
+    """Per-IP Shodan host enrichment for on-prem IPs."""
+    print('\n' + '=' * 60)
+    print('LAYER: Per-IP Shodan Host Intelligence')
+    print('=' * 60)
+
+    to_process = [
+        (i, c) for i, c in enumerate(contractors)
+        if needs_layer(c, 'shodan_ip', force)
+        and c.get('osint', {}).get('onprem_network', {}).get('on_prem_ips')
+    ]
+    if limit > 0:
+        to_process = to_process[:limit]
+
+    if not to_process:
+        print('  No contractors to process.')
+        return 0
+
+    print(f'  Processing {len(to_process)} contractors with on-prem IPs...')
+
+    # Shared caches across all contractors (deduplicates IP lookups)
+    ip_cache = {}
+    idb_cache = {}
+    enriched = 0
+
+    for idx, (i, c) in enumerate(to_process):
+        name = c['name'][:45]
+        ips = c.get('osint', {}).get('onprem_network', {}).get('on_prem_ips', [])
+        print(f'  [{idx+1}/{len(to_process)}] {name:45s} ({len(ips)} IPs)', end=' ', flush=True)
+
+        result = enrich_contractor_ips(
+            api, c,
+            ip_cache=ip_cache,
+            internetdb_cache=idb_cache,
+            delay=1.0,
+        )
+
+        c.setdefault('osint', {})['shodan_ip'] = result
+
+        n_hosts = result.get('ips_enriched', 0)
+        n_crit = len(result.get('aggregate', {}).get('critical_findings', []))
+        if n_hosts > 0:
+            print(f'  OK hosts={n_hosts} critical={n_crit}')
+            enriched += 1
+        else:
+            print(f'  -- no exposed hosts')
+
+        # Save every 25 contractors
+        if (idx + 1) % 25 == 0:
+            print(f'\n  Saving progress ({idx+1}/{len(to_process)}), '
+                  f'IP cache: {len(ip_cache)} IPs...\n')
+            save_data({'contractors': contractors,
+                       **{k: v for k, v in load_data().items() if k != 'contractors'}})
+
+    print(f'\n  Per-IP Shodan: {enriched}/{len(to_process)} with exposed hosts')
+    print(f'  Total unique IPs queried: {len(ip_cache)}')
+    return enriched
+
+
 def run_layer_nvd(contractors, force=False, limit=0):
     """Enrich CVEs with CVSS scores from NVD."""
     print(f'\n--- Layer: NVD CVSS Scoring ---')
@@ -532,7 +592,7 @@ def print_summary(contractors):
 def main():
     parser = argparse.ArgumentParser(description='Multi-layer OSINT enrichment pipeline')
     parser.add_argument('--layers', default='all',
-                        help='Comma-separated layers: all,shodan,domain,verify,dns,ct,web,asn,onprem,service_risk,nvd')
+                        help='Comma-separated layers: all,shodan,domain,verify,dns,ct,web,asn,onprem,service_risk,shodan_ip,nvd')
     parser.add_argument('--limit', type=int, default=0,
                         help='Limit contractors per layer (0=all)')
     parser.add_argument('--force', action='store_true',
@@ -552,7 +612,7 @@ def main():
 
     # Initialize Shodan if needed
     api = None
-    if (run_all or 'shodan' in layers) and not args.skip_shodan:
+    if (run_all or 'shodan' in layers or 'shodan_ip' in layers) and not args.skip_shodan:
         api_key = os.getenv('SHODAN_API_KEY')
         if api_key:
             try:
@@ -602,6 +662,10 @@ def main():
 
     if run_all or 'service_risk' in layers:
         run_layer_service_risk(contractors, force=args.force, limit=args.limit)
+        save_data(data)
+
+    if (run_all or 'shodan_ip' in layers) and api:
+        run_layer_shodan_ip(contractors, api, force=args.force, limit=args.limit)
         save_data(data)
 
     if run_all or 'nvd' in layers:
