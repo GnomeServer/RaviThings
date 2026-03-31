@@ -4030,11 +4030,38 @@ async function sendAtlasChat() {
   document.getElementById('atlasChatSend').disabled = true;
   showAtlasTyping();
 
+  // Build context: top-risk contractors + currently visible contractors
+  let dataContext = '';
+  if (DATA && DATA.contractors) {
+    // Compute risk scores and sort
+    const scored = DATA.contractors.map((c, i) => ({
+      idx: i, name: c.name, city: c.city, state: c.state,
+      lat: c.lat, lon: c.lon, category: c.category,
+      risk: computeRiskScore(c),
+      sip: (c.osint || {}).shodan_ip || {},
+      sr: (c.osint || {}).service_risk || {},
+      dns: (c.osint || {}).dns || {},
+    })).sort((a, b) => b.risk - a.risk);
+
+    // Top 20 highest risk
+    const top20 = scored.slice(0, 20).map(c => {
+      const crit = c.sip.aggregate ? c.sip.aggregate.critical_findings || [] : [];
+      const critStr = crit.map(f => `${f.service}@${f.ip}:${f.port}`).join(', ');
+      return `[${c.idx}] ${c.name} (${c.city}, ${c.state}) risk=${c.risk} ` +
+        `danger=${c.sr.max_danger || 'none'} dmarc=${c.dns.dmarc_policy || '?'} ` +
+        `hosts=${c.sip.ips_enriched || 0}` +
+        (critStr ? ` CRITICAL:[${critStr}]` : '');
+    }).join('\n');
+
+    dataContext = `\n\nTOP 20 HIGHEST-RISK CONTRACTORS (use open_panel with the [index] to show them):\n${top20}`;
+  }
+
   // Prepare request
   const payload = {
     query: query,
     messages: atlasChatMessages.slice(-10),
     contractor_count: DATA ? DATA.contractors.length : 0,
+    data_context: dataContext,
   };
 
   try {
