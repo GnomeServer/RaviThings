@@ -1642,6 +1642,109 @@
     50% { opacity: 0.6; transform: scale(1.04); box-shadow: 0 0 15px rgba(255,23,68,0.8), 0 0 30px rgba(255,23,68,0.3); }
   }
 
+  /* ─── CVE POPUP ─── */
+  #cvePopup {
+    position: fixed;
+    z-index: 3000;
+    width: 380px;
+    max-height: 280px;
+    background: rgba(4, 8, 16, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,23,68,0.2);
+    border-left: 3px solid #ff1744;
+    border-radius: var(--hud-radius);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(255,23,68,0.06);
+    padding: 14px 16px;
+    display: none;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,23,68,0.15) transparent;
+  }
+
+  #cvePopup.visible { display: block; }
+
+  .cve-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .cve-popup-id {
+    font-weight: 700;
+    font-size: 13px;
+    color: #ff1744;
+    text-shadow: 0 0 6px rgba(255,23,68,0.3);
+  }
+
+  .cve-popup-score {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: var(--hud-radius);
+  }
+
+  .cve-popup-score.critical { background: rgba(213,0,0,0.15); color: #ff1744; border: 1px solid rgba(213,0,0,0.25); }
+  .cve-popup-score.high { background: rgba(255,109,0,0.1); color: #ff6d00; border: 1px solid rgba(255,109,0,0.2); }
+  .cve-popup-score.medium { background: rgba(255,209,64,0.08); color: #ffd740; border: 1px solid rgba(255,209,64,0.15); }
+  .cve-popup-score.low { background: rgba(0,230,118,0.06); color: #00e676; border: 1px solid rgba(0,230,118,0.1); }
+
+  .cve-popup-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px;
+    transition: color 0.15s;
+  }
+  .cve-popup-close:hover { color: #ff1744; }
+
+  .cve-popup-desc {
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+
+  .cve-popup-loading {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .cve-popup-links {
+    display: flex;
+    gap: 6px;
+  }
+
+  .cve-popup-links a {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 3px 8px;
+    border-radius: var(--hud-radius);
+    border: 1px solid rgba(0,229,255,0.15);
+    color: var(--accent-cyan);
+    transition: all 0.15s;
+  }
+  .cve-popup-links a:hover {
+    background: rgba(0,229,255,0.06);
+    border-color: var(--accent-cyan);
+  }
+
+  .cve-clickable {
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cve-clickable:hover {
+    filter: brightness(1.3);
+    text-decoration: underline;
+  }
+
   /* ─── RESPONSIVE ─── */
   @media (max-width: 768px) {
     #detailPanel { width: 100%; right: -100%; }
@@ -1793,6 +1896,9 @@
   <svg id="netGraphSVG"></svg>
 </div>
 <div class="ng-tooltip" id="ngTooltip"></div>
+
+<!-- CVE Popup -->
+<div id="cvePopup"></div>
 
 <!-- Map container -->
 <div id="map"></div>
@@ -2389,6 +2495,7 @@ function openDetailPanel(idx) {
   const c = DATA.contractors[idx];
   if (!c) return;
   selectedContractor = idx;
+  _lastOpenedContractor = c;
 
   const panel = document.getElementById('detailPanel');
 
@@ -3048,6 +3155,118 @@ function buildOSINTSection(c) {
   return html;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// CVE POPUP
+// ═══════════════════════════════════════════════════════════════
+
+const _cveDescCache = {};
+
+function showCvePopup(cveId, event) {
+  const popup = document.getElementById('cvePopup');
+  if (!popup) return;
+
+  // Position near the click
+  const rect = event.target.getBoundingClientRect();
+  let top = rect.bottom + 8;
+  let left = rect.left;
+
+  // Keep within viewport
+  if (top + 280 > window.innerHeight) top = rect.top - 280;
+  if (left + 380 > window.innerWidth) left = window.innerWidth - 390;
+  if (left < 10) left = 10;
+
+  popup.style.top = top + 'px';
+  popup.style.left = left + 'px';
+
+  // Check local NVD cache first
+  const currentContractor = _lastOpenedContractor;
+  const nvdScores = currentContractor?.osint?.nvd_cvss?.scores || {};
+  const cached = nvdScores[cveId] || nvdScores[cveId.toUpperCase()] || _cveDescCache[cveId];
+
+  let scoreHtml = '';
+  let descHtml = '';
+
+  if (cached) {
+    const score = cached.score || cached.cvss_score;
+    const sev = cached.severity || (score >= 9 ? 'critical' : score >= 7 ? 'high' : score >= 4 ? 'medium' : 'low');
+    if (score) scoreHtml = `<span class="cve-popup-score ${sev}">CVSS ${score}</span>`;
+    if (cached.description) {
+      descHtml = `<div class="cve-popup-desc">${escapeHtml(cached.description)}</div>`;
+    }
+  }
+
+  popup.innerHTML = `
+    <div class="cve-popup-header">
+      <span class="cve-popup-id">${escapeHtml(cveId)}</span>
+      ${scoreHtml}
+      <button class="cve-popup-close" onclick="closeCvePopup()">✕</button>
+    </div>
+    ${descHtml || '<div class="cve-popup-loading">Loading description from NVD...</div>'}
+    <div class="cve-popup-links">
+      <a href="https://nvd.nist.gov/vuln/detail/${encodeURIComponent(cveId)}" target="_blank" rel="noopener">NVD</a>
+      <a href="https://www.cvedetails.com/cve/${encodeURIComponent(cveId)}/" target="_blank" rel="noopener">CVE Details</a>
+      <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=${encodeURIComponent(cveId)}" target="_blank" rel="noopener">MITRE</a>
+    </div>
+  `;
+
+  popup.classList.add('visible');
+
+  // Fetch from NVD if no description yet
+  if (!descHtml) {
+    fetchCveDescription(cveId, popup);
+  }
+}
+
+async function fetchCveDescription(cveId, popup) {
+  try {
+    const resp = await fetch(`https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${encodeURIComponent(cveId.toUpperCase())}`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    const vuln = data.vulnerabilities?.[0]?.cve;
+    if (!vuln) return;
+
+    const desc = vuln.descriptions?.find(d => d.lang === 'en')?.value || '';
+    const metrics = vuln.metrics?.cvssMetricV31?.[0] || vuln.metrics?.cvssMetricV30?.[0] || vuln.metrics?.cvssMetricV2?.[0];
+    const score = metrics?.cvssData?.baseScore;
+    const severity = metrics?.cvssData?.baseSeverity?.toLowerCase() || (score >= 9 ? 'critical' : score >= 7 ? 'high' : score >= 4 ? 'medium' : 'low');
+
+    // Cache it
+    _cveDescCache[cveId] = { score, severity, description: desc };
+
+    // Update popup if still visible
+    if (popup.classList.contains('visible')) {
+      const scoreHtml = score ? `<span class="cve-popup-score ${severity}">CVSS ${score}</span>` : '';
+      popup.querySelector('.cve-popup-id').insertAdjacentHTML('afterend', scoreHtml);
+      const loading = popup.querySelector('.cve-popup-loading');
+      if (loading) {
+        loading.outerHTML = desc
+          ? `<div class="cve-popup-desc">${escapeHtml(desc)}</div>`
+          : `<div class="cve-popup-desc" style="color:var(--text-muted)">No description available.</div>`;
+      }
+    }
+  } catch (e) {
+    const loading = popup?.querySelector('.cve-popup-loading');
+    if (loading) loading.textContent = 'Could not fetch CVE details.';
+  }
+}
+
+function closeCvePopup() {
+  const popup = document.getElementById('cvePopup');
+  if (popup) popup.classList.remove('visible');
+}
+
+// Close popup when clicking outside
+document.addEventListener('click', (e) => {
+  const popup = document.getElementById('cvePopup');
+  if (popup?.classList.contains('visible') && !popup.contains(e.target) && !e.target.classList.contains('cve-clickable')) {
+    closeCvePopup();
+  }
+});
+
+let _lastOpenedContractor = null;
+
+
 function buildHostIntelSection(c) {
   const sip = (c.osint || {}).shodan_ip;
   if (!sip || !sip.queried || !sip.hosts || sip.hosts.length === 0) {
@@ -3156,7 +3375,7 @@ function buildHostIntelSection(c) {
       html += `<div style="margin-top:3px">
         <span class="data-label">CVEs (${hvulns.length})</span>
         <div class="port-badges" style="margin-top:2px">
-          ${hvulns.slice(0, 8).map(v => `<span class="port-badge risky" style="font-size:8px">${v}</span>`).join('')}
+          ${hvulns.slice(0, 8).map(v => `<span class="port-badge risky cve-clickable" style="font-size:8px" onclick="showCvePopup('${v}',event)">${v}</span>`).join('')}
           ${hvulns.length > 8 ? `<span class="port-badge" style="font-size:8px">+${hvulns.length - 8} more</span>` : ''}
         </div>
       </div>`;
@@ -3246,7 +3465,7 @@ function buildShodanSection(c) {
           const severity = getCVESeverity(v.cve, c);
           const cvssData = getCVSSScore(v.cve, c);
           const scoreTag = cvssData ? ` <span style="opacity:0.7;font-size:9px">(${cvssData.base_score.toFixed(1)})</span>` : '';
-          return `<span class="vuln-badge ${severity}">${v.cve}${scoreTag}<span class="vuln-count">\u00d7${v.count}</span></span>`;
+          return `<span class="vuln-badge ${severity} cve-clickable" onclick="showCvePopup('${v.cve}',event)">${v.cve}${scoreTag}<span class="vuln-count">\u00d7${v.count}</span></span>`;
         }).join('')}
       </div>
     </div>`;
