@@ -2666,7 +2666,10 @@ function buildPanelBody(c) {
   // ── OSINT Intelligence (all layers) ──
   html += buildOSINTSection(c);
 
-  // ── Shodan Intelligence (legacy) ──
+  // ── Per-IP Host Intelligence (Shodan IP) ──
+  html += buildHostIntelSection(c);
+
+  // ── Shodan Intelligence (legacy org-name search) ──
   html += buildShodanSection(c);
 
   // ── Co-located Contractors ──
@@ -3044,6 +3047,128 @@ function buildOSINTSection(c) {
   html += '</div>';
   return html;
 }
+
+function buildHostIntelSection(c) {
+  const sip = (c.osint || {}).shodan_ip;
+  if (!sip || !sip.queried || !sip.hosts || sip.hosts.length === 0) {
+    return '';  // No per-IP data — don't show empty section
+  }
+
+  const agg = sip.aggregate || {};
+  const critFindings = agg.critical_findings || [];
+  const sslIssues = agg.ssl_issues || [];
+  const totalVulns = agg.total_vulns || 0;
+  const hosts = sip.hosts;
+
+  let html = '<div class="panel-section">';
+  html += `<div class="section-title">Host Intelligence (${hosts.length} hosts)</div>`;
+
+  // Aggregate banner — critical findings + stats
+  if (critFindings.length > 0 || totalVulns > 0) {
+    html += `<div class="shodan-exposure" style="border-left-color:#ff1744">
+      <div class="exposure-icon">\u26a0</div>
+      <div class="exposure-detail">
+        <div class="exposure-count">${hosts.length}</div>
+        <div class="exposure-label">Hosts Scanned</div>
+      </div>
+      <div class="exposure-detail" style="text-align:center">
+        <div class="exposure-count" style="color:#ff1744">${critFindings.length}</div>
+        <div class="exposure-label">Critical</div>
+      </div>
+      <div class="exposure-detail" style="text-align:right">
+        <div class="exposure-count" style="color:#ffd740">${totalVulns}</div>
+        <div class="exposure-label">CVEs</div>
+      </div>
+    </div>`;
+  }
+
+  // Critical findings callout
+  if (critFindings.length > 0) {
+    html += '<div style="margin-bottom:10px">';
+    html += '<span class="data-label" style="color:#ff1744">Critical Exposures</span>';
+    html += '<div style="margin-top:4px">';
+    for (const cf of critFindings) {
+      html += `<div class="vuln-badge critical" style="margin-bottom:3px;display:flex">
+        <span>${cf.ip}:${cf.port}</span>
+        <span style="margin-left:auto;font-weight:700">${cf.service}</span>
+        ${cf.product ? `<span class="vuln-count">${cf.product}</span>` : ''}
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+
+  // SSL issues
+  if (sslIssues.length > 0) {
+    html += '<div style="margin-bottom:10px">';
+    html += '<span class="data-label" style="color:#ff9100">SSL Issues</span>';
+    html += '<div style="margin-top:4px">';
+    for (const si of sslIssues) {
+      html += `<div class="vuln-badge high" style="margin-bottom:3px">
+        <span>${si.ip}:${si.port}</span>
+        <span style="margin-left:6px">${si.issue === 'expired' ? 'EXPIRED' : si.issue}</span>
+        <span class="vuln-count">${si.subject}</span>
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+
+  // Per-host cards
+  for (const host of hosts) {
+    const svcs = host.services || [];
+    const hvulns = host.vulns || [];
+    const hostnames = (host.hostnames || []).join(', ');
+
+    html += `<div class="host-card" style="margin-bottom:6px;border-left-color:${hvulns.length > 5 ? '#ff1744' : hvulns.length > 0 ? '#ff9100' : 'rgba(0,229,255,0.15)'}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span class="host-ip">${host.ip}</span>
+        ${host.org ? `<span class="host-meta">${host.org}</span>` : ''}
+        ${host.os ? `<span class="ip-badge on-prem" style="background:rgba(124,77,255,0.1);border-color:rgba(124,77,255,0.2);color:#b388ff">${host.os}</span>` : ''}
+      </div>`;
+
+    if (hostnames) {
+      html += `<div class="host-meta" style="margin-bottom:4px">${hostnames}</div>`;
+    }
+
+    // Services table
+    if (svcs.length > 0) {
+      html += '<div style="display:flex;flex-direction:column;gap:2px;margin:4px 0">';
+      for (const svc of svcs.slice(0, 10)) {
+        const product = [svc.product, svc.version].filter(Boolean).join(' ');
+        const httpTitle = svc.http_title ? ` [${svc.http_title.substring(0, 35)}]` : '';
+        const sslInfo = svc.ssl_expired ? ' <span style="color:#ff1744">SSL EXPIRED</span>' :
+                        svc.ssl_subject ? ` <span style="color:var(--text-muted)">SSL:${svc.ssl_subject.substring(0, 25)}</span>` : '';
+
+        const isRisky = [21, 23, 445, 1433, 3306, 3389, 5432, 5900, 6379, 9200, 11211, 27017].includes(svc.port);
+
+        html += `<div class="service-row" style="${isRisky ? 'background:rgba(255,23,68,0.05);border-left:2px solid #ff1744' : ''}">
+          <span class="port-badge${isRisky ? ' risky' : ''}" style="min-width:45px;text-align:center">${svc.port}/${svc.transport}</span>
+          <span style="flex:1;font-size:10px;color:var(--text-primary)">${product}${httpTitle}${sslInfo}</span>
+        </div>`;
+      }
+      if (svcs.length > 10) {
+        html += `<div style="font-size:9px;color:var(--text-muted);padding:2px 8px">+ ${svcs.length - 10} more services</div>`;
+      }
+      html += '</div>';
+    }
+
+    // Vulns summary
+    if (hvulns.length > 0) {
+      html += `<div style="margin-top:3px">
+        <span class="data-label">CVEs (${hvulns.length})</span>
+        <div class="port-badges" style="margin-top:2px">
+          ${hvulns.slice(0, 8).map(v => `<span class="port-badge risky" style="font-size:8px">${v}</span>`).join('')}
+          ${hvulns.length > 8 ? `<span class="port-badge" style="font-size:8px">+${hvulns.length - 8} more</span>` : ''}
+        </div>
+      </div>`;
+    }
+
+    html += '</div>';  // Close host-card
+  }
+
+  html += '</div>';  // Close panel-section
+  return html;
+}
+
 
 function buildShodanSection(c) {
   const s = c.shodan;
