@@ -177,6 +177,9 @@ def assemble_contractor_intel(contractor: dict) -> dict:
             "top_cves": top_cves,
         })
 
+    # Collect all on-prem IPs for explicit listing in prompt
+    onprem_ips = onprem.get("on_prem_ips", [])
+
     return {
         "name": contractor.get("name", ""),
         "city": contractor.get("city", ""),
@@ -189,6 +192,7 @@ def assemble_contractor_intel(contractor: dict) -> dict:
         "services_count": len(all_services),
         "vulns_count": len(all_vulns),
         "onprem_count": onprem_count,
+        "onprem_ips": onprem_ips[:50],  # Explicit IP list for prompt
         "dmarc": dmarc,
         "web_score": web_score,
         "os_list": sorted(os_list),
@@ -209,9 +213,10 @@ RULES:
 1. ONLY use facts from the provided INTEL data. Never invent services, ports, IPs, or CVEs.
 2. Each step must reference a specific MITRE ATT&CK tactic and technique ID.
 3. Chain steps logically — each step should enable or lead to the next.
-4. Include specific IPs, ports, products, and CVE numbers when available.
+4. ALWAYS include specific IP addresses and port numbers. Use the ON-PREM IPs and EXPOSED SERVICES lists. NEVER say "undisclosed IP" or "unknown address" — always cite a real IP from the data.
 5. Be concrete: "Exploit CVE-2023-44487 on nginx at 203.161.63.192:443" not "exploit a vulnerability."
 6. Output valid JSON matching the schema below.
+7. In the "evidence" field, always include the specific IP:port combination.
 
 OUTPUT JSON SCHEMA:
 {
@@ -271,19 +276,21 @@ Domain: {intel['domain']}
 Federal Obligation: ${intel['obligation']:,.0f}
 DMARC Policy: {intel['dmarc'] or 'not_set'}
 Web Security Score: {intel['web_score']}/100
-On-Premises IPs: {intel['onprem_count']}
 Total Services Exposed: {intel['services_count']}
 Total CVEs: {intel['vulns_count']}
 SSL Issues: {intel['ssl_issues_count']} expired cert(s)
 OS Detected: {', '.join(intel['os_list']) or 'unknown'}
 
+ON-PREM IP ADDRESSES (use these exact IPs in your kill chain steps):
+{chr(10).join('  ' + ip for ip in intel.get('onprem_ips', [])) or '  none identified'}
+
 ATTACK VECTORS IDENTIFIED:
 {vector_text}
-EXPOSED SERVICES:
+EXPOSED SERVICES (IP:port/protocol product):
 {svc_text}
 TOP CVEs: {', '.join(intel.get('all_vulns', [])[:10]) or 'none identified'}
 
-Generate a detailed kill chain with 4-8 steps. Be specific to THIS contractor's actual infrastructure."""
+Generate a detailed kill chain with 4-8 steps. ALWAYS reference specific IP addresses from the ON-PREM IPs or EXPOSED SERVICES lists above. Never use generic phrases like "undisclosed IP" — cite the real IP."""
 
     return [
         {"role": "system", "content": KILL_CHAIN_SYSTEM_PROMPT},
