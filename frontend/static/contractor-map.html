@@ -2172,12 +2172,24 @@ function computeRiskScore(c) {
   const dns = o.dns || {};
   const web = o.web || {};
   const ct = o.ct || {};
+  const sip = o.shodan_ip || {};
+  const sipAgg = sip.aggregate || {};
 
-  // 1. Internet exposure (0-20 pts)
-  if (s.total_hosts > 0) {
-    const hostScore = Math.min(s.total_hosts / 50, 1) * 20;
+  // 1. Internet exposure (0-20 pts) — prefer per-IP data over legacy org search
+  const exposedHosts = sip.ips_enriched || s.total_hosts || 0;
+  if (exposedHosts > 0) {
+    const hostScore = Math.min(exposedHosts / 20, 1) * 20;
     score += hostScore;
-    if (s.total_hosts > 10) factors.push({ text: `${s.total_hosts} exposed hosts`, level: 'bad' });
+    if (exposedHosts > 5) factors.push({ text: `${exposedHosts} exposed hosts`, level: 'bad' });
+    else if (exposedHosts > 0) factors.push({ text: `${exposedHosts} exposed host(s)`, level: 'warn' });
+  }
+
+  // 1b. Critical service exposures from per-IP data (0-15 pts bonus)
+  const critFindings = sipAgg.critical_findings || [];
+  if (critFindings.length > 0) {
+    score += Math.min(critFindings.length * 5, 15);
+    const svcNames = [...new Set(critFindings.map(f => f.service))].join(', ');
+    factors.push({ text: `${critFindings.length} critical exposures (${svcNames})`, level: 'bad' });
   }
 
   // 2. Vulnerabilities (0-30 pts) — use CVSS data if available
@@ -2382,23 +2394,31 @@ function populateThreatDashboard() {
     const o = c.osint || {};
     const dns = o.dns || {};
     const web = o.web || {};
+    const sip = o.shodan_ip || {};
+    const sipAgg = sip.aggregate || {};
 
-    // Exposed hosts — count contractors, not sum hosts (avoids Shodan false-positive inflation)
-    if ((s.total_hosts || 0) > 0) totalHosts++;
+    // Exposed hosts — prefer per-IP Shodan data over legacy org search
+    if ((sip.ips_enriched || 0) > 0 || (s.total_hosts || 0) > 0) totalHosts++;
 
-    // CVEs
-    if ((s.vulns || []).length > 0) contractorsWithCVEs++;
+    // CVEs — combine legacy + per-IP
+    const legacyVulns = (s.vulns || []).length;
+    const sipVulns = sipAgg.total_vulns || 0;
+    if (legacyVulns > 0 || sipVulns > 0) contractorsWithCVEs++;
 
     // DMARC
     const dmarc = dns.dmarc_policy;
     if (dns.queried && (!dmarc || dmarc === 'not_set' || dmarc === 'none')) noDMARC++;
 
-    // Risky ports
-    if ((s.top_ports || []).some(p => RISKY_PORTS.has(p.port))) riskyPortContractors++;
+    // Risky ports — check both legacy and per-IP
+    const legacyRisky = (s.top_ports || []).some(p => RISKY_PORTS.has(p.port));
+    const sipRisky = (sipAgg.critical_findings || []).length > 0;
+    if (legacyRisky || sipRisky) riskyPortContractors++;
 
-    // Weak SSL
+    // Weak SSL — check both legacy and per-IP
     const hosts = s.sample_hosts || [];
-    if (hosts.some(h => h.ssl_expires && new Date(h.ssl_expires) < new Date())) weakSSL++;
+    const legacyExpiredSSL = hosts.some(h => h.ssl_expires && new Date(h.ssl_expires) < new Date());
+    const sipExpiredSSL = (sipAgg.ssl_issues || []).length > 0;
+    if (legacyExpiredSSL || sipExpiredSSL) weakSSL++;
 
     // No security headers
     if (web.queried && typeof web.security_score === 'number' && web.security_score < 30) noSecHeaders++;
@@ -3748,12 +3768,17 @@ function buildShodanSection(c) {
     </div>`;
   }
 
-  // Queried but no results
+  // Queried but no results from legacy org search
   if (s.total_hosts === 0) {
+    // Check if per-IP Shodan data exists (Host Intelligence section handles that)
+    const hasSipData = (c.osint || {}).shodan_ip && (c.osint.shodan_ip.ips_enriched || 0) > 0;
+    if (hasSipData) {
+      return '';  // Don't show misleading "no hosts" — Host Intelligence section has the data
+    }
     return `
     <div class="panel-section">
       <div class="section-title">Shodan Intelligence</div>
-      <div class="shodan-empty">No internet-facing hosts found for this organization.</div>
+      <div class="shodan-empty">No hosts found via org-name search. Per-IP scanning may reveal more.</div>
     </div>`;
   }
 
