@@ -103,6 +103,53 @@ async def contractors():
     return FileResponse(BASE / "frontend" / "static" / "contractors.json")
 
 
+class KillChainRequest(BaseModel):
+    contractor_index: int
+
+
+@app.post("/api/kill-chain")
+async def kill_chain_endpoint(req: KillChainRequest):
+    """Generate a MITRE ATT&CK kill chain for a specific contractor."""
+    import json as _json
+    from backend.kill_chain import assemble_contractor_intel, generate_kill_chain
+
+    # Load contractor data
+    with open(BASE / "frontend" / "static" / "contractors.json") as f:
+        data = _json.load(f)
+
+    contractors = data.get("contractors", [])
+    if req.contractor_index < 0 or req.contractor_index >= len(contractors):
+        return JSONResponse({"error": "Invalid contractor index"}, status_code=400)
+
+    contractor = contractors[req.contractor_index]
+    intel = assemble_contractor_intel(contractor)
+
+    if hermes.is_available():
+        result = await generate_kill_chain(hermes, intel)
+    else:
+        # Fallback: generate a basic kill chain from vectors alone (no LLM)
+        steps = []
+        for i, v in enumerate(intel["vectors"][:8], 1):
+            steps.append({
+                "step": i,
+                "tactic": v.get("tactic", ""),
+                "technique_id": v.get("technique", ""),
+                "technique_name": v.get("name", ""),
+                "description": v.get("detail", ""),
+                "evidence": v.get("evidence", f"Port {v.get('port', '')} {v.get('product', '')}".strip()),
+                "impact": "Enables further attack progression",
+            })
+        result = {
+            "summary": f"{intel['name']} has {len(intel['vectors'])} identified attack vectors.",
+            "risk_level": "critical" if len(intel["vectors"]) > 5 else "high" if len(intel["vectors"]) > 2 else "medium",
+            "steps": steps,
+            "remediation": [{"priority": 1, "action": "Address critical exposures first", "impact": "Reduces attack surface"}],
+            "note": "Generated without AI reasoning — Hermes 405B not available",
+        }
+
+    return JSONResponse(result)
+
+
 @app.post("/api/atlas-chat")
 async def atlas_chat(req: AtlasChatRequest):
     # Inject live data context into system prompt
