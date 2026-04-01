@@ -2909,6 +2909,9 @@ function buildPanelBody(c) {
   // ── Shodan Intelligence (legacy org-name search) ──
   html += buildShodanSection(c);
 
+  // ── Cross-Contractor Correlation ──
+  html += buildCorrelationSection(c);
+
   // ── Co-located Contractors ──
   html += buildColocationSection(c);
 
@@ -4053,6 +4056,135 @@ function buildNetworkDiagram(c) {
     <div class="section-title">Network Topology</div>
     <div class="net-diagram">${svg}</div>
   </div>`;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// CROSS-CONTRACTOR CORRELATION
+// ═══════════════════════════════════════════════════════════════
+
+// Build correlation index on first use (lazy, cached)
+let _correlationIndex = null;
+
+function buildCorrelationIndex() {
+  if (_correlationIndex) return _correlationIndex;
+  if (!DATA || !DATA.contractors) return null;
+
+  const ipToContractors = {};     // ip -> [{idx, name}]
+  const emailProvToContractors = {}; // provider -> [{idx, name, dmarc}]
+
+  DATA.contractors.forEach((c, idx) => {
+    const osint = c.osint || {};
+    const onprem = osint.onprem_network || {};
+    const dns = osint.dns || {};
+
+    // Map IPs to contractors
+    for (const ip of (onprem.on_prem_ips || [])) {
+      if (!ipToContractors[ip]) ipToContractors[ip] = [];
+      ipToContractors[ip].push({ idx, name: c.name });
+    }
+
+    // Map email providers
+    const provider = dns.mail_provider;
+    if (provider) {
+      if (!emailProvToContractors[provider]) emailProvToContractors[provider] = [];
+      emailProvToContractors[provider].push({
+        idx, name: c.name,
+        dmarc: dns.dmarc_policy || 'not_set',
+      });
+    }
+  });
+
+  // Only keep shared IPs (2+ contractors)
+  const sharedIPs = {};
+  for (const [ip, contractors] of Object.entries(ipToContractors)) {
+    if (contractors.length > 1) sharedIPs[ip] = contractors;
+  }
+
+  _correlationIndex = { sharedIPs, emailProvToContractors };
+  return _correlationIndex;
+}
+
+function buildCorrelationSection(c) {
+  const index = buildCorrelationIndex();
+  if (!index) return '';
+
+  const osint = c.osint || {};
+  const onprem = osint.onprem_network || {};
+  const dns = osint.dns || {};
+  const myIPs = onprem.on_prem_ips || [];
+  const myProvider = dns.mail_provider || '';
+  const myIdx = DATA.contractors.indexOf(c);
+
+  const findings = [];
+
+  // 1. Shared IPs (supply chain risk)
+  const sharedIPFindings = [];
+  for (const ip of myIPs) {
+    const shared = index.sharedIPs[ip];
+    if (shared) {
+      const others = shared.filter(s => s.idx !== myIdx);
+      if (others.length > 0) {
+        sharedIPFindings.push({ ip, others });
+      }
+    }
+  }
+
+  // 2. Same email provider, both lacking DMARC
+  const emailFindings = [];
+  if (myProvider && (dns.dmarc_policy === 'not_set' || dns.dmarc_policy === 'none')) {
+    const sameProvider = (index.emailProvToContractors[myProvider] || [])
+      .filter(e => e.idx !== myIdx && (e.dmarc === 'not_set' || e.dmarc === 'none'));
+    if (sameProvider.length > 0) {
+      emailFindings.push({
+        provider: myProvider,
+        count: sameProvider.length,
+        sample: sameProvider.slice(0, 5),
+      });
+    }
+  }
+
+  if (sharedIPFindings.length === 0 && emailFindings.length === 0) return '';
+
+  let html = '<div class="panel-section">';
+  html += '<div class="section-title" style="color:rgba(255,171,0,0.5)">Supply Chain Correlations</div>';
+
+  // Shared IPs
+  if (sharedIPFindings.length > 0) {
+    html += '<div style="margin-bottom:8px"><span class="data-label" style="color:#ffab00">Shared Infrastructure</span>';
+    for (const f of sharedIPFindings.slice(0, 5)) {
+      html += `<div class="host-card" style="border-left-color:#ffab00;margin-top:4px">
+        <span class="host-ip">${escapeHtml(f.ip)}</span>
+        <span style="font-size:9px;color:var(--text-muted);margin-left:8px">shared with ${f.others.length} contractor(s)</span>
+        <div style="margin-top:3px">`;
+      for (const o of f.others.slice(0, 3)) {
+        html += `<span class="coloc-item" style="display:inline-flex;padding:2px 6px;margin:2px;font-size:9px;cursor:pointer;border-left-color:#ffab00" onclick="openDetailPanel(${o.idx})">${escapeHtml(o.name.substring(0, 30))}</span>`;
+      }
+      html += '</div></div>';
+    }
+    html += '</div>';
+  }
+
+  // Email provider correlation
+  if (emailFindings.length > 0) {
+    for (const f of emailFindings) {
+      html += `<div style="margin-bottom:8px">
+        <span class="data-label" style="color:#ffab00">Phishing Campaign Risk</span>
+        <div class="kc-summary" style="border-left-color:#ffab00;margin-top:4px;font-size:10px">
+          <strong>${f.count}</strong> other contractors use <strong>${escapeHtml(f.provider)}</strong>
+          and also lack DMARC protection. A single spearphishing campaign could target all of them.
+        </div>`;
+      html += '<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">';
+      for (const s of f.sample) {
+        html += `<span class="tag" style="cursor:pointer;border-color:rgba(255,171,0,0.15)" onclick="openDetailPanel(${s.idx})">${escapeHtml(s.name.substring(0, 25))}</span>`;
+      }
+      if (f.count > 5) html += `<span class="tag" style="color:var(--text-muted)">+${f.count - 5} more</span>`;
+      html += '</div></div>';
+    }
+  }
+
+  html += '</div>';
+  return html;
 }
 
 
