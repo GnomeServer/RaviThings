@@ -57,8 +57,7 @@
 
   .leaflet-container { background: var(--bg-primary) !important; }
 
-  /* Dark tactical map tiles */
-  .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) saturate(0.15) brightness(0.55) contrast(1.5); }
+  /* Native dark tiles — no filter needed (CartoDB Dark Matter) */
   .leaflet-control-zoom a {
     background: rgba(6,10,18,0.9) !important;
     color: var(--accent-cyan) !important;
@@ -2310,12 +2309,11 @@ async function init() {
     attributionControl: true,
   });
 
-  // OSM tiles — inverted to dark via CSS filter on .leaflet-tile-pane
-  // Full street/building/POI detail at every zoom level
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19,
-    maxNativeZoom: 19,
+  // CartoDB Dark Matter — native dark tiles with crisp labels, no CSS filter
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20,
   }).addTo(map);
 
   // Load data
