@@ -3302,6 +3302,15 @@ async function generateKillChain() {
     return;
   }
 
+  // Disable the button and show active state
+  const btn = document.getElementById('killChainBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+    btn.style.background = 'rgba(255,23,68,0.15)';
+    btn.style.animation = 'threatPulse 1.5s ease-in-out infinite';
+  }
+
   // Add loading indicator at top of panel body
   const loadingDiv = document.createElement('div');
   loadingDiv.className = 'kill-chain-container';
@@ -3309,11 +3318,13 @@ async function generateKillChain() {
     <div class="section-title" style="color:#ff1744">Kill Chain Analysis</div>
     <div class="kc-loading">
       <div class="spinner"></div>
-      <span>Generating MITRE ATT&CK kill chain via Hermes 405B...</span>
+      <span>Analyzing attack surface via Hermes 405B... This may take 15-30 seconds.</span>
     </div>
   `;
   body.insertBefore(loadingDiv, body.firstChild);
-  loadingDiv.scrollIntoView({ behavior: 'smooth' });
+
+  // Scroll panel to top to show the loading indicator
+  document.getElementById('detailPanel').scrollTop = 0;
 
   try {
     const resp = await fetch('/api/kill-chain', {
@@ -3333,6 +3344,15 @@ async function generateKillChain() {
         Failed to generate kill chain: ${escapeHtml(e.message)}
       </div>
     `;
+  } finally {
+    // Restore button state
+    const btn = document.getElementById('killChainBtn');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Kill Chain';
+      btn.style.background = 'rgba(255,23,68,0.05)';
+      btn.style.animation = '';
+    }
   }
 }
 
@@ -3387,7 +3407,8 @@ async function generateBriefing() {
   const c = DATA.contractors[selectedContractor];
   if (!c) return;
 
-  const risk = computeRiskScore(c);
+  const riskData = computeRiskScore(c);
+  const risk = riskData.score;
   const osint = c.osint || {};
   const dns = osint.dns || {};
   const sip = osint.shodan_ip || {};
@@ -4719,7 +4740,8 @@ async function sendAtlasChat() {
       const sip = o.shodan_ip || {};
       const nvd = o.nvd_cvss || {};
       const onp = o.onprem_network || {};
-      const risk = computeRiskScore(c);
+      const riskObj = computeRiskScore(c);
+      const risk = riskObj.score;
       const crit = (sip.aggregate || {}).critical_findings || [];
       const critStr = crit.slice(0, 5).map(f => `${f.service}:${f.port}`).join(', ');
       const hosts = (sip.hosts || []).slice(0, 3).map(h =>
@@ -4744,7 +4766,7 @@ async function sendAtlasChat() {
     }
 
     // 2. Top 30 by risk score
-    const scored = DATA.contractors.map((c, i) => ({ c, i, risk: computeRiskScore(c) }))
+    const scored = DATA.contractors.map((c, i) => ({ c, i, risk: computeRiskScore(c).score }))
       .sort((a, b) => b.risk - a.risk);
     const top30 = scored.slice(0, 30).map(({c, i}) => summarizeContractor(c, i));
 
