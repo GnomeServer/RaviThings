@@ -57,8 +57,7 @@
 
   .leaflet-container { background: var(--bg-primary) !important; }
 
-  /* Dark tactical map tiles */
-  .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) saturate(0.15) brightness(0.55) contrast(1.5); }
+  /* Native dark tiles — no filter needed (CartoDB Dark Matter) */
   .leaflet-control-zoom a {
     background: rgba(6,10,18,0.9) !important;
     color: var(--accent-cyan) !important;
@@ -1745,6 +1744,132 @@
     text-decoration: underline;
   }
 
+  /* ─── KILL CHAIN DISPLAY ─── */
+  .kill-chain-container {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  .kc-summary {
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    padding: 8px 10px;
+    background: rgba(0,0,0,0.15);
+    border-radius: var(--hud-radius);
+    border-left: 3px solid #ff1744;
+    margin-bottom: 12px;
+  }
+
+  .kc-step {
+    position: relative;
+    padding: 8px 10px 8px 36px;
+    margin-bottom: 6px;
+    background: rgba(0,0,0,0.1);
+    border-radius: var(--hud-radius);
+    border-left: 2px solid rgba(255,23,68,0.2);
+  }
+
+  .kc-step:hover {
+    background: rgba(255,23,68,0.03);
+    border-left-color: #ff1744;
+  }
+
+  .kc-step-num {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255,23,68,0.12);
+    border: 1px solid rgba(255,23,68,0.25);
+    color: #ff1744;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .kc-step-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+  }
+
+  .kc-tactic {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #ff1744;
+    padding: 1px 5px;
+    border-radius: var(--hud-radius);
+    background: rgba(255,23,68,0.08);
+    border: 1px solid rgba(255,23,68,0.15);
+  }
+
+  .kc-technique {
+    font-size: 8px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+  }
+
+  .kc-desc {
+    font-size: 11px;
+    color: var(--text-primary);
+    line-height: 1.4;
+    margin-bottom: 2px;
+  }
+
+  .kc-evidence {
+    font-size: 9px;
+    color: rgba(0,229,255,0.6);
+    font-style: italic;
+  }
+
+  .kc-remediation {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: rgba(0,230,118,0.03);
+    border: 1px solid rgba(0,230,118,0.08);
+    border-radius: var(--hud-radius);
+  }
+
+  .kc-remediation-item {
+    display: flex;
+    gap: 8px;
+    padding: 3px 0;
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+
+  .kc-priority {
+    font-weight: 700;
+    color: #00e676;
+    min-width: 16px;
+  }
+
+  .kc-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+
+  .kc-loading .spinner {
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgba(255,23,68,0.15);
+    border-top-color: #ff1744;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
   /* ─── RESPONSIVE ─── */
   @media (max-width: 768px) {
     #detailPanel { width: 100%; right: -100%; }
@@ -1865,7 +1990,11 @@
     <div id="panelName" class="panel-contractor-name"></div>
     <div id="panelDba" class="panel-dba"></div>
     <div id="panelParent" class="panel-parent"></div>
-    <button id="viewNetworkBtn" onclick="openNetGraph()" style="margin-top:8px;padding:4px 10px;background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.15);border-radius:2px;color:var(--accent-cyan);cursor:pointer;font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;display:none;transition:all 0.2s">View Network Map</button>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <button id="viewNetworkBtn" onclick="openNetGraph()" style="padding:4px 10px;background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.15);border-radius:2px;color:var(--accent-cyan);cursor:pointer;font-size:10px;letter-spacing:1px;text-transform:uppercase;display:none;transition:all 0.2s">Network Map</button>
+      <button id="killChainBtn" onclick="generateKillChain()" style="padding:4px 10px;background:rgba(255,23,68,0.05);border:1px solid rgba(255,23,68,0.15);border-radius:2px;color:#ff1744;cursor:pointer;font-size:10px;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s">Kill Chain</button>
+      <button id="briefingBtn" onclick="generateBriefing()" style="padding:4px 10px;background:rgba(255,171,0,0.05);border:1px solid rgba(255,171,0,0.15);border-radius:2px;color:#ffab00;cursor:pointer;font-size:10px;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s">Briefing</button>
+    </div>
   </div>
   <div class="panel-body" id="panelBody"></div>
 </div>
@@ -2043,12 +2172,24 @@ function computeRiskScore(c) {
   const dns = o.dns || {};
   const web = o.web || {};
   const ct = o.ct || {};
+  const sip = o.shodan_ip || {};
+  const sipAgg = sip.aggregate || {};
 
-  // 1. Internet exposure (0-20 pts)
-  if (s.total_hosts > 0) {
-    const hostScore = Math.min(s.total_hosts / 50, 1) * 20;
+  // 1. Internet exposure (0-20 pts) — prefer per-IP data over legacy org search
+  const exposedHosts = sip.ips_enriched || s.total_hosts || 0;
+  if (exposedHosts > 0) {
+    const hostScore = Math.min(exposedHosts / 20, 1) * 20;
     score += hostScore;
-    if (s.total_hosts > 10) factors.push({ text: `${s.total_hosts} exposed hosts`, level: 'bad' });
+    if (exposedHosts > 5) factors.push({ text: `${exposedHosts} exposed hosts`, level: 'bad' });
+    else if (exposedHosts > 0) factors.push({ text: `${exposedHosts} exposed host(s)`, level: 'warn' });
+  }
+
+  // 1b. Critical service exposures from per-IP data (0-15 pts bonus)
+  const critFindings = sipAgg.critical_findings || [];
+  if (critFindings.length > 0) {
+    score += Math.min(critFindings.length * 5, 15);
+    const svcNames = [...new Set(critFindings.map(f => f.service))].join(', ');
+    factors.push({ text: `${critFindings.length} critical exposures (${svcNames})`, level: 'bad' });
   }
 
   // 2. Vulnerabilities (0-30 pts) — use CVSS data if available
@@ -2180,12 +2321,11 @@ async function init() {
     attributionControl: true,
   });
 
-  // OSM tiles — inverted to dark via CSS filter on .leaflet-tile-pane
-  // Full street/building/POI detail at every zoom level
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19,
-    maxNativeZoom: 19,
+  // CartoDB Dark Matter — native dark tiles with crisp labels, no CSS filter
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20,
   }).addTo(map);
 
   // Load data
@@ -2254,23 +2394,31 @@ function populateThreatDashboard() {
     const o = c.osint || {};
     const dns = o.dns || {};
     const web = o.web || {};
+    const sip = o.shodan_ip || {};
+    const sipAgg = sip.aggregate || {};
 
-    // Exposed hosts — count contractors, not sum hosts (avoids Shodan false-positive inflation)
-    if ((s.total_hosts || 0) > 0) totalHosts++;
+    // Exposed hosts — prefer per-IP Shodan data over legacy org search
+    if ((sip.ips_enriched || 0) > 0 || (s.total_hosts || 0) > 0) totalHosts++;
 
-    // CVEs
-    if ((s.vulns || []).length > 0) contractorsWithCVEs++;
+    // CVEs — combine legacy + per-IP
+    const legacyVulns = (s.vulns || []).length;
+    const sipVulns = sipAgg.total_vulns || 0;
+    if (legacyVulns > 0 || sipVulns > 0) contractorsWithCVEs++;
 
     // DMARC
     const dmarc = dns.dmarc_policy;
     if (dns.queried && (!dmarc || dmarc === 'not_set' || dmarc === 'none')) noDMARC++;
 
-    // Risky ports
-    if ((s.top_ports || []).some(p => RISKY_PORTS.has(p.port))) riskyPortContractors++;
+    // Risky ports — check both legacy and per-IP
+    const legacyRisky = (s.top_ports || []).some(p => RISKY_PORTS.has(p.port));
+    const sipRisky = (sipAgg.critical_findings || []).length > 0;
+    if (legacyRisky || sipRisky) riskyPortContractors++;
 
-    // Weak SSL
+    // Weak SSL — check both legacy and per-IP
     const hosts = s.sample_hosts || [];
-    if (hosts.some(h => h.ssl_expires && new Date(h.ssl_expires) < new Date())) weakSSL++;
+    const legacyExpiredSSL = hosts.some(h => h.ssl_expires && new Date(h.ssl_expires) < new Date());
+    const sipExpiredSSL = (sipAgg.ssl_issues || []).length > 0;
+    if (legacyExpiredSSL || sipExpiredSSL) weakSSL++;
 
     // No security headers
     if (web.queried && typeof web.security_score === 'number' && web.security_score < 30) noSecHeaders++;
@@ -2779,6 +2927,9 @@ function buildPanelBody(c) {
   // ── Shodan Intelligence (legacy org-name search) ──
   html += buildShodanSection(c);
 
+  // ── Cross-Contractor Correlation ──
+  html += buildCorrelationSection(c);
+
   // ── Co-located Contractors ──
   html += buildColocationSection(c);
 
@@ -3156,6 +3307,222 @@ function buildOSINTSection(c) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// KILL CHAIN GENERATOR
+// ═══════════════════════════════════════════════════════════════
+
+async function generateKillChain() {
+  if (selectedContractor === null) return;
+  const body = document.getElementById('panelBody');
+
+  // Check if kill chain already rendered
+  if (body.querySelector('.kill-chain-container')) {
+    body.querySelector('.kill-chain-container').scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+
+  // Disable the button and show active state
+  const btn = document.getElementById('killChainBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Generating...';
+    btn.style.background = 'rgba(255,23,68,0.15)';
+    btn.style.animation = 'threatPulse 1.5s ease-in-out infinite';
+  }
+
+  // Add loading indicator at top of panel body
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'kill-chain-container';
+  loadingDiv.innerHTML = `
+    <div class="section-title" style="color:#ff1744">Kill Chain Analysis</div>
+    <div class="kc-loading">
+      <div class="spinner"></div>
+      <span>Analyzing attack surface via Hermes 405B... This may take 15-30 seconds.</span>
+    </div>
+  `;
+  body.insertBefore(loadingDiv, body.firstChild);
+
+  // Scroll panel to top to show the loading indicator
+  document.getElementById('detailPanel').scrollTop = 0;
+
+  try {
+    const resp = await fetch('/api/kill-chain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contractor_index: selectedContractor }),
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    loadingDiv.innerHTML = renderKillChain(data);
+  } catch (e) {
+    loadingDiv.innerHTML = `
+      <div class="section-title" style="color:#ff1744">Kill Chain Analysis</div>
+      <div class="kc-summary" style="border-left-color:var(--text-muted)">
+        Failed to generate kill chain: ${escapeHtml(e.message)}
+      </div>
+    `;
+  } finally {
+    // Restore button state
+    const btn = document.getElementById('killChainBtn');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Kill Chain';
+      btn.style.background = 'rgba(255,23,68,0.05)';
+      btn.style.animation = '';
+    }
+  }
+}
+
+function renderKillChain(data) {
+  const riskColors = { critical: '#ff1744', high: '#ff9100', medium: '#ffd740', low: '#00e676' };
+  const riskColor = riskColors[data.risk_level] || '#ff1744';
+
+  let html = `<div class="section-title" style="color:${riskColor}">Kill Chain Analysis — ${(data.risk_level || '').toUpperCase()}</div>`;
+
+  // Summary
+  if (data.summary) {
+    html += `<div class="kc-summary" style="border-left-color:${riskColor}">${escapeHtml(data.summary)}</div>`;
+  }
+
+  // Steps
+  for (const step of data.steps || []) {
+    html += `
+    <div class="kc-step">
+      <div class="kc-step-num">${step.step}</div>
+      <div class="kc-step-header">
+        <span class="kc-tactic">${escapeHtml(step.tactic)}</span>
+        <span class="kc-technique">${escapeHtml(step.technique_id)} ${escapeHtml(step.technique_name)}</span>
+      </div>
+      <div class="kc-desc">${escapeHtml(step.description)}</div>
+      <div class="kc-evidence">Evidence: ${escapeHtml(step.evidence)}</div>
+    </div>`;
+  }
+
+  // Remediation
+  if (data.remediation && data.remediation.length > 0) {
+    html += `<div class="kc-remediation">
+      <div style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#00e676;margin-bottom:6px">// Remediation Priorities</div>`;
+    for (const r of data.remediation) {
+      html += `<div class="kc-remediation-item">
+        <span class="kc-priority">${r.priority}.</span>
+        <span>${escapeHtml(r.action)}</span>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  return html;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// BRIEFING MODE
+// ═══════════════════════════════════════════════════════════════
+
+async function generateBriefing() {
+  if (selectedContractor === null) return;
+  const c = DATA.contractors[selectedContractor];
+  if (!c) return;
+
+  const riskData = computeRiskScore(c);
+  const risk = riskData.score;
+  const osint = c.osint || {};
+  const dns = osint.dns || {};
+  const sip = osint.shodan_ip || {};
+  const sr = osint.service_risk || {};
+  const nvd = osint.nvd_cvss || {};
+  const onprem = osint.onprem_network || {};
+  const ct = osint.ct || {};
+  const web = osint.web || {};
+  const agg = sip.aggregate || {};
+
+  // Build briefing HTML in full-screen overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'briefingOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(4,8,16,0.98);overflow-y:auto;padding:40px;backdrop-filter:blur(20px)';
+
+  const riskLevel = risk >= 70 ? 'CRITICAL' : risk >= 50 ? 'HIGH' : risk >= 25 ? 'MEDIUM' : 'LOW';
+  const riskColor = risk >= 70 ? '#ff1744' : risk >= 50 ? '#ff9100' : risk >= 25 ? '#ffd740' : '#00e676';
+
+  overlay.innerHTML = `
+  <div style="max-width:800px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <div>
+        <div style="font-size:8px;font-weight:700;letter-spacing:3px;color:rgba(0,229,255,0.3);text-transform:uppercase;margin-bottom:4px">// Classified — DOE Red Team Assessment</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text-primary)">${escapeHtml(c.name)}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${escapeHtml(c.city)}, ${escapeHtml(c.state)} — ${escapeHtml(c.category)}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:36px;font-weight:800;color:${riskColor};text-shadow:0 0 15px ${riskColor}40">${risk}</div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:${riskColor}">${riskLevel} RISK</div>
+      </div>
+    </div>
+
+    <button onclick="this.parentElement.parentElement.remove()" style="position:fixed;top:16px;right:16px;padding:4px 12px;background:rgba(255,23,68,0.08);border:1px solid rgba(255,23,68,0.2);border-radius:2px;color:#ff1744;cursor:pointer;font-size:10px;letter-spacing:1px;text-transform:uppercase;z-index:3001">✕ Close</button>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:24px">
+      <div style="padding:10px;background:rgba(0,0,0,0.2);border-radius:2px;border-left:3px solid ${riskColor}">
+        <div style="font-size:7px;font-weight:700;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase">Federal Obligation</div>
+        <div style="font-size:16px;font-weight:700;color:var(--accent-cyan)">$${(c.obligation/1e6).toFixed(1)}M</div>
+      </div>
+      <div style="padding:10px;background:rgba(0,0,0,0.2);border-radius:2px;border-left:3px solid #ff1744">
+        <div style="font-size:7px;font-weight:700;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase">Exposed Hosts</div>
+        <div style="font-size:16px;font-weight:700;color:#ff1744">${sip.ips_enriched || 0}</div>
+      </div>
+      <div style="padding:10px;background:rgba(0,0,0,0.2);border-radius:2px;border-left:3px solid #ff9100">
+        <div style="font-size:7px;font-weight:700;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase">CVEs Found</div>
+        <div style="font-size:16px;font-weight:700;color:#ff9100">${agg.total_vulns || 0}</div>
+      </div>
+      <div style="padding:10px;background:rgba(0,0,0,0.2);border-radius:2px;border-left:3px solid #ffd740">
+        <div style="font-size:7px;font-weight:700;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase">On-Prem IPs</div>
+        <div style="font-size:16px;font-weight:700;color:#ffd740">${onprem.on_prem_count || 0}</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:8px;font-weight:700;letter-spacing:2px;color:rgba(0,229,255,0.4);text-transform:uppercase;margin-bottom:8px;border-bottom:1px solid rgba(0,229,255,0.06);padding-bottom:6px">// Executive Summary</div>
+      <div style="font-size:12px;line-height:1.6;color:var(--text-secondary)">
+        ${escapeHtml(c.name)} is a ${escapeHtml(c.category)} contractor located in ${escapeHtml(c.city)}, ${escapeHtml(c.state)},
+        with $${(c.obligation/1e6).toFixed(1)}M in federal obligations.
+        The organization presents a <strong style="color:${riskColor}">${riskLevel}</strong> risk profile (score: ${risk}/100)
+        based on ${sip.ips_enriched || 0} exposed hosts, ${agg.total_vulns || 0} known CVEs,
+        DMARC policy of "${dns.dmarc_policy || 'not set'}",
+        and ${(agg.critical_findings || []).length} critical service exposures.
+        ${onprem.on_prem_count ? `The organization has ${onprem.on_prem_count} on-premises IP addresses identified, suggesting self-hosted infrastructure.` : ''}
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:8px;font-weight:700;letter-spacing:2px;color:rgba(255,23,68,0.5);text-transform:uppercase;margin-bottom:8px;border-bottom:1px solid rgba(255,23,68,0.08);padding-bottom:6px">// Critical Findings</div>
+      ${(agg.critical_findings || []).length > 0 ? agg.critical_findings.map(f => `
+        <div style="padding:6px 10px;margin-bottom:4px;background:rgba(255,23,68,0.04);border-left:3px solid #ff1744;border-radius:2px;font-size:11px;color:var(--text-primary)">
+          <strong style="color:#ff1744">${escapeHtml(f.service)}</strong> exposed at ${escapeHtml(f.ip)}:${f.port}
+          ${f.product ? `<span style="color:var(--text-muted)"> (${escapeHtml(f.product)})</span>` : ''}
+        </div>
+      `).join('') : '<div style="font-size:11px;color:var(--text-muted)">No critical service exposures detected.</div>'}
+    </div>
+
+    <div style="margin-bottom:20px">
+      <div style="font-size:8px;font-weight:700;letter-spacing:2px;color:rgba(0,230,118,0.5);text-transform:uppercase;margin-bottom:8px;border-bottom:1px solid rgba(0,230,118,0.06);padding-bottom:6px">// Remediation Priorities</div>
+      <div style="font-size:11px;line-height:1.6;color:var(--text-secondary)">
+        ${dns.dmarc_policy === 'not_set' || dns.dmarc_policy === 'none' ? '<div style="padding:4px 10px;margin-bottom:3px;border-left:3px solid #00e676;background:rgba(0,230,118,0.03);border-radius:2px"><strong style="color:#00e676">1.</strong> Implement DMARC policy (currently: ' + (dns.dmarc_policy || 'not set') + ')</div>' : ''}
+        ${(agg.critical_findings || []).map((f, i) => `<div style="padding:4px 10px;margin-bottom:3px;border-left:3px solid #00e676;background:rgba(0,230,118,0.03);border-radius:2px"><strong style="color:#00e676">${i+2}.</strong> Close exposed ${escapeHtml(f.service)} on port ${f.port}</div>`).join('')}
+        ${(agg.ssl_issues || []).length > 0 ? '<div style="padding:4px 10px;margin-bottom:3px;border-left:3px solid #00e676;background:rgba(0,230,118,0.03);border-radius:2px"><strong style="color:#00e676">*.</strong> Renew ' + agg.ssl_issues.length + ' expired SSL certificate(s)</div>' : ''}
+      </div>
+    </div>
+
+    <div style="margin-top:30px;padding-top:16px;border-top:1px solid rgba(0,229,255,0.06);font-size:8px;color:var(--text-muted);text-align:center;letter-spacing:1px">
+      GENERATED BY OSINT ATLAS // DOE RED TEAM ASSESSMENT TOOL // ${new Date().toISOString().split('T')[0]}
+    </div>
+  </div>
+  `;
+
+  document.body.appendChild(overlay);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
 // CVE POPUP
 // ═══════════════════════════════════════════════════════════════
 
@@ -3401,12 +3768,17 @@ function buildShodanSection(c) {
     </div>`;
   }
 
-  // Queried but no results
+  // Queried but no results from legacy org search
   if (s.total_hosts === 0) {
+    // Check if per-IP Shodan data exists (Host Intelligence section handles that)
+    const hasSipData = (c.osint || {}).shodan_ip && (c.osint.shodan_ip.ips_enriched || 0) > 0;
+    if (hasSipData) {
+      return '';  // Don't show misleading "no hosts" — Host Intelligence section has the data
+    }
     return `
     <div class="panel-section">
       <div class="section-title">Shodan Intelligence</div>
-      <div class="shodan-empty">No internet-facing hosts found for this organization.</div>
+      <div class="shodan-empty">No hosts found via org-name search. Per-IP scanning may reveal more.</div>
     </div>`;
   }
 
@@ -3728,6 +4100,135 @@ function buildNetworkDiagram(c) {
     <div class="section-title">Network Topology</div>
     <div class="net-diagram">${svg}</div>
   </div>`;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// CROSS-CONTRACTOR CORRELATION
+// ═══════════════════════════════════════════════════════════════
+
+// Build correlation index on first use (lazy, cached)
+let _correlationIndex = null;
+
+function buildCorrelationIndex() {
+  if (_correlationIndex) return _correlationIndex;
+  if (!DATA || !DATA.contractors) return null;
+
+  const ipToContractors = {};     // ip -> [{idx, name}]
+  const emailProvToContractors = {}; // provider -> [{idx, name, dmarc}]
+
+  DATA.contractors.forEach((c, idx) => {
+    const osint = c.osint || {};
+    const onprem = osint.onprem_network || {};
+    const dns = osint.dns || {};
+
+    // Map IPs to contractors
+    for (const ip of (onprem.on_prem_ips || [])) {
+      if (!ipToContractors[ip]) ipToContractors[ip] = [];
+      ipToContractors[ip].push({ idx, name: c.name });
+    }
+
+    // Map email providers
+    const provider = dns.mail_provider;
+    if (provider) {
+      if (!emailProvToContractors[provider]) emailProvToContractors[provider] = [];
+      emailProvToContractors[provider].push({
+        idx, name: c.name,
+        dmarc: dns.dmarc_policy || 'not_set',
+      });
+    }
+  });
+
+  // Only keep shared IPs (2+ contractors)
+  const sharedIPs = {};
+  for (const [ip, contractors] of Object.entries(ipToContractors)) {
+    if (contractors.length > 1) sharedIPs[ip] = contractors;
+  }
+
+  _correlationIndex = { sharedIPs, emailProvToContractors };
+  return _correlationIndex;
+}
+
+function buildCorrelationSection(c) {
+  const index = buildCorrelationIndex();
+  if (!index) return '';
+
+  const osint = c.osint || {};
+  const onprem = osint.onprem_network || {};
+  const dns = osint.dns || {};
+  const myIPs = onprem.on_prem_ips || [];
+  const myProvider = dns.mail_provider || '';
+  const myIdx = DATA.contractors.indexOf(c);
+
+  const findings = [];
+
+  // 1. Shared IPs (supply chain risk)
+  const sharedIPFindings = [];
+  for (const ip of myIPs) {
+    const shared = index.sharedIPs[ip];
+    if (shared) {
+      const others = shared.filter(s => s.idx !== myIdx);
+      if (others.length > 0) {
+        sharedIPFindings.push({ ip, others });
+      }
+    }
+  }
+
+  // 2. Same email provider, both lacking DMARC
+  const emailFindings = [];
+  if (myProvider && (dns.dmarc_policy === 'not_set' || dns.dmarc_policy === 'none')) {
+    const sameProvider = (index.emailProvToContractors[myProvider] || [])
+      .filter(e => e.idx !== myIdx && (e.dmarc === 'not_set' || e.dmarc === 'none'));
+    if (sameProvider.length > 0) {
+      emailFindings.push({
+        provider: myProvider,
+        count: sameProvider.length,
+        sample: sameProvider.slice(0, 5),
+      });
+    }
+  }
+
+  if (sharedIPFindings.length === 0 && emailFindings.length === 0) return '';
+
+  let html = '<div class="panel-section">';
+  html += '<div class="section-title" style="color:rgba(255,171,0,0.5)">Supply Chain Correlations</div>';
+
+  // Shared IPs
+  if (sharedIPFindings.length > 0) {
+    html += '<div style="margin-bottom:8px"><span class="data-label" style="color:#ffab00">Shared Infrastructure</span>';
+    for (const f of sharedIPFindings.slice(0, 5)) {
+      html += `<div class="host-card" style="border-left-color:#ffab00;margin-top:4px">
+        <span class="host-ip">${escapeHtml(f.ip)}</span>
+        <span style="font-size:9px;color:var(--text-muted);margin-left:8px">shared with ${f.others.length} contractor(s)</span>
+        <div style="margin-top:3px">`;
+      for (const o of f.others.slice(0, 3)) {
+        html += `<span class="coloc-item" style="display:inline-flex;padding:2px 6px;margin:2px;font-size:9px;cursor:pointer;border-left-color:#ffab00" onclick="openDetailPanel(${o.idx})">${escapeHtml(o.name.substring(0, 30))}</span>`;
+      }
+      html += '</div></div>';
+    }
+    html += '</div>';
+  }
+
+  // Email provider correlation
+  if (emailFindings.length > 0) {
+    for (const f of emailFindings) {
+      html += `<div style="margin-bottom:8px">
+        <span class="data-label" style="color:#ffab00">Phishing Campaign Risk</span>
+        <div class="kc-summary" style="border-left-color:#ffab00;margin-top:4px;font-size:10px">
+          <strong>${f.count}</strong> other contractors use <strong>${escapeHtml(f.provider)}</strong>
+          and also lack DMARC protection. A single spearphishing campaign could target all of them.
+        </div>`;
+      html += '<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">';
+      for (const s of f.sample) {
+        html += `<span class="tag" style="cursor:pointer;border-color:rgba(255,171,0,0.15)" onclick="openDetailPanel(${s.idx})">${escapeHtml(s.name.substring(0, 25))}</span>`;
+      }
+      if (f.count > 5) html += `<span class="tag" style="color:var(--text-muted)">+${f.count - 5} more</span>`;
+      html += '</div></div>';
+    }
+  }
+
+  html += '</div>';
+  return html;
 }
 
 
@@ -4262,7 +4763,8 @@ async function sendAtlasChat() {
       const sip = o.shodan_ip || {};
       const nvd = o.nvd_cvss || {};
       const onp = o.onprem_network || {};
-      const risk = computeRiskScore(c);
+      const riskObj = computeRiskScore(c);
+      const risk = riskObj.score;
       const crit = (sip.aggregate || {}).critical_findings || [];
       const critStr = crit.slice(0, 5).map(f => `${f.service}:${f.port}`).join(', ');
       const hosts = (sip.hosts || []).slice(0, 3).map(h =>
@@ -4287,7 +4789,7 @@ async function sendAtlasChat() {
     }
 
     // 2. Top 30 by risk score
-    const scored = DATA.contractors.map((c, i) => ({ c, i, risk: computeRiskScore(c) }))
+    const scored = DATA.contractors.map((c, i) => ({ c, i, risk: computeRiskScore(c).score }))
       .sort((a, b) => b.risk - a.risk);
     const top30 = scored.slice(0, 30).map(({c, i}) => summarizeContractor(c, i));
 
