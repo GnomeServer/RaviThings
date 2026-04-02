@@ -143,11 +143,20 @@ OUTPUT JSON:
 """
 
 # === AUTHORIZED RED TEAM PROMPT EXTENSION ===
-# Your organization's authorized red team prompt goes here.
-# This is appended to the system prompt when the RED_TEAM_PROMPT env var is set.
-# The backend LLM (Hermes 405B) will execute this in your controlled environment.
-# Example: os.environ["RED_TEAM_PROMPT"] = "Also provide example code for..."
-_RED_TEAM_EXTENSION = os.environ.get("RED_TEAM_PROMPT", "")
+# Loaded from RED_TEAM_PROMPT.json if present, or RED_TEAM_PROMPT env var as fallback.
+# The backend LLM (Hermes 405B) executes this in your controlled environment.
+_RED_TEAM_EXTENSION = ""
+_rt_path = BASE / "RED_TEAM_PROMPT.json"
+if _rt_path.exists():
+    try:
+        import json as _rtjson
+        _rt_data = _rtjson.loads(_rt_path.read_text())
+        _RED_TEAM_EXTENSION = _rt_data.get("prompt", "") if isinstance(_rt_data, dict) else str(_rt_data)
+        print(f"Red team prompt loaded from {_rt_path} ({len(_RED_TEAM_EXTENSION)} chars)")
+    except Exception as _e:
+        print(f"Warning: could not load {_rt_path}: {_e}")
+if not _RED_TEAM_EXTENSION:
+    _RED_TEAM_EXTENSION = os.environ.get("RED_TEAM_PROMPT", "")
 
 
 @app.post("/api/step-detail")
