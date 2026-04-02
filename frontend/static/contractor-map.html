@@ -2886,7 +2886,7 @@ function buildPanelBody(c) {
       missionText += '.';
     }
 
-    if (contracts.length) missionText += ` ${contracts.length} contract${contracts.length > 1 ? 's' : ''}: ${contracts.map(id => escapeHtml(id)).join(', ')}.`;
+    if (contracts.length > 1) missionText += ` ${contracts.length} active contracts.`;
     if (awardType) missionText += ` Award: ${escapeHtml(awardType.toLowerCase())}.`;
     if (pricing) missionText += ` Pricing: ${escapeHtml(pricing.toLowerCase())}.`;
     if (start || end) missionText += ` Period: ${escapeHtml(start || '?')} to ${escapeHtml(end || 'ongoing')}.`;
