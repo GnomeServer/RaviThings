@@ -3900,6 +3900,9 @@ async function summarizeContractorRole() {
 
     if (data.summary) {
       target.innerHTML = escapeHtml(data.summary);
+      if (data.sources > 0) {
+        target.innerHTML += `<div style="margin-top:6px;font-size:8px;color:var(--text-muted);font-style:italic">Synthesized from ${data.sources} web source${data.sources > 1 ? 's' : ''} + contract record</div>`;
+      }
       target.style.color = 'var(--text-secondary)';
     } else {
       target.innerHTML = origText;

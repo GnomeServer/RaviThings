@@ -109,8 +109,9 @@ class KillChainRequest(BaseModel):
 
 @app.post("/api/summarize-role")
 async def summarize_role_endpoint(req: KillChainRequest):
-    """Generate an LLM summary of a contractor's mission based on all available data."""
+    """Generate an enhanced description using web search + LLM synthesis."""
     import json as _json
+    from backend.brave_search import BraveSearchClient
 
     with open(BASE / "frontend" / "static" / "contractors.json") as f:
         data = _json.load(f)
@@ -120,9 +121,42 @@ async def summarize_role_endpoint(req: KillChainRequest):
         return JSONResponse({"error": "Invalid index"}, status_code=400)
 
     c = contractors[req.contractor_index]
+    name = c.get("name", "")
+    contract_ids = c.get("contract_ids", [])
 
-    # Assemble all contract data for the LLM
-    context = f"""Contractor: {c.get('name', '')}
+    # Step 1: Search the web for real articles about this contractor + DOE
+    brave = BraveSearchClient()
+    web_context = ""
+    if brave.is_available():
+        # Search for the company + DOE
+        results1 = await brave.search(f'"{name}" Department of Energy contract', count=5)
+        # Search for specific contract IDs
+        results2 = []
+        for cid in contract_ids[:3]:
+            r = await brave.search(f'"{cid}" DOE contract', count=3)
+            results2.extend(r)
+
+        all_results = results1 + results2
+        # Deduplicate by URL
+        seen_urls = set()
+        unique = []
+        for r in all_results:
+            if r["url"] not in seen_urls:
+                seen_urls.add(r["url"])
+                unique.append(r)
+
+        if unique:
+            web_lines = []
+            for r in unique[:8]:
+                web_lines.append(f"Source: {r['title']}")
+                web_lines.append(f"URL: {r['url']}")
+                if r.get("description"):
+                    web_lines.append(f"Content: {r['description']}")
+                web_lines.append("")
+            web_context = "\n".join(web_lines)
+
+    # Step 2: Assemble contract data
+    contract_context = f"""Contractor: {name}
 DBA: {c.get('dba', '')}
 Parent: {c.get('parent', '')}
 Category: {c.get('category', '')}
@@ -133,40 +167,42 @@ Award Type: {c.get('award_type', '')}
 Pricing: {c.get('pricing', '')}
 Federal Obligation: ${c.get('obligation', 0):,.0f}
 Max Potential: ${c.get('max_potential', 0):,.0f}
-Contract IDs: {', '.join(c.get('contract_ids', []))}
+Contract IDs: {', '.join(contract_ids)}
 Fiscal Years: {c.get('fiscal_years', '')}
 Start: {c.get('start_date', '')} End: {c.get('end_date', '')}
-Size: {c.get('size_determination', '')}
-Designations: {', '.join(c.get('business_designations', []))}
 Awarding Agency: {c.get('awarding_agency', '')}
 Funding Agencies: {', '.join(c.get('funding_agencies', []))}
 Role Description: {c.get('role', '')}
-Key Personnel: {', '.join(c.get('personnel', [])[:10]) if c.get('personnel') else 'none listed'}
-Transactions: {c.get('transaction_count', '')}"""
+Key Personnel: {', '.join(c.get('personnel', [])[:10]) if c.get('personnel') else 'none listed'}"""
+
+    # Step 3: LLM synthesis from web sources + contract data
+    user_content = f"CONTRACT RECORD:\n{contract_context}"
+    if web_context:
+        user_content += f"\n\nWEB SEARCH RESULTS (cite these sources):\n{web_context}"
 
     messages = [
         {"role": "system", "content": (
             "You are a DOE contractor intelligence analyst creating an enhanced description. "
-            "Write 2-3 paragraphs covering: (1) what the organization is, its history, and primary mission — "
-            "use your training knowledge about this company/institution alongside the contract data provided, "
-            "(2) the specific nature and scope of their DOE work — what programs, facilities, or missions they support, "
-            "(3) why this contractor matters to DOE operations and national security. "
-            "Combine the provided contract record data with your knowledge about the organization. "
-            "For well-known entities (national labs, major defense contractors, universities), include relevant "
-            "context about their broader role. For lesser-known companies, focus on what the contract data reveals. "
-            "Write in a professional intelligence briefing style. Be concrete and specific."
+            "You have been given (1) the official contract record and (2) web search results about this contractor. "
+            "Write 2-3 paragraphs synthesizing BOTH sources. "
+            "Paragraph 1: What the organization does for DOE — cite specific web sources when possible. "
+            "Paragraph 2: The scope of their work — programs, facilities, missions they support, based on web findings. "
+            "Paragraph 3: Key facts from the contract record (obligation, contract type, funding agencies). "
+            "ONLY state facts from the provided contract data or web search results. Do NOT use training knowledge. "
+            "If web results are empty, synthesize from the contract record alone. "
+            "Write in a professional intelligence briefing style."
         )},
-        {"role": "user", "content": context},
+        {"role": "user", "content": user_content},
     ]
 
     if hermes.is_available():
         try:
-            summary = await hermes.chat(messages, max_tokens=500)
-            return JSONResponse({"summary": summary.strip()})
+            summary = await hermes.chat(messages, max_tokens=700)
+            return JSONResponse({"summary": summary.strip(), "sources": len(seen_urls) if web_context else 0})
         except Exception as e:
-            return JSONResponse({"summary": f"Summary generation failed: {e}"})
+            return JSONResponse({"summary": f"Enhanced description failed: {e}", "sources": 0})
     else:
-        return JSONResponse({"summary": "Hermes 405B not available for summarization."})
+        return JSONResponse({"summary": "Hermes 405B not available.", "sources": 0})
 
 
 @app.post("/api/full-assessment")
