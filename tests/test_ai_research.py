@@ -78,6 +78,15 @@ class TestExtractResearchJson(unittest.TestCase):
         self.assertEqual(result['company_status'], 'dissolved')
         self.assertEqual(result['brief'], 'Company ceased operations in 2020')
 
+    def test_json_with_braces_in_string_values(self):
+        """JSON with curly braces inside string values should parse correctly."""
+        from osint.ai_research import extract_research_json
+        raw = '{"company_status": "acquired", "brief": "The company {formerly OSI} was acquired by Emerson."}'
+        result = extract_research_json(raw)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['company_status'], 'acquired')
+        self.assertIn('{formerly OSI}', result['brief'])
+
 
 # ═══════════════════════════════════════════════════════════════
 # BUILD_RESEARCH_PROMPT TESTS

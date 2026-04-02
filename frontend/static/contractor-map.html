@@ -4131,7 +4131,8 @@ async function generateAIResearch() {
     if (lastResult) {
       const c = DATA.contractors[selectedContractor];
       if (!c.osint) c.osint = {};
-      c.osint.ai_research = lastResult;
+      const { phase, ...researchData } = lastResult;
+      c.osint.ai_research = researchData;
 
       // Update local domain if cascaded
       if (lastResult.current_domain && lastResult.domain_validated &&

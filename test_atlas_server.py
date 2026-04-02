@@ -229,15 +229,14 @@ async def summarize_role_endpoint(req: KillChainRequest):
 
 @app.post("/api/ai-research")
 async def ai_research_endpoint(req: KillChainRequest):
-    """AI-powered contractor research with SSE streaming."""
+    """AI-powered contractor research with SSE streaming.
+
+    Uses the core research_contractor() function with an on_status callback
+    to emit SSE progress events.
+    """
     import json as _json
-    import time as _time
     from backend.brave_search import BraveSearchClient
-    from osint.ai_research import (
-        build_research_prompt, extract_research_json,
-        apply_domain_cascade,
-    )
-    from osint.domain_discovery import probe_domain, extract_domain_from_url
+    from osint.ai_research import research_contractor, apply_domain_cascade
 
     with open(BASE / "frontend" / "static" / "contractors.json") as f:
         data = _json.load(f)
@@ -250,114 +249,29 @@ async def ai_research_endpoint(req: KillChainRequest):
 
     async def stream():
         brave = BraveSearchClient()
-        name = c.get('name', '')
-        dba = c.get('dba', '')
-        city = c.get('city', '')
-        state = c.get('state', '')
-        search_name = dba if dba and dba != name else name
-        dd = c.get('osint', {}).get('domain_discovery', {})
 
-        # Phase 1: Web Search
-        all_results = []
-        queries = [
-            f'"{search_name}" Department of Energy contractor',
-            f'"{search_name}" acquired OR merged OR subsidiary',
-            f'"{search_name}" official website {city} {state}',
-        ]
-        if dd.get('domain'):
-            queries.append(f'site:{dd["domain"]} {search_name}')
+        # Collect progress events from the callback
+        progress_events = []
 
-        if brave.is_available():
-            for q in queries:
-                yield f"data: {_json.dumps({'phase': 'search', 'detail': q[:60]})}\n\n"
-                try:
-                    results = await brave.search(q, count=5)
-                    all_results.extend(results)
-                except Exception:
-                    pass
+        async def on_status(msg):
+            progress_events.append(msg)
 
-        # Deduplicate by URL
-        seen = set()
-        unique = []
-        for r in all_results:
-            if r['url'] not in seen:
-                seen.add(r['url'])
-                unique.append(r)
+        # Run the core research function
+        result = await research_contractor(c, hermes, brave, on_status=on_status)
 
-        yield f"data: {_json.dumps({'phase': 'search_complete', 'results': len(unique)})}\n\n"
-
-        # Format context for LLM
-        search_context = ''
-        if unique:
-            lines = []
-            for r in unique[:12]:
-                lines.append(f"Source: {r['title']}")
-                lines.append(f"URL: {r['url']}")
-                if r.get('description'):
-                    lines.append(f"Content: {r['description']}")
-                lines.append('')
-            search_context = '\n'.join(lines)
-
-        # Phase 2: LLM Synthesis
-        yield f"data: {_json.dumps({'phase': 'synthesizing', 'sources': len(unique)})}\n\n"
-        messages = build_research_prompt(c, search_context)
-
-        result = {
-            'queried': True,
-            'query_time': _time.strftime('%Y-%m-%dT%H:%M:%S'),
-            'company_status': 'unknown',
-            'company_status_detail': None,
-            'current_domain': None,
-            'domain_confidence': 0,
-            'domain_validated': False,
-            'previous_domain': dd.get('domain'),
-            'parent_company': None,
-            'acquisition_year': None,
-            'brief': None,
-            'sources': [],
-            'search_queries_used': len([q for q in queries]),
-            'raw_search_results': len(unique),
-            'error': None,
-        }
-
-        if hermes.is_available():
-            try:
-                raw = await hermes.chat(messages, max_tokens=1500)
-                parsed = extract_research_json(raw)
-                if parsed:
-                    result['company_status'] = parsed.get('company_status', 'unknown')
-                    result['company_status_detail'] = parsed.get('company_status_detail')
-                    result['parent_company'] = parsed.get('parent_company')
-                    result['acquisition_year'] = parsed.get('acquisition_year')
-                    result['brief'] = parsed.get('brief')
-                    result['domain_confidence'] = parsed.get('domain_confidence', 0)
-                    sources = parsed.get('sources', [])
-                    if isinstance(sources, list):
-                        result['sources'] = [
-                            {'title': s.get('title', ''), 'url': s.get('url', '')}
-                            for s in sources if isinstance(s, dict)
-                        ]
-
-                    # Domain validation
-                    suggested = parsed.get('current_domain')
-                    if suggested:
-                        suggested = extract_domain_from_url(
-                            f'https://{suggested}' if '://' not in str(suggested) else suggested
-                        )
-                    if suggested:
-                        yield f"data: {_json.dumps({'phase': 'validating', 'domain': suggested})}\n\n"
-                        validated = probe_domain(suggested, timeout=3.0)
-                        result['current_domain'] = suggested
-                        result['domain_validated'] = validated
-                else:
-                    result['error'] = 'json_parse_failed'
-            except Exception as e:
-                result['error'] = f'hermes_error: {str(e)[:100]}'
-        else:
-            result['error'] = 'hermes_unavailable'
+        # Emit collected progress events
+        for msg in progress_events:
+            # Map status messages to SSE phase events
+            if 'Searching' in msg:
+                yield f"data: {_json.dumps({'phase': 'search', 'detail': msg[:60]})}\n\n"
+            elif 'Analyzing' in msg:
+                yield f"data: {_json.dumps({'phase': 'synthesizing', 'sources': result.get('raw_search_results', 0)})}\n\n"
+            elif 'Validating' in msg:
+                yield f"data: {_json.dumps({'phase': 'validating', 'domain': result.get('current_domain', '')})}\n\n"
 
         # Save to contractor data
         c.setdefault('osint', {})['ai_research'] = result
+        dd = c.get('osint', {}).get('domain_discovery', {})
 
         if not result.get('error') and result.get('current_domain') and result.get('domain_validated'):
             old = dd.get('domain', '')

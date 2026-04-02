@@ -58,25 +58,15 @@ def extract_research_json(raw: str) -> Optional[dict]:
         except (json.JSONDecodeError, ValueError):
             pass
 
-    # Try 3: Find the outermost { ... } in the text
-    # Use a brace-counting approach for robustness
-    start = text.find('{')
-    if start == -1:
-        return None
-
-    depth = 0
-    for i in range(start, len(text)):
-        if text[i] == '{':
-            depth += 1
-        elif text[i] == '}':
-            depth -= 1
-            if depth == 0:
-                candidate = text[start:i + 1]
-                try:
-                    return json.loads(candidate)
-                except (json.JSONDecodeError, ValueError):
-                    # Keep looking for another brace pair
-                    break
+    # Try 3: Extract between first { and last } — let json.loads handle
+    # string escaping (brace-counting is unreliable with braces in strings)
+    first_brace = text.find('{')
+    last_brace = text.rfind('}')
+    if first_brace != -1 and last_brace > first_brace:
+        try:
+            return json.loads(text[first_brace:last_brace + 1])
+        except (json.JSONDecodeError, ValueError):
+            pass
 
     return None
 
@@ -317,11 +307,13 @@ async def research_contractor(contractor: dict, hermes, brave, on_status=None) -
     result['sources'] = parsed.get('sources', [])
 
     # ── Phase 4: DNS-validate the suggested domain ──
+    # Run blocking DNS probe in a thread to avoid stalling the event loop
+    import asyncio
     domain = result['current_domain']
     if domain:
         if on_status:
             await on_status(f'Validating domain {domain}...')
-        result['domain_validated'] = probe_domain(domain)
+        result['domain_validated'] = await asyncio.to_thread(probe_domain, domain)
 
     return result
 
