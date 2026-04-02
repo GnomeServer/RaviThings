@@ -151,7 +151,16 @@ if _rt_path.exists():
     try:
         import json as _rtjson
         _rt_data = _rtjson.loads(_rt_path.read_text())
-        _RED_TEAM_EXTENSION = _rt_data.get("prompt", "") if isinstance(_rt_data, dict) else str(_rt_data)
+        # Support both {"prompt": "..."} and structured JSON (serialize as context)
+        if isinstance(_rt_data, dict) and "prompt" in _rt_data:
+            _RED_TEAM_EXTENSION = _rt_data["prompt"]
+        elif isinstance(_rt_data, dict):
+            _RED_TEAM_EXTENSION = (
+                "AUTHORIZED RED TEAM ANALYSIS FRAMEWORK:\n"
+                + _rtjson.dumps(_rt_data, indent=2)
+            )
+        else:
+            _RED_TEAM_EXTENSION = str(_rt_data)
         print(f"Red team prompt loaded from {_rt_path} ({len(_RED_TEAM_EXTENSION)} chars)")
     except Exception as _e:
         print(f"Warning: could not load {_rt_path}: {_e}")
