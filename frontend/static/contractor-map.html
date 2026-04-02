@@ -1870,6 +1870,144 @@
     animation: spin 0.8s linear infinite;
   }
 
+  /* ─── STEP DETAIL OVERLAY ─── */
+  #stepDetailOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    background: rgba(4, 8, 16, 0.95);
+    backdrop-filter: blur(16px);
+    overflow-y: auto;
+    padding: 30px;
+    display: none;
+  }
+
+  #stepDetailOverlay.visible { display: block; }
+
+  .sd-container {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .sd-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,23,68,0.12);
+  }
+
+  .sd-close {
+    margin-left: auto;
+    padding: 4px 12px;
+    background: rgba(255,23,68,0.06);
+    border: 1px solid rgba(255,23,68,0.15);
+    border-radius: var(--hud-radius);
+    color: #ff1744;
+    cursor: pointer;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .sd-section {
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    background: rgba(0,0,0,0.2);
+    border-radius: var(--hud-radius);
+    border-left: 3px solid rgba(0,229,255,0.15);
+  }
+
+  .sd-section.detection { border-left-color: #ffd740; }
+  .sd-section.remediation { border-left-color: #00e676; }
+  .sd-section.references { border-left-color: #7c4dff; }
+  .sd-section.red-team { border-left-color: #ff1744; }
+
+  .sd-section-title {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .sd-section-title.cyan { color: rgba(0,229,255,0.5); }
+  .sd-section-title.yellow { color: rgba(255,215,64,0.6); }
+  .sd-section-title.green { color: rgba(0,230,118,0.6); }
+  .sd-section-title.purple { color: rgba(124,77,255,0.6); }
+  .sd-section-title.red { color: rgba(255,23,68,0.6); }
+
+  .sd-text {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  .sd-code {
+    font-size: 11px;
+    padding: 8px 10px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,229,255,0.06);
+    border-radius: var(--hud-radius);
+    color: var(--accent-cyan);
+    margin: 4px 0;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .sd-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .sd-list li {
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding: 3px 0;
+    padding-left: 12px;
+    position: relative;
+  }
+
+  .sd-list li::before {
+    content: '>';
+    position: absolute;
+    left: 0;
+    color: var(--accent-cyan);
+    font-weight: 700;
+  }
+
+  .sd-list.green li::before { color: #00e676; }
+  .sd-list.yellow li::before { color: #ffd740; }
+
+  .sd-link {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border: 1px solid rgba(124,77,255,0.2);
+    border-radius: var(--hud-radius);
+    color: #b388ff;
+    text-decoration: none;
+    margin: 2px;
+    transition: all 0.15s;
+  }
+
+  .sd-link:hover {
+    background: rgba(124,77,255,0.08);
+    border-color: #7c4dff;
+  }
+
+  .sd-loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 30px;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
   /* ─── RESPONSIVE ─── */
   @media (max-width: 768px) {
     #detailPanel { width: 100%; right: -100%; }
@@ -2025,6 +2163,9 @@
   <svg id="netGraphSVG"></svg>
 </div>
 <div class="ng-tooltip" id="ngTooltip"></div>
+
+<!-- Step Detail Overlay -->
+<div id="stepDetailOverlay"></div>
 
 <!-- CVE Popup -->
 <div id="cvePopup"></div>
@@ -3385,14 +3526,18 @@ function renderKillChain(data) {
     html += `<div class="kc-summary" style="border-left-color:${riskColor}">${escapeHtml(data.summary)}</div>`;
   }
 
-  // Steps
+  // Steps — clickable for detailed analysis
+  // Store steps globally so onclick can access them
+  window._lastKillChainSteps = data.steps || [];
   for (const step of data.steps || []) {
+    const stepJson = encodeURIComponent(JSON.stringify(step));
     html += `
-    <div class="kc-step">
+    <div class="kc-step" style="cursor:pointer" onclick="showStepDetail(${step.step - 1})" title="Click for detailed analysis">
       <div class="kc-step-num">${step.step}</div>
       <div class="kc-step-header">
         <span class="kc-tactic">${escapeHtml(step.tactic)}</span>
         <span class="kc-technique">${escapeHtml(step.technique_id)} ${escapeHtml(step.technique_name)}</span>
+        <span style="margin-left:auto;font-size:8px;color:var(--text-muted);letter-spacing:1px">CLICK FOR DETAIL</span>
       </div>
       <div class="kc-desc">${escapeHtml(step.description)}</div>
       <div class="kc-evidence">Evidence: ${escapeHtml(step.evidence)}</div>
@@ -3413,6 +3558,144 @@ function renderKillChain(data) {
   }
 
   return html;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// STEP DETAIL POPUP
+// ═══════════════════════════════════════════════════════════════
+
+async function showStepDetail(stepIndex) {
+  const step = (window._lastKillChainSteps || [])[stepIndex];
+  if (!step || selectedContractor === null) return;
+
+  const overlay = document.getElementById('stepDetailOverlay');
+  overlay.innerHTML = `<div class="sd-container">
+    <div class="sd-header">
+      <span class="kc-tactic">${escapeHtml(step.tactic)}</span>
+      <span style="font-size:12px;font-weight:700;color:var(--text-primary)">${escapeHtml(step.technique_id)} — ${escapeHtml(step.technique_name)}</span>
+      <button class="sd-close" onclick="document.getElementById('stepDetailOverlay').classList.remove('visible')">✕ Close</button>
+    </div>
+    <div class="sd-section">
+      <div class="sd-section-title cyan">// Step ${step.step} Description</div>
+      <div class="sd-text">${escapeHtml(step.description)}</div>
+      <div style="margin-top:6px;font-size:10px;color:rgba(0,229,255,0.5)">Evidence: ${escapeHtml(step.evidence)}</div>
+    </div>
+    <div class="sd-loading">
+      <div class="spinner" style="width:16px;height:16px;border:1px solid rgba(0,229,255,0.15);border-top-color:var(--accent-cyan);border-radius:50%;animation:spin 0.8s linear infinite"></div>
+      <span>Generating detailed analysis via Hermes 405B...</span>
+    </div>
+  </div>`;
+  overlay.classList.add('visible');
+
+  try {
+    const resp = await fetch('/api/step-detail', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contractor_index: selectedContractor, step }),
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    // Remove loading, render detail sections
+    const container = overlay.querySelector('.sd-container');
+    const loading = container.querySelector('.sd-loading');
+    if (loading) loading.remove();
+
+    // Vulnerability Analysis
+    const vuln = data.vulnerability || {};
+    container.innerHTML += `<div class="sd-section">
+      <div class="sd-section-title cyan">// Vulnerability Analysis</div>
+      <div class="sd-text">${escapeHtml(vuln.description || 'No analysis available.')}</div>
+      ${vuln.affected_versions ? `<div style="margin-top:4px;font-size:10px;color:var(--text-muted)">Affected: ${escapeHtml(vuln.affected_versions)}</div>` : ''}
+      ${vuln.cvss ? `<div style="margin-top:2px;font-size:10px;color:#ff9100">CVSS: ${escapeHtml(vuln.cvss)}</div>` : ''}
+      ${vuln.cwe ? `<div style="margin-top:2px;font-size:10px;color:var(--text-muted)">CWE: ${escapeHtml(vuln.cwe)}</div>` : ''}
+    </div>`;
+
+    // Attacker View
+    const av = data.attacker_view || {};
+    if (av.banner || av.what_they_see) {
+      container.innerHTML += `<div class="sd-section">
+        <div class="sd-section-title cyan">// What an Attacker Sees</div>
+        ${av.banner ? `<div class="sd-code">${escapeHtml(av.banner)}</div>` : ''}
+        ${av.what_they_see ? `<div class="sd-text">${escapeHtml(av.what_they_see)}</div>` : ''}
+      </div>`;
+    }
+
+    // Detection
+    const det = data.detection || {};
+    const sigs = det.signatures || [];
+    const logs = det.log_indicators || [];
+    if (sigs.length || logs.length || det.monitoring_advice) {
+      let detHtml = `<div class="sd-section detection"><div class="sd-section-title yellow">// Detection</div>`;
+      if (det.monitoring_advice) detHtml += `<div class="sd-text">${escapeHtml(det.monitoring_advice)}</div>`;
+      if (sigs.length) {
+        detHtml += '<div style="margin-top:6px;font-size:9px;font-weight:700;color:rgba(255,215,64,0.5);letter-spacing:1px">SIGNATURES</div>';
+        for (const sig of sigs) detHtml += `<div class="sd-code">${escapeHtml(sig)}</div>`;
+      }
+      if (logs.length) {
+        detHtml += '<div style="margin-top:6px;font-size:9px;font-weight:700;color:rgba(255,215,64,0.5);letter-spacing:1px">LOG INDICATORS</div>';
+        detHtml += '<ul class="sd-list yellow">';
+        for (const l of logs) detHtml += `<li>${escapeHtml(l)}</li>`;
+        detHtml += '</ul>';
+      }
+      detHtml += '</div>';
+      container.innerHTML += detHtml;
+    }
+
+    // Remediation
+    const rem = data.remediation || {};
+    const imm = rem.immediate || [];
+    const lt = rem.long_term || [];
+    const cmds = rem.commands || [];
+    if (imm.length || lt.length || cmds.length) {
+      let remHtml = `<div class="sd-section remediation"><div class="sd-section-title green">// Remediation</div>`;
+      if (imm.length) {
+        remHtml += '<div style="font-size:9px;font-weight:700;color:rgba(0,230,118,0.5);letter-spacing:1px;margin-bottom:4px">IMMEDIATE</div>';
+        remHtml += '<ul class="sd-list green">';
+        for (const i of imm) remHtml += `<li>${escapeHtml(i)}</li>`;
+        remHtml += '</ul>';
+      }
+      if (cmds.length) {
+        remHtml += '<div style="font-size:9px;font-weight:700;color:rgba(0,230,118,0.5);letter-spacing:1px;margin-top:8px;margin-bottom:4px">COMMANDS</div>';
+        for (const c of cmds) remHtml += `<div class="sd-code" style="border-left-color:#00e676">${escapeHtml(c)}</div>`;
+      }
+      if (lt.length) {
+        remHtml += '<div style="font-size:9px;font-weight:700;color:rgba(0,230,118,0.5);letter-spacing:1px;margin-top:8px;margin-bottom:4px">LONG-TERM</div>';
+        remHtml += '<ul class="sd-list green">';
+        for (const l of lt) remHtml += `<li>${escapeHtml(l)}</li>`;
+        remHtml += '</ul>';
+      }
+      remHtml += '</div>';
+      container.innerHTML += remHtml;
+    }
+
+    // Alternative Vectors
+    const alts = data.alternative_vectors || [];
+    if (alts.length) {
+      let altHtml = `<div class="sd-section" style="border-left-color:#ff9100"><div class="sd-section-title red">// Alternative Attack Vectors</div>`;
+      altHtml += '<ul class="sd-list">';
+      for (const a of alts) altHtml += `<li>${escapeHtml(a)}</li>`;
+      altHtml += '</ul></div>';
+      container.innerHTML += altHtml;
+    }
+
+    // References
+    const refs = data.references || [];
+    if (refs.length) {
+      let refHtml = `<div class="sd-section references"><div class="sd-section-title purple">// References</div><div>`;
+      for (const r of refs) {
+        refHtml += `<a class="sd-link" href="${escapeHtml(r.url || '#')}" target="_blank" rel="noopener">${escapeHtml(r.title || r.url)}</a>`;
+      }
+      refHtml += '</div></div>';
+      container.innerHTML += refHtml;
+    }
+
+  } catch (e) {
+    const loading = overlay.querySelector('.sd-loading');
+    if (loading) loading.innerHTML = `<span style="color:#ff1744">Failed to load detail: ${escapeHtml(e.message)}</span>`;
+  }
 }
 
 
