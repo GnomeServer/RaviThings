@@ -148,6 +148,103 @@ def discover_domain(contractor: dict) -> dict:
                 result['source'] = 'dns_probe'
                 return result
 
-    # No domain found
+    # No domain found via DNS probing
     result['error'] = 'no_domain_found'
+    return result
+
+
+async def discover_domain_via_search(contractor: dict, brave_client=None) -> dict:
+    """Discover a contractor's domain via Brave web search.
+
+    More accurate than DNS probing because it finds the company's actual
+    website rather than guessing from name patterns.
+
+    Args:
+        contractor: dict with 'name', 'dba', 'city', 'state'
+        brave_client: BraveSearchClient instance (or None to create one)
+
+    Returns:
+        dict with domain, source, confidence
+    """
+    result = {
+        'queried': True,
+        'query_time': time.strftime('%Y-%m-%dT%H:%M:%S'),
+        'domain': None,
+        'source': None,
+        'search_url': None,
+        'confidence': 0,
+        'error': None,
+    }
+
+    if brave_client is None:
+        try:
+            from backend.brave_search import BraveSearchClient
+            brave_client = BraveSearchClient()
+        except ImportError:
+            result['error'] = 'brave_search_not_available'
+            return result
+
+    if not brave_client.is_available():
+        result['error'] = 'no_brave_api_key'
+        return result
+
+    import asyncio
+
+    name = contractor.get('name', '')
+    dba = contractor.get('dba', '')
+    city = contractor.get('city', '')
+    state = contractor.get('state', '')
+
+    # Use DBA if available (often more recognizable)
+    search_name = dba if dba and dba != name else name
+
+    # Search for the company's official website
+    queries = [
+        f'"{search_name}" official website {city} {state}',
+        f'"{search_name}" {state}',
+    ]
+
+    for query in queries:
+        try:
+            results = await brave_client.search(query, count=5)
+        except Exception:
+            continue
+
+        for r in results:
+            url = r.get('url', '')
+            title = (r.get('title', '') + ' ' + r.get('description', '')).lower()
+            domain = extract_domain_from_url(url)
+
+            if not domain:
+                continue
+
+            # Skip known non-company domains
+            skip_domains = {
+                'facebook.com', 'linkedin.com', 'twitter.com', 'x.com',
+                'yelp.com', 'bbb.org', 'glassdoor.com', 'indeed.com',
+                'wikipedia.org', 'bloomberg.com', 'dnb.com', 'zoominfo.com',
+                'opencorporates.com', 'usaspending.gov', 'sam.gov',
+                'fpds.gov', 'google.com', 'youtube.com', 'instagram.com',
+            }
+            base = '.'.join(domain.split('.')[-2:])
+            if base in skip_domains:
+                continue
+
+            # Check if the company name appears in the title/description
+            name_words = [w.lower() for w in search_name.split() if len(w) > 2]
+            name_words = [w for w in name_words if w not in STRIP_WORDS]
+            matches = sum(1 for w in name_words if w in title)
+            match_ratio = matches / max(len(name_words), 1)
+
+            if match_ratio >= 0.3:  # At least 30% of name words match
+                # Verify it resolves
+                if probe_domain(domain, timeout=3.0):
+                    confidence = int(min(match_ratio * 80 + 20, 100))
+                    result['domain'] = domain
+                    result['source'] = 'brave_search'
+                    result['search_url'] = url
+                    result['confidence'] = confidence
+                    return result
+
+    result['error'] = 'no_domain_found_via_search'
     return result

@@ -24,7 +24,7 @@ from collections import Counter
 import shodan
 from dotenv import load_dotenv
 
-from osint.domain_discovery import discover_domain
+from osint.domain_discovery import discover_domain, discover_domain_via_search
 from osint.domain_verify import verify_domain
 from osint.dns_intel import enrich_dns
 from osint.ct_logs import enrich_ct
@@ -111,6 +111,98 @@ def run_layer_domain_discovery(contractors, force=False, limit=0):
 
     print(f'\n  Domain Discovery: {found}/{len(to_process)} domains found')
     return found
+
+
+def run_layer_domain_search(contractors, force=False, limit=0):
+    """Layer: Brave Search domain validation — find correct domains via web search.
+
+    Targets contractors with:
+    - No domain discovered yet
+    - Low verification confidence (< 50%)
+    - Domain from dns_probe (heuristic, error-prone)
+    """
+    import asyncio
+    from backend.brave_search import BraveSearchClient
+
+    print('\n' + '=' * 60)
+    print('LAYER: Brave Search Domain Validation')
+    print('=' * 60)
+
+    brave = BraveSearchClient()
+    if not brave.is_available():
+        print('  BRAVE_SEARCH_API_KEY not set. Skipping.')
+        return 0
+
+    # Find contractors needing domain validation
+    to_process = []
+    for i, c in enumerate(contractors):
+        if force:
+            to_process.append((i, c))
+            continue
+
+        osint = c.get('osint', {})
+        dd = osint.get('domain_discovery', {})
+        dv = osint.get('domain_verify', {})
+
+        # Already validated via search
+        if dd.get('source') == 'brave_search':
+            continue
+
+        # Needs validation if: no domain, low confidence, or dns_probe source
+        needs_it = (
+            not dd.get('domain')
+            or dd.get('source') == 'dns_probe'
+            or (dv.get('confidence', 100) < 50 and dv.get('queried'))
+        )
+        if needs_it:
+            to_process.append((i, c))
+
+    if limit > 0:
+        to_process = to_process[:limit]
+
+    if not to_process:
+        print('  No contractors need domain search validation.')
+        return 0
+
+    print(f'  Processing {len(to_process)} contractors...')
+
+    found = 0
+    upgraded = 0
+
+    async def process_all():
+        nonlocal found, upgraded
+        for idx, (i, c) in enumerate(to_process):
+            old_domain = c.get('osint', {}).get('domain_discovery', {}).get('domain', '')
+            print(f'  [{idx+1}/{len(to_process)}] {c["name"][:45]:45s}', end=' ', flush=True)
+
+            result = await discover_domain_via_search(c, brave_client=brave)
+            c.setdefault('osint', {})['domain_discovery_search'] = result
+
+            if result['domain']:
+                found += 1
+                if result['domain'] != old_domain:
+                    # Upgrade: replace the old domain with the search-validated one
+                    c['osint']['domain_discovery']['domain'] = result['domain']
+                    c['osint']['domain_discovery']['source'] = 'brave_search'
+                    c['osint']['domain_discovery']['search_url'] = result.get('search_url', '')
+                    upgraded += 1
+                    print(f'  UPGRADED {old_domain or "none"} -> {result["domain"]} (conf={result["confidence"]}%)')
+                else:
+                    print(f'  CONFIRMED {result["domain"]} (conf={result["confidence"]}%)')
+            else:
+                print(f'  -- no domain found via search')
+
+            # Save every 50
+            if (idx + 1) % 50 == 0:
+                print(f'\n  Saving progress ({idx+1}/{len(to_process)})...\n')
+                save_data({'contractors': contractors,
+                           **{k: v for k, v in load_data().items() if k != 'contractors'}})
+
+            await asyncio.sleep(0.5)  # Rate limit
+
+    asyncio.run(process_all())
+    print(f'\n  Domain Search: {found} found, {upgraded} upgraded from {len(to_process)} checked')
+    return upgraded
 
 
 def run_layer_enhanced_shodan(contractors, api, force=False, limit=0):
@@ -592,7 +684,7 @@ def print_summary(contractors):
 def main():
     parser = argparse.ArgumentParser(description='Multi-layer OSINT enrichment pipeline')
     parser.add_argument('--layers', default='all',
-                        help='Comma-separated layers: all,shodan,domain,verify,dns,ct,web,asn,onprem,service_risk,shodan_ip,nvd')
+                        help='Comma-separated layers: all,shodan,domain,domain_search,verify,dns,ct,web,asn,onprem,service_risk,shodan_ip,nvd')
     parser.add_argument('--limit', type=int, default=0,
                         help='Limit contractors per layer (0=all)')
     parser.add_argument('--force', action='store_true',
@@ -630,6 +722,10 @@ def main():
     # Run layers in priority order
     if run_all or 'domain' in layers:
         run_layer_domain_discovery(contractors, force=args.force, limit=args.limit)
+        save_data(data)
+
+    if run_all or 'domain_search' in layers:
+        run_layer_domain_search(contractors, force=args.force, limit=args.limit)
         save_data(data)
 
     if run_all or 'verify' in layers:
