@@ -35,6 +35,7 @@ from osint.nvd_cvss import enrich_nvd_cvss, collect_cve_ids
 from osint.service_risk import classify_services
 from osint.onprem_network import identify_onprem_network
 from osint.shodan_ip import enrich_contractor_ips
+from osint.ai_research import research_contractor, needs_ai_research, apply_domain_cascade
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -636,6 +637,86 @@ def run_layer_nvd(contractors, force=False, limit=0):
     print(f'  Global cache: {len(global_cache)} unique CVEs')
 
 
+def run_layer_ai_research(contractors, force=False, limit=0):
+    """Layer: AI Research — web search + LLM reasoning for domain/status/brief."""
+    import asyncio
+    from backend.mercury_client import HermesClient
+    from backend.brave_search import BraveSearchClient
+
+    print('\n' + '=' * 60)
+    print('LAYER: AI Research (Hermes + Brave Search)')
+    print('=' * 60)
+
+    hermes = HermesClient()
+    brave = BraveSearchClient()
+
+    if not hermes.is_available():
+        print('  NOUS_API_KEY not set. Skipping.')
+        return 0
+
+    # Smart targeting
+    to_process = []
+    for i, c in enumerate(contractors):
+        if force or needs_ai_research(c):
+            to_process.append((i, c))
+
+    if limit > 0:
+        to_process = to_process[:limit]
+
+    if not to_process:
+        print('  No contractors need AI research.')
+        return 0
+
+    print(f'  Processing {len(to_process)} contractors...')
+    if brave.is_available():
+        print('  Brave Search: available')
+    else:
+        print('  WARNING: Brave Search unavailable (no BRAVE_SEARCH_API_KEY). LLM will run without web context.')
+
+    researched = 0
+    upgraded = 0
+
+    async def process_all():
+        nonlocal researched, upgraded
+        for idx, (i, c) in enumerate(to_process):
+            name = c['name'][:45]
+            print(f'  [{idx+1}/{len(to_process)}] {name:45s}', end=' ', flush=True)
+
+            result = await research_contractor(c, hermes, brave)
+            c.setdefault('osint', {})['ai_research'] = result
+
+            if result.get('error'):
+                print(f'  ERROR: {result["error"][:50]}')
+            else:
+                researched += 1
+                status = result.get('company_status', 'unknown')
+                domain = result.get('current_domain', '')
+
+                # Domain cascade if AI found a different, validated domain
+                if domain and result.get('domain_validated'):
+                    old = c.get('osint', {}).get('domain_discovery', {}).get('domain', '')
+                    if domain != old:
+                        apply_domain_cascade(c, domain, 'ai_research')
+                        upgraded += 1
+                        print(f'  {status.upper()} domain: {old or "none"} -> {domain}')
+                    else:
+                        print(f'  {status.upper()} domain: {domain} (confirmed)')
+                else:
+                    print(f'  {status.upper()} domain: {domain or "none"} (unvalidated)')
+
+            # Save every 25
+            if (idx + 1) % 25 == 0:
+                print(f'\n  Saving progress ({idx+1}/{len(to_process)})...\n')
+                save_data({'contractors': contractors,
+                           **{k: v for k, v in load_data().items() if k != 'contractors'}})
+
+            await asyncio.sleep(1.0)  # Rate limit
+
+    asyncio.run(process_all())
+    print(f'\n  AI Research: {researched}/{len(to_process)} researched, {upgraded} domains upgraded')
+    return researched
+
+
 def print_summary(contractors):
     """Print aggregate summary of all OSINT data."""
     print('\n' + '=' * 60)
@@ -696,7 +777,7 @@ def print_summary(contractors):
 def main():
     parser = argparse.ArgumentParser(description='Multi-layer OSINT enrichment pipeline')
     parser.add_argument('--layers', default='all',
-                        help='Comma-separated layers: all,shodan,domain,domain_search,verify,dns,ct,web,asn,onprem,service_risk,shodan_ip,nvd')
+                        help='Comma-separated layers: all,shodan,domain,domain_search,verify,dns,ct,web,asn,onprem,service_risk,shodan_ip,nvd,ai_research')
     parser.add_argument('--limit', type=int, default=0,
                         help='Limit contractors per layer (0=all)')
     parser.add_argument('--force', action='store_true',
@@ -778,6 +859,10 @@ def main():
 
     if run_all or 'nvd' in layers:
         run_layer_nvd(contractors, force=args.force, limit=args.limit)
+        save_data(data)
+
+    if run_all or 'ai_research' in layers:
+        run_layer_ai_research(contractors, force=args.force, limit=args.limit)
         save_data(data)
 
     # Final save and summary
