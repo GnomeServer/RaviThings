@@ -256,7 +256,8 @@ Provide a complete defensive analysis of this specific step."""
         system_prompt += f"\n\nFOCUS: This step maps to red team phase(s): {relevant_phase}. "
         system_prompt += f"Target: {target_ip}:{target_port} running {target_product}. "
         system_prompt += "Provide phase-specific tool commands and techniques for THIS exact target. "
-        system_prompt += "Add a 'red_team' key to your JSON output with: {\"tools\": [...], \"commands\": [...], \"techniques\": [...]}."
+        system_prompt += "Add a 'red_team' key to your JSON output with: {\"tools\": [...], \"commands\": [...], \"techniques\": [...]}. "
+        system_prompt += "IMPORTANT: In JSON strings, escape all backslashes as \\\\. Do not use raw \\n or \\t in string values."
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -272,7 +273,20 @@ Provide a complete defensive analysis of this specific step."""
                 json_str = raw.split("```json")[1].split("```")[0]
             elif "```" in raw:
                 json_str = raw.split("```")[1].split("```")[0]
-            result = _json.loads(json_str)
+
+            # Robust JSON parsing — handle LLM escape issues
+            try:
+                result = _json.loads(json_str)
+            except _json.JSONDecodeError:
+                # Fix common LLM JSON errors: unescaped backslashes
+                import re as _re2
+                fixed = _re2.sub(r'(?<!\\)\\(?!["\\/bfnrtu])', r'\\\\', json_str)
+                try:
+                    result = _json.loads(fixed)
+                except _json.JSONDecodeError:
+                    # Last resort: strip control chars and try again
+                    cleaned = json_str.encode('utf-8', errors='replace').decode('unicode_escape', errors='replace')
+                    result = _json.loads(cleaned)
         except Exception as e:
             result = {
                 "vulnerability": {"description": f"Analysis generation failed: {e}"},
