@@ -3506,17 +3506,37 @@ async function generateKillChain() {
   // Add loading indicator at top of panel body
   const loadingDiv = document.createElement('div');
   loadingDiv.className = 'kill-chain-container';
+  const kcName = DATA.contractors[selectedContractor]?.name || '';
   loadingDiv.innerHTML = `
     <div class="section-title" style="color:#ff1744">Kill Chain Analysis</div>
-    <div class="kc-loading">
+    <div class="kc-loading" id="kcLoadingStatus">
       <div class="spinner"></div>
-      <span>Analyzing attack surface via Hermes 405B... This may take 15-30 seconds.</span>
+      <div>
+        <div>Assembling OSINT intelligence for ${escapeHtml(kcName.substring(0, 40))}...</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px">Mapping attack vectors → Hermes 405B → MITRE ATT&CK kill chain</div>
+      </div>
     </div>
   `;
   body.insertBefore(loadingDiv, body.firstChild);
 
   // Scroll panel to top to show the loading indicator
   document.getElementById('detailPanel').scrollTop = 0;
+
+  // Animated status updates during wait
+  const kcStatuses = [
+    'Collecting exposed services, ports, and CVEs...',
+    'Mapping DMARC, SSL, and email security posture...',
+    'Identifying on-premises network topology...',
+    'Sending intelligence brief to Hermes 405B...',
+    'Generating MITRE ATT&CK attack path...',
+  ];
+  let kcStatusIdx = 0;
+  const kcTimer = setInterval(() => {
+    const el = document.querySelector('#kcLoadingStatus > div > div:first-child');
+    if (el && kcStatusIdx < kcStatuses.length) {
+      el.textContent = kcStatuses[kcStatusIdx++];
+    }
+  }, 4000);
 
   try {
     const resp = await fetch('/api/kill-chain', {
@@ -3528,8 +3548,10 @@ async function generateKillChain() {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
 
+    clearInterval(kcTimer);
     loadingDiv.innerHTML = renderKillChain(data);
   } catch (e) {
+    clearInterval(kcTimer);
     loadingDiv.innerHTML = `
       <div class="section-title" style="color:#ff1744">Kill Chain Analysis</div>
       <div class="kc-summary" style="border-left-color:var(--text-muted)">
@@ -3616,7 +3638,10 @@ async function showStepDetail(stepIndex) {
     </div>
     <div class="sd-loading">
       <div class="spinner" style="width:16px;height:16px;border:1px solid rgba(0,229,255,0.15);border-top-color:var(--accent-cyan);border-radius:50%;animation:spin 0.8s linear infinite"></div>
-      <span>Generating detailed analysis via Hermes 405B...</span>
+      <div>
+        <div>Generating detailed analysis for ${escapeHtml(step.technique_id)} — ${escapeHtml(step.technique_name)}...</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px">Vulnerability analysis → Red team tools → Detection signatures → Remediation</div>
+      </div>
     </div>
   </div>`;
   overlay.classList.add('visible');
@@ -3886,7 +3911,8 @@ async function summarizeContractorRole() {
   if (!target) return;
 
   const origText = target.innerHTML;
-  target.innerHTML = '<span style="color:#b388ff;font-style:italic">Generating enhanced description via Hermes 405B...</span>';
+  const statusLine = (msg) => `<div style="display:flex;align-items:center;gap:8px"><div class="spinner" style="width:12px;height:12px;border:1px solid rgba(124,77,255,0.2);border-top-color:#b388ff;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div><span style="color:#b388ff;font-size:11px">${msg}</span></div>`;
+  target.innerHTML = statusLine('Searching web for contractor + DOE articles...');
 
   try {
     const resp = await fetch('/api/summarize-role', {
@@ -3896,12 +3922,43 @@ async function summarizeContractorRole() {
     });
 
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
 
-    if (data.summary) {
-      target.innerHTML = escapeHtml(data.summary);
-      if (data.sources > 0) {
-        target.innerHTML += `<div style="margin-top:6px;font-size:8px;color:var(--text-muted);font-style:italic">Synthesized from ${data.sources} web source${data.sources > 1 ? 's' : ''} + contract record</div>`;
+    // Stream SSE events for progress
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let finalSummary = '';
+    let sourceCount = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6);
+        if (payload === '[DONE]') continue;
+        let event;
+        try { event = JSON.parse(payload); } catch { continue; }
+
+        if (event.phase === 'search') target.innerHTML = statusLine(`Searching: "${escapeHtml(event.query)}"...`);
+        if (event.phase === 'search_complete') target.innerHTML = statusLine(`Found ${event.results} web sources. Searching contract IDs...`);
+        if (event.phase === 'contract_search') target.innerHTML = statusLine(`Searching contract ${escapeHtml(event.contract_id)}...`);
+        if (event.phase === 'synthesizing') target.innerHTML = statusLine(`Synthesizing from ${event.sources} sources via Hermes 405B...`);
+        if (event.phase === 'complete') {
+          finalSummary = event.summary || '';
+          sourceCount = event.sources || 0;
+        }
+      }
+    }
+
+    if (finalSummary) {
+      target.innerHTML = escapeHtml(finalSummary);
+      if (sourceCount > 0) {
+        target.innerHTML += `<div style="margin-top:6px;font-size:8px;color:var(--text-muted);font-style:italic">Synthesized from ${sourceCount} web source${sourceCount > 1 ? 's' : ''} + contract record</div>`;
       }
       target.style.color = 'var(--text-secondary)';
     } else {

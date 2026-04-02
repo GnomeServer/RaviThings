@@ -109,7 +109,7 @@ class KillChainRequest(BaseModel):
 
 @app.post("/api/summarize-role")
 async def summarize_role_endpoint(req: KillChainRequest):
-    """Generate an enhanced description using web search + LLM synthesis."""
+    """Generate an enhanced description using web search + LLM synthesis. Streams SSE progress."""
     import json as _json
     from backend.brave_search import BraveSearchClient
 
@@ -124,85 +124,72 @@ async def summarize_role_endpoint(req: KillChainRequest):
     name = c.get("name", "")
     contract_ids = c.get("contract_ids", [])
 
-    # Step 1: Search the web for real articles about this contractor + DOE
-    brave = BraveSearchClient()
-    web_context = ""
-    if brave.is_available():
-        # Search for the company + DOE
-        results1 = await brave.search(f'"{name}" Department of Energy contract', count=5)
-        # Search for specific contract IDs
-        results2 = []
-        for cid in contract_ids[:3]:
-            r = await brave.search(f'"{cid}" DOE contract', count=3)
-            results2.extend(r)
-
-        all_results = results1 + results2
-        # Deduplicate by URL
-        seen_urls = set()
+    async def stream():
+        brave = BraveSearchClient()
+        web_context = ""
         unique = []
-        for r in all_results:
-            if r["url"] not in seen_urls:
-                seen_urls.add(r["url"])
-                unique.append(r)
 
-        if unique:
-            web_lines = []
-            for r in unique[:8]:
-                web_lines.append(f"Source: {r['title']}")
-                web_lines.append(f"URL: {r['url']}")
-                if r.get("description"):
-                    web_lines.append(f"Content: {r['description']}")
-                web_lines.append("")
-            web_context = "\n".join(web_lines)
+        if brave.is_available():
+            # Search for contractor + DOE
+            query1 = f'"{name}" Department of Energy contract'
+            yield f"data: {_json.dumps({'phase': 'search', 'query': query1[:60]})}\n\n"
+            results1 = await brave.search(query1, count=5)
+            yield f"data: {_json.dumps({'phase': 'search_complete', 'results': len(results1)})}\n\n"
 
-    # Step 2: Assemble contract data
-    contract_context = f"""Contractor: {name}
-DBA: {c.get('dba', '')}
-Parent: {c.get('parent', '')}
-Category: {c.get('category', '')}
-City: {c.get('city', '')}, {c.get('state', '')}
-NAICS: {c.get('naics_desc', '') or c.get('naics', '')}
-Product/Service: {c.get('product_service', '')}
-Award Type: {c.get('award_type', '')}
-Pricing: {c.get('pricing', '')}
-Federal Obligation: ${c.get('obligation', 0):,.0f}
-Max Potential: ${c.get('max_potential', 0):,.0f}
-Contract IDs: {', '.join(contract_ids)}
-Fiscal Years: {c.get('fiscal_years', '')}
-Start: {c.get('start_date', '')} End: {c.get('end_date', '')}
-Awarding Agency: {c.get('awarding_agency', '')}
-Funding Agencies: {', '.join(c.get('funding_agencies', []))}
-Role Description: {c.get('role', '')}
-Key Personnel: {', '.join(c.get('personnel', [])[:10]) if c.get('personnel') else 'none listed'}"""
+            # Search contract IDs
+            results2 = []
+            for cid in contract_ids[:3]:
+                yield f"data: {_json.dumps({'phase': 'contract_search', 'contract_id': cid})}\n\n"
+                r = await brave.search(f'"{cid}" DOE contract', count=3)
+                results2.extend(r)
 
-    # Step 3: LLM synthesis from web sources + contract data
-    user_content = f"CONTRACT RECORD:\n{contract_context}"
-    if web_context:
-        user_content += f"\n\nWEB SEARCH RESULTS (cite these sources):\n{web_context}"
+            all_results = results1 + results2
+            seen_urls = set()
+            for r in all_results:
+                if r["url"] not in seen_urls:
+                    seen_urls.add(r["url"])
+                    unique.append(r)
 
-    messages = [
-        {"role": "system", "content": (
-            "You are a DOE contractor intelligence analyst creating an enhanced description. "
-            "You have been given (1) the official contract record and (2) web search results about this contractor. "
-            "Write 2-3 paragraphs synthesizing BOTH sources. "
-            "Paragraph 1: What the organization does for DOE — cite specific web sources when possible. "
-            "Paragraph 2: The scope of their work — programs, facilities, missions they support, based on web findings. "
-            "Paragraph 3: Key facts from the contract record (obligation, contract type, funding agencies). "
-            "ONLY state facts from the provided contract data or web search results. Do NOT use training knowledge. "
-            "If web results are empty, synthesize from the contract record alone. "
-            "Write in a professional intelligence briefing style."
-        )},
-        {"role": "user", "content": user_content},
-    ]
+            if unique:
+                web_lines = []
+                for r in unique[:8]:
+                    web_lines.append(f"Source: {r['title']}")
+                    web_lines.append(f"URL: {r['url']}")
+                    if r.get("description"):
+                        web_lines.append(f"Content: {r['description']}")
+                    web_lines.append("")
+                web_context = "\n".join(web_lines)
 
-    if hermes.is_available():
-        try:
-            summary = await hermes.chat(messages, max_tokens=700)
-            return JSONResponse({"summary": summary.strip(), "sources": len(seen_urls) if web_context else 0})
-        except Exception as e:
-            return JSONResponse({"summary": f"Enhanced description failed: {e}", "sources": 0})
-    else:
-        return JSONResponse({"summary": "Hermes 405B not available.", "sources": 0})
+        yield f"data: {_json.dumps({'phase': 'synthesizing', 'sources': len(unique)})}\n\n"
+
+        contract_context = f"Contractor: {name}\nDBA: {c.get('dba', '')}\nParent: {c.get('parent', '')}\nCategory: {c.get('category', '')}\nCity: {c.get('city', '')}, {c.get('state', '')}\nNAICS: {c.get('naics_desc', '') or c.get('naics', '')}\nProduct/Service: {c.get('product_service', '')}\nFederal Obligation: ${c.get('obligation', 0):,.0f}\nMax Potential: ${c.get('max_potential', 0):,.0f}\nContract IDs: {', '.join(contract_ids)}\nFiscal Years: {c.get('fiscal_years', '')}\nStart: {c.get('start_date', '')} End: {c.get('end_date', '')}\nFunding: {', '.join(c.get('funding_agencies', []))}\nRole: {c.get('role', '')}\nPersonnel: {', '.join(c.get('personnel', [])[:10]) if c.get('personnel') else 'none'}"
+
+        user_content = f"CONTRACT RECORD:\n{contract_context}"
+        if web_context:
+            user_content += f"\n\nWEB SEARCH RESULTS (cite these sources):\n{web_context}"
+
+        messages = [
+            {"role": "system", "content": (
+                "You are a DOE contractor intelligence analyst creating an enhanced description. "
+                "You have (1) the official contract record and (2) web search results. "
+                "Write 2-3 paragraphs: what they do for DOE, scope of work from web findings, "
+                "key contract facts. ONLY use provided data/web results. No training knowledge. "
+                "Professional intelligence briefing style."
+            )},
+            {"role": "user", "content": user_content},
+        ]
+
+        if hermes.is_available():
+            try:
+                summary = await hermes.chat(messages, max_tokens=700)
+                yield f"data: {_json.dumps({'phase': 'complete', 'summary': summary.strip(), 'sources': len(unique)})}\n\n"
+            except Exception as e:
+                yield f"data: {_json.dumps({'phase': 'complete', 'summary': f'Failed: {e}', 'sources': 0})}\n\n"
+        else:
+            yield f"data: {_json.dumps({'phase': 'complete', 'summary': 'Hermes 405B not available.', 'sources': 0})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
 
 
 @app.post("/api/full-assessment")
