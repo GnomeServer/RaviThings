@@ -130,18 +130,33 @@ async def summarize_role_endpoint(req: KillChainRequest):
         unique = []
 
         if brave.is_available():
-            # Search for contractor + DOE
-            query1 = f'"{name}" Department of Energy contract'
+            # Search 1: contractor name + DOE
+            query1 = f'"{name}" Department of Energy'
             yield f"data: {_json.dumps({'phase': 'search', 'query': query1[:60]})}\n\n"
             results1 = await brave.search(query1, count=5)
+
+            # Search 2: contractor name + what they do
+            dba = c.get('dba', '')
+            search_name = dba if dba and dba != name else name
+            query2 = f'"{search_name}" site:energy.gov OR site:doe.gov'
+            yield f"data: {_json.dumps({'phase': 'search', 'query': query2[:60]})}\n\n"
+            results1b = await brave.search(query2, count=3)
+            results1.extend(results1b)
+
             yield f"data: {_json.dumps({'phase': 'search_complete', 'results': len(results1)})}\n\n"
 
-            # Search contract IDs
+            # Search 3: specific contract IDs
             results2 = []
             for cid in contract_ids[:3]:
                 yield f"data: {_json.dumps({'phase': 'contract_search', 'contract_id': cid})}\n\n"
-                r = await brave.search(f'"{cid}" DOE contract', count=3)
+                r = await brave.search(f'"{cid}" DOE', count=3)
                 results2.extend(r)
+
+            # Search 4: company website directly
+            query4 = f'{search_name} official website'
+            yield f"data: {_json.dumps({'phase': 'search', 'query': 'company website'})}\n\n"
+            results4 = await brave.search(query4, count=2)
+            results2.extend(results4)
 
             all_results = results1 + results2
             seen_urls = set()
@@ -162,7 +177,24 @@ async def summarize_role_endpoint(req: KillChainRequest):
 
         yield f"data: {_json.dumps({'phase': 'synthesizing', 'sources': len(unique)})}\n\n"
 
-        contract_context = f"Contractor: {name}\nDBA: {c.get('dba', '')}\nParent: {c.get('parent', '')}\nCategory: {c.get('category', '')}\nCity: {c.get('city', '')}, {c.get('state', '')}\nNAICS: {c.get('naics_desc', '') or c.get('naics', '')}\nProduct/Service: {c.get('product_service', '')}\nFederal Obligation: ${c.get('obligation', 0):,.0f}\nMax Potential: ${c.get('max_potential', 0):,.0f}\nContract IDs: {', '.join(contract_ids)}\nFiscal Years: {c.get('fiscal_years', '')}\nStart: {c.get('start_date', '')} End: {c.get('end_date', '')}\nFunding: {', '.join(c.get('funding_agencies', []))}\nRole: {c.get('role', '')}\nPersonnel: {', '.join(c.get('personnel', [])[:10]) if c.get('personnel') else 'none'}"
+        osint_domain = c.get('osint', {}).get('domain_verify', {}).get('domain', '') or c.get('osint', {}).get('domain_discovery', {}).get('domain', '')
+        contract_context = (
+            f"Contractor: {name}\nDBA: {c.get('dba', '')}\nParent: {c.get('parent', '')}\n"
+            f"Category: {c.get('category', '')}\nCity: {c.get('city', '')}, {c.get('state', '')}\n"
+            f"NAICS: {c.get('naics_desc', '') or c.get('naics', '')}\n"
+            f"Product/Service: {c.get('product_service', '')}\n"
+            f"Federal Obligation: ${c.get('obligation', 0):,.0f}\n"
+            f"Max Potential: ${c.get('max_potential', 0):,.0f}\n"
+            f"Contract IDs ({len(contract_ids)}): {', '.join(contract_ids)}\n"
+            f"Fiscal Years: {c.get('fiscal_years', '')}\n"
+            f"Start: {c.get('start_date', '')} End: {c.get('end_date', '')}\n"
+            f"Funding: {', '.join(c.get('funding_agencies', []))}\n"
+            f"Role: {c.get('role', '')}\n"
+            f"OSINT Domain (may be incorrect): {osint_domain}\n"
+            f"Personnel: {', '.join(c.get('personnel', [])[:10]) if c.get('personnel') else 'none'}\n"
+            f"Size: {c.get('size_determination', '')}\n"
+            f"Business Designations: {', '.join(c.get('business_designations', []))}"
+        )
 
         user_content = f"CONTRACT RECORD:\n{contract_context}"
         if web_context:
@@ -173,7 +205,10 @@ async def summarize_role_endpoint(req: KillChainRequest):
                 "You are a DOE contractor intelligence analyst creating an enhanced description. "
                 "You have (1) the official contract record and (2) web search results. "
                 "Write 2-3 paragraphs: what they do for DOE, scope of work from web findings, "
-                "key contract facts. ONLY use provided data/web results. No training knowledge. "
+                "key contract facts including all contract IDs and their purposes if known. "
+                "If the web search reveals the company's real website URL, include it. "
+                "Note if the OSINT domain appears incorrect based on web findings. "
+                "ONLY use provided data/web results. No training knowledge. "
                 "Professional intelligence briefing style."
             )},
             {"role": "user", "content": user_content},
