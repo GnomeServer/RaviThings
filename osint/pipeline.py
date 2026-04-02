@@ -186,7 +186,19 @@ def run_layer_domain_search(contractors, force=False, limit=0):
                     c['osint']['domain_discovery']['source'] = 'brave_search'
                     c['osint']['domain_discovery']['search_url'] = result.get('search_url', '')
                     upgraded += 1
-                    print(f'  UPGRADED {old_domain or "none"} -> {result["domain"]} (conf={result["confidence"]}%)')
+
+                    # CASCADE: invalidate downstream layers that used the old domain
+                    # These will be re-enriched on next pipeline run with the correct domain
+                    cascade_layers = ['domain_verify', 'dns', 'ct', 'web']
+                    invalidated = []
+                    for layer in cascade_layers:
+                        if layer in c['osint'] and c['osint'][layer].get('queried'):
+                            c['osint'][layer]['queried'] = False
+                            c['osint'][layer]['_invalidated_by'] = f'domain_upgrade:{old_domain}->{result["domain"]}'
+                            invalidated.append(layer)
+
+                    cascade_info = f' [cascade: {",".join(invalidated)}]' if invalidated else ''
+                    print(f'  UPGRADED {old_domain or "none"} -> {result["domain"]} (conf={result["confidence"]}%){cascade_info}')
                 else:
                     print(f'  CONFIRMED {result["domain"]} (conf={result["confidence"]}%)')
             else:
