@@ -2853,6 +2853,53 @@ function buildPanelBody(c) {
     </div>
   </div>`;
 
+  // ── Mission Profile (rich template + LLM summarize) ──
+  {
+    const roleClean = (c.role || '')
+      .replace(/^Supports Department of Energy through work described as:\s*/i, '')
+      .replace(/IGF::CL,CT::IGF\s*/g, '')
+      .replace(/TAS::\d+\s*\d*::TAS\s*/g, '')
+      .trim();
+    const naicsDesc = c.naics_desc || c.naics || '';
+    const psc = c.product_service || '';
+    const contracts = c.contract_ids || [];
+    const funding = c.funding_agencies || [];
+    const obligation = c.obligation || 0;
+    const maxPotential = c.max_potential || 0;
+    const pricing = c.pricing || '';
+    const awardType = c.award_type || '';
+    const start = c.start_date || '';
+    const end = c.end_date || '';
+
+    let missionText = '';
+    if (c.dba) missionText += `Operating as ${escapeHtml(c.dba)}, `;
+    missionText += `${escapeHtml(c.name)} is a ${escapeHtml(c.category)} contractor`;
+    if (c.parent && c.parent !== c.name) missionText += ` (subsidiary of ${escapeHtml(c.parent)})`;
+    missionText += ` located in ${escapeHtml(c.city)}, ${escapeHtml(c.state)}.`;
+
+    if (naicsDesc) missionText += ` Primary work: ${escapeHtml(naicsDesc.toLowerCase())}.`;
+    if (psc) missionText += ` Product/service: ${escapeHtml(psc.toLowerCase())}.`;
+
+    if (obligation > 0) {
+      missionText += ` Federal obligation: $${obligation >= 1e9 ? (obligation/1e9).toFixed(1) + 'B' : obligation >= 1e6 ? (obligation/1e6).toFixed(1) + 'M' : (obligation/1e3).toFixed(0) + 'K'}`;
+      if (maxPotential > 0) missionText += ` (max potential: $${maxPotential >= 1e9 ? (maxPotential/1e9).toFixed(1) + 'B' : (maxPotential/1e6).toFixed(1) + 'M'})`;
+      missionText += '.';
+    }
+
+    if (contracts.length) missionText += ` ${contracts.length} contract${contracts.length > 1 ? 's' : ''}: ${contracts.map(id => escapeHtml(id)).join(', ')}.`;
+    if (awardType) missionText += ` Award: ${escapeHtml(awardType.toLowerCase())}.`;
+    if (pricing) missionText += ` Pricing: ${escapeHtml(pricing.toLowerCase())}.`;
+    if (start || end) missionText += ` Period: ${escapeHtml(start || '?')} to ${escapeHtml(end || 'ongoing')}.`;
+    if (funding.length > 1) missionText += ` Funded by: ${funding.map(f => escapeHtml(f)).join(', ')}.`;
+
+    html += `
+    <div class="panel-section">
+      <div class="section-title">Mission Profile <button onclick="summarizeContractorRole()" style="float:right;font-size:7px;padding:2px 6px;background:rgba(124,77,255,0.06);border:1px solid rgba(124,77,255,0.15);border-radius:2px;color:#b388ff;cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:-2px">Summarize</button></div>
+      <div class="role-text" id="missionProfileText">${missionText}</div>
+      ${roleClean ? `<div class="role-text" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border-dim);font-style:italic;color:var(--text-muted);font-size:10px">"${escapeHtml(roleClean.substring(0, 400))}${roleClean.length > 400 ? '…' : ''}"</div>` : ''}
+    </div>`;
+  }
+
   // ── Financials ──
   html += `
   <div class="panel-section">
@@ -3007,58 +3054,6 @@ function buildPanelBody(c) {
       <div class="personnel-list">
         ${c.personnel.map(p => `<div class="person">${p}</div>`).join('')}
       </div>
-    </div>`;
-  }
-
-  // ── Mission Profile (rich template + LLM summarize) ──
-  {
-    const roleClean = (c.role || '')
-      .replace(/^Supports Department of Energy through work described as:\s*/i, '')
-      .replace(/IGF::CL,CT::IGF\s*/g, '')
-      .replace(/TAS::\d+\s*\d*::TAS\s*/g, '')
-      .trim();
-    const naicsDesc = c.naics_desc || c.naics || '';
-    const psc = c.product_service || '';
-    const contracts = c.contract_ids || [];
-    const fy = c.fiscal_years || '';
-    const start = c.start_date || '';
-    const end = c.end_date || '';
-    const funding = c.funding_agencies || [];
-    const obligation = c.obligation || 0;
-    const maxPotential = c.max_potential || 0;
-    const pricing = c.pricing || '';
-    const awardType = c.award_type || '';
-
-    // Build rich template paragraph
-    let missionText = '';
-    if (c.dba) missionText += `Operating as ${escapeHtml(c.dba)}, `;
-    missionText += `${escapeHtml(c.name)} is a ${escapeHtml(c.category)} contractor`;
-    if (c.parent && c.parent !== c.name) missionText += ` (subsidiary of ${escapeHtml(c.parent)})`;
-    missionText += ` located in ${escapeHtml(c.city)}, ${escapeHtml(c.state)}.`;
-
-    if (naicsDesc) missionText += ` Primary work: ${escapeHtml(naicsDesc.toLowerCase())}.`;
-    if (psc) missionText += ` Product/service: ${escapeHtml(psc.toLowerCase())}.`;
-
-    if (obligation > 0) {
-      missionText += ` Federal obligation: $${obligation >= 1e9 ? (obligation/1e9).toFixed(1) + 'B' : obligation >= 1e6 ? (obligation/1e6).toFixed(1) + 'M' : (obligation/1e3).toFixed(0) + 'K'}`;
-      if (maxPotential > 0) missionText += ` (max potential: $${maxPotential >= 1e9 ? (maxPotential/1e9).toFixed(1) + 'B' : (maxPotential/1e6).toFixed(1) + 'M'})`;
-      missionText += '.';
-    }
-
-    if (contracts.length) missionText += ` ${contracts.length} contract${contracts.length > 1 ? 's' : ''}: ${contracts.map(id => escapeHtml(id)).join(', ')}.`;
-    if (awardType) missionText += ` Award: ${escapeHtml(awardType.toLowerCase())}.`;
-    if (pricing) missionText += ` Pricing: ${escapeHtml(pricing.toLowerCase())}.`;
-    if (start || end) missionText += ` Period: ${escapeHtml(start || '?')} to ${escapeHtml(end || 'ongoing')}.`;
-    if (funding.length > 1) missionText += ` Funded by: ${funding.map(f => escapeHtml(f)).join(', ')}.`;
-
-    html += `
-    <div class="panel-section">
-      <div class="section-title" style="display:flex;align-items:center;justify-content:space-between">
-        <span>Mission Profile</span>
-        <button onclick="summarizeContractorRole()" style="font-size:7px;padding:2px 6px;background:rgba(124,77,255,0.06);border:1px solid rgba(124,77,255,0.15);border-radius:2px;color:#b388ff;cursor:pointer;letter-spacing:1px;text-transform:uppercase">Summarize</button>
-      </div>
-      <div class="role-text" id="missionProfileText">${missionText}</div>
-      ${roleClean ? `<div class="role-text" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border-dim);font-style:italic;color:var(--text-muted);font-size:10px">"${escapeHtml(roleClean.substring(0, 400))}${roleClean.length > 400 ? '…' : ''}"</div>` : ''}
     </div>`;
   }
 
