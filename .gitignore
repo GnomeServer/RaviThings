@@ -32,3 +32,12 @@ frontend/.svelte-kit/
 # Test artifacts
 test_*.py
 !tests/test_*.py
+
+# Screenshots & development images
+*.png
+
+# Playwright MCP logs
+.playwright-mcp/
+
+# Log files
+*.log
