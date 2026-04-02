@@ -2900,6 +2900,9 @@ function buildPanelBody(c) {
     </div>`;
   }
 
+  // ── AI Research Brief ──
+  html += buildAIResearchSection(c);
+
   // ── Financials ──
   html += `
   <div class="panel-section">
@@ -3109,6 +3112,108 @@ function buildPanelBody(c) {
 
   return html;
 }
+
+function buildAIResearchSection(c) {
+  const ar = (c.osint || {}).ai_research;
+
+  // Not yet researched — show Research button
+  if (!ar || !ar.queried) {
+    return `<div class="panel-section">
+      <div class="section-title">AI Research Brief
+        <button onclick="generateAIResearch()" id="aiResearchBtn"
+          style="float:right;font-size:7px;padding:2px 6px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:var(--hud-cyan);cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:-2px">Research</button>
+      </div>
+      <div style="color:var(--text-muted);font-size:11px;padding:4px 0;">Not yet researched. Click Research to analyze this contractor via web search + AI.</div>
+    </div>`;
+  }
+
+  // Error state
+  if (ar.error) {
+    return `<div class="panel-section">
+      <div class="section-title">AI Research Brief
+        <button onclick="generateAIResearch()" id="aiResearchBtn"
+          style="float:right;font-size:7px;padding:2px 6px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:var(--hud-cyan);cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:-2px">Retry</button>
+      </div>
+      <div style="color:var(--hud-danger);font-size:11px;padding:4px 0;">Error: ${escapeHtml(ar.error)}</div>
+    </div>`;
+  }
+
+  // Successfully researched
+  const statusColors = {
+    'active': 'var(--hud-success, #22c55e)',
+    'acquired': 'var(--hud-warning, #f59e0b)',
+    'merged': 'var(--hud-warning, #f59e0b)',
+    'dissolved': 'var(--hud-danger, #ef4444)',
+    'unknown': 'var(--text-muted)',
+  };
+  const statusColor = statusColors[ar.company_status] || 'var(--text-muted)';
+
+  let html = `<div class="panel-section">
+    <div class="section-title">AI Research Brief
+      <button onclick="generateAIResearch()" id="aiResearchBtn"
+        style="float:right;font-size:7px;padding:2px 6px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:2px;color:var(--hud-cyan);cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:-2px">Refresh</button>
+    </div>`;
+
+  // Status badge + parent info
+  html += `<div style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+    <span style="background:${statusColor};color:#000;padding:1px 7px;border-radius:2px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">${escapeHtml(ar.company_status || 'unknown')}</span>`;
+
+  if (ar.parent_company) {
+    html += `<span style="color:var(--text-muted);font-size:10px;">Parent: <span style="color:var(--hud-cyan)">${escapeHtml(ar.parent_company)}</span>`;
+    if (ar.acquisition_year) html += ` (${ar.acquisition_year})`;
+    html += `</span>`;
+  }
+
+  if (ar.domain_confidence) {
+    html += `<span style="color:var(--text-muted);font-size:9px;margin-left:auto;">conf: ${ar.domain_confidence}%</span>`;
+  }
+  html += `</div>`;
+
+  // Domain correction callout
+  if (ar.current_domain && ar.previous_domain && ar.current_domain !== ar.previous_domain) {
+    html += `<div style="background:rgba(14,165,233,0.06);border-left:2px solid var(--hud-cyan);padding:4px 8px;margin:6px 0;font-size:10px;font-family:var(--font-mono)">
+      Domain corrected: <span style="color:var(--hud-danger);text-decoration:line-through">${escapeHtml(ar.previous_domain)}</span>
+      <span style="color:var(--text-muted)">→</span>
+      <span style="color:var(--hud-success, #22c55e)">${escapeHtml(ar.current_domain)}</span>
+      ${ar.domain_validated ? '<span style="color:var(--hud-success, #22c55e);font-size:9px"> ✓ DNS validated</span>' : '<span style="color:var(--text-muted);font-size:9px"> (unvalidated)</span>'}
+    </div>`;
+  } else if (ar.current_domain) {
+    html += `<div style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);margin:4px 0;">
+      Domain: <span style="color:var(--hud-cyan)">${escapeHtml(ar.current_domain)}</span>
+      ${ar.domain_validated ? '<span style="color:var(--hud-success, #22c55e);font-size:9px"> ✓</span>' : ''}
+    </div>`;
+  }
+
+  // Brief text
+  if (ar.brief) {
+    const paragraphs = ar.brief.split(/\n+/).filter(p => p.trim());
+    for (const p of paragraphs) {
+      html += `<p style="color:var(--text-secondary);font-size:11px;line-height:1.55;margin:6px 0;">${escapeHtml(p)}</p>`;
+    }
+  }
+
+  // Status detail
+  if (ar.company_status_detail && ar.company_status !== 'active') {
+    html += `<div style="color:var(--text-muted);font-size:10px;font-style:italic;margin:4px 0;">${escapeHtml(ar.company_status_detail)}</div>`;
+  }
+
+  // Sources
+  if (ar.sources && ar.sources.length > 0) {
+    html += `<div style="margin-top:6px;border-top:1px solid var(--border-dim);padding-top:4px;">
+      <div style="color:var(--text-muted);font-size:8px;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">${ar.sources.length} Source${ar.sources.length !== 1 ? 's' : ''}</div>`;
+    for (const s of ar.sources.slice(0, 6)) {
+      const display = escapeHtml(s.title || s.url || '');
+      html += `<div style="font-size:10px;margin:1px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        <a href="${escapeHtml(s.url)}" target="_blank" rel="noopener" style="color:var(--hud-cyan);text-decoration:none">${display}</a>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
 
 function buildOnPremSection(c) {
   const onprem = (c.osint || {}).onprem_network;
@@ -3966,6 +4071,86 @@ async function summarizeContractorRole() {
     }
   } catch (e) {
     target.innerHTML = origText;
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// AI RESEARCH (Brave Search + Hermes LLM)
+// ═══════════════════════════════════════════════════════════════
+
+async function generateAIResearch() {
+  if (selectedContractor === null) return;
+  const btn = document.getElementById('aiResearchBtn');
+  const origLabel = btn ? btn.textContent : 'Research';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Researching...';
+    btn.style.opacity = '0.6';
+  }
+
+  try {
+    const resp = await fetch('/api/ai-research', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contractor_index: selectedContractor }),
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let lastResult = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6).trim();
+        if (payload === '[DONE]') continue;
+        let event;
+        try { event = JSON.parse(payload); } catch { continue; }
+
+        if (btn) {
+          if (event.phase === 'search') btn.textContent = `Searching...`;
+          else if (event.phase === 'search_complete') btn.textContent = `${event.results} results found`;
+          else if (event.phase === 'synthesizing') btn.textContent = `Analyzing ${event.sources} sources...`;
+          else if (event.phase === 'validating') btn.textContent = `Validating ${event.domain}...`;
+          else if (event.phase === 'complete') lastResult = event;
+        }
+      }
+    }
+
+    // Update contractor data and rebuild panel
+    if (lastResult) {
+      const c = DATA.contractors[selectedContractor];
+      if (!c.osint) c.osint = {};
+      c.osint.ai_research = lastResult;
+
+      // Update local domain if cascaded
+      if (lastResult.current_domain && lastResult.domain_validated &&
+          lastResult.previous_domain && lastResult.current_domain !== lastResult.previous_domain) {
+        if (!c.osint.domain_discovery) c.osint.domain_discovery = {};
+        c.osint.domain_discovery.domain = lastResult.current_domain;
+        c.osint.domain_discovery.source = 'ai_research';
+      }
+
+      // Rebuild panel to show updated data
+      document.getElementById('panelBody').innerHTML = buildPanelBody(c);
+    }
+  } catch (e) {
+    console.error('AI Research failed:', e);
+    if (btn) {
+      btn.textContent = 'Failed - Retry';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
   }
 }
 
