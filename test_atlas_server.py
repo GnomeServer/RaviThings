@@ -107,6 +107,64 @@ class KillChainRequest(BaseModel):
     contractor_index: int
 
 
+@app.post("/api/summarize-role")
+async def summarize_role_endpoint(req: KillChainRequest):
+    """Generate an LLM summary of a contractor's mission based on all available data."""
+    import json as _json
+
+    with open(BASE / "frontend" / "static" / "contractors.json") as f:
+        data = _json.load(f)
+
+    contractors = data.get("contractors", [])
+    if req.contractor_index < 0 or req.contractor_index >= len(contractors):
+        return JSONResponse({"error": "Invalid index"}, status_code=400)
+
+    c = contractors[req.contractor_index]
+
+    # Assemble all contract data for the LLM
+    context = f"""Contractor: {c.get('name', '')}
+DBA: {c.get('dba', '')}
+Parent: {c.get('parent', '')}
+Category: {c.get('category', '')}
+City: {c.get('city', '')}, {c.get('state', '')}
+NAICS: {c.get('naics_desc', '') or c.get('naics', '')}
+Product/Service: {c.get('product_service', '')}
+Award Type: {c.get('award_type', '')}
+Pricing: {c.get('pricing', '')}
+Federal Obligation: ${c.get('obligation', 0):,.0f}
+Max Potential: ${c.get('max_potential', 0):,.0f}
+Contract IDs: {', '.join(c.get('contract_ids', []))}
+Fiscal Years: {c.get('fiscal_years', '')}
+Start: {c.get('start_date', '')} End: {c.get('end_date', '')}
+Size: {c.get('size_determination', '')}
+Designations: {', '.join(c.get('business_designations', []))}
+Awarding Agency: {c.get('awarding_agency', '')}
+Funding Agencies: {', '.join(c.get('funding_agencies', []))}
+Role Description: {c.get('role', '')}
+Key Personnel: {', '.join(c.get('personnel', [])[:10]) if c.get('personnel') else 'none listed'}
+Transactions: {c.get('transaction_count', '')}"""
+
+    messages = [
+        {"role": "system", "content": (
+            "You are a DOE contractor intelligence analyst. Summarize what this contractor does "
+            "for the Department of Energy in 2-3 concise paragraphs. Cover: (1) what the organization is "
+            "and its primary mission, (2) the scope and nature of their DOE work, (3) key financial and "
+            "organizational details. Use only the provided data — do not invent facts. Write in a "
+            "professional briefing style."
+        )},
+        {"role": "user", "content": context},
+    ]
+
+    if hermes.is_available():
+        try:
+            summary = await hermes.chat(messages, max_tokens=500)
+            return JSONResponse({"summary": summary.strip()})
+        except Exception as e:
+            return JSONResponse({"summary": f"Summary generation failed: {e}"})
+    else:
+        return JSONResponse({"summary": "Hermes 405B not available for summarization."})
+
+
 @app.post("/api/full-assessment")
 async def full_assessment_endpoint(req: KillChainRequest):
     """Generate a complete assessment: kill chain + detailed analysis of every step.
