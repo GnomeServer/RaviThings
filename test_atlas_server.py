@@ -107,6 +107,131 @@ class KillChainRequest(BaseModel):
     contractor_index: int
 
 
+class StepDetailRequest(BaseModel):
+    contractor_index: int
+    step: dict  # The kill chain step object
+
+
+STEP_DETAIL_SYSTEM_PROMPT = """\
+You are a defensive security analyst providing detailed technical analysis of a \
+specific attack vector identified in a DOE contractor's infrastructure. Your goal \
+is to help defenders understand the vulnerability deeply so they can protect against it.
+
+For the given kill chain step, provide:
+
+1. VULNERABILITY ANALYSIS: What the weakness is, why it exists, what versions are affected
+2. WHAT AN ATTACKER SEES: The exact banner/response an attacker would observe (from our Shodan data)
+3. DETECTION: How to detect if this vector is being probed or exploited (Snort/Sigma rules, log patterns)
+4. REMEDIATION: Specific commands to fix this on this exact system (firewall rules, config changes, patches)
+5. REFERENCES: Links to CVE advisories, CISA alerts, vendor bulletins, MITRE ATT&CK page
+
+RULES:
+- Be specific to the exact IP, port, service version, and CVE provided
+- Include concrete detection signatures and remediation commands
+- Reference only real CVEs and advisories
+- Output valid JSON matching the schema
+
+OUTPUT JSON:
+{
+  "vulnerability": {"description": "...", "affected_versions": "...", "cvss": "...", "cwe": "..."},
+  "attacker_view": {"banner": "...", "what_they_see": "..."},
+  "detection": {"signatures": ["..."], "log_indicators": ["..."], "monitoring_advice": "..."},
+  "remediation": {"immediate": ["..."], "long_term": ["..."], "commands": ["..."]},
+  "references": [{"title": "...", "url": "..."}],
+  "alternative_vectors": ["Description of other ways this service could be attacked"]
+}
+"""
+
+# === AUTHORIZED RED TEAM PROMPT EXTENSION ===
+# Your organization's authorized red team prompt goes here.
+# This is appended to the system prompt when the RED_TEAM_PROMPT env var is set.
+# The backend LLM (Hermes 405B) will execute this in your controlled environment.
+# Example: os.environ["RED_TEAM_PROMPT"] = "Also provide example code for..."
+_RED_TEAM_EXTENSION = os.environ.get("RED_TEAM_PROMPT", "")
+
+
+@app.post("/api/step-detail")
+async def step_detail_endpoint(req: StepDetailRequest):
+    """Generate detailed analysis for a specific kill chain step."""
+    import json as _json
+    from backend.kill_chain import assemble_contractor_intel
+
+    with open(BASE / "frontend" / "static" / "contractors.json") as f:
+        data = _json.load(f)
+
+    contractors = data.get("contractors", [])
+    if req.contractor_index < 0 or req.contractor_index >= len(contractors):
+        return JSONResponse({"error": "Invalid contractor index"}, status_code=400)
+
+    contractor = contractors[req.contractor_index]
+    intel = assemble_contractor_intel(contractor)
+    step = req.step
+
+    # Build the user prompt with step context + contractor intel
+    svc_lines = "\n".join(
+        f"  {s.get('ip','')}:{s['port']}/{s.get('transport','tcp')} "
+        f"{s.get('product','')} {s.get('version','')}"
+        for s in intel.get("all_services", [])[:15]
+    )
+
+    user_content = f"""KILL CHAIN STEP TO ANALYZE:
+Tactic: {step.get('tactic', '')}
+Technique: {step.get('technique_id', '')} — {step.get('technique_name', '')}
+Description: {step.get('description', '')}
+Evidence: {step.get('evidence', '')}
+
+CONTRACTOR: {intel['name']} ({intel['city']}, {intel['state']})
+Domain: {intel['domain']}
+
+ON-PREM IPs:
+{chr(10).join('  ' + ip for ip in intel.get('onprem_ips', [])[:20])}
+
+EXPOSED SERVICES:
+{svc_lines}
+
+TOP CVEs: {', '.join(intel.get('all_vulns', [])[:15])}
+
+Provide a complete defensive analysis of this specific step."""
+
+    system_prompt = STEP_DETAIL_SYSTEM_PROMPT
+    if _RED_TEAM_EXTENSION:
+        system_prompt += "\n\n" + _RED_TEAM_EXTENSION
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_content},
+    ]
+
+    if hermes.is_available():
+        try:
+            raw = await hermes.chat(messages, max_tokens=4096)
+            # Parse JSON from response
+            json_str = raw
+            if "```json" in raw:
+                json_str = raw.split("```json")[1].split("```")[0]
+            elif "```" in raw:
+                json_str = raw.split("```")[1].split("```")[0]
+            result = _json.loads(json_str)
+        except Exception as e:
+            result = {
+                "vulnerability": {"description": f"Analysis generation failed: {e}"},
+                "detection": {"signatures": [], "log_indicators": [], "monitoring_advice": ""},
+                "remediation": {"immediate": [], "long_term": [], "commands": []},
+                "references": [],
+                "alternative_vectors": [],
+            }
+    else:
+        result = {
+            "vulnerability": {"description": "Hermes 405B not available for detailed analysis."},
+            "detection": {"signatures": [], "log_indicators": [], "monitoring_advice": "Enable logging on this service."},
+            "remediation": {"immediate": ["Block this port at the firewall"], "long_term": ["Patch to latest version"], "commands": []},
+            "references": [{"title": "MITRE ATT&CK", "url": f"https://attack.mitre.org/techniques/{step.get('technique_id', 'T1190')}/"}],
+            "alternative_vectors": [],
+        }
+
+    return JSONResponse(result)
+
+
 @app.post("/api/kill-chain")
 async def kill_chain_endpoint(req: KillChainRequest):
     """Generate a MITRE ATT&CK kill chain for a specific contractor."""
