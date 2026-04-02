@@ -2894,7 +2894,7 @@ function buildPanelBody(c) {
 
     html += `
     <div class="panel-section">
-      <div class="section-title">Mission Profile <button onclick="summarizeContractorRole()" style="float:right;font-size:7px;padding:2px 6px;background:rgba(124,77,255,0.06);border:1px solid rgba(124,77,255,0.15);border-radius:2px;color:#b388ff;cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:-2px">Summarize</button></div>
+      <div class="section-title">Mission Profile <button onclick="summarizeContractorRole()" style="float:right;font-size:7px;padding:2px 6px;background:rgba(124,77,255,0.06);border:1px solid rgba(124,77,255,0.15);border-radius:2px;color:#b388ff;cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:-2px">Enhanced Description</button></div>
       <div class="role-text" id="missionProfileText">${missionText}</div>
       ${roleClean ? `<div class="role-text" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border-dim);font-style:italic;color:var(--text-muted);font-size:10px">"${escapeHtml(roleClean.substring(0, 400))}${roleClean.length > 400 ? '…' : ''}"</div>` : ''}
     </div>`;
@@ -3886,7 +3886,7 @@ async function summarizeContractorRole() {
   if (!target) return;
 
   const origText = target.innerHTML;
-  target.innerHTML = '<span style="color:#b388ff;font-style:italic">Generating AI summary via Hermes 405B...</span>';
+  target.innerHTML = '<span style="color:#b388ff;font-style:italic">Generating enhanced description via Hermes 405B...</span>';
 
   try {
     const resp = await fetch('/api/summarize-role', {

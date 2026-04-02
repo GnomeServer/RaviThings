@@ -146,11 +146,15 @@ Transactions: {c.get('transaction_count', '')}"""
 
     messages = [
         {"role": "system", "content": (
-            "You are a DOE contractor intelligence analyst. Summarize what this contractor does "
-            "for the Department of Energy in 2-3 concise paragraphs. Cover: (1) what the organization is "
-            "and its primary mission, (2) the scope and nature of their DOE work, (3) key financial and "
-            "organizational details. Use only the provided data — do not invent facts. Write in a "
-            "professional briefing style."
+            "You are a DOE contractor intelligence analyst creating an enhanced description. "
+            "Write 2-3 paragraphs covering: (1) what the organization is, its history, and primary mission — "
+            "use your training knowledge about this company/institution alongside the contract data provided, "
+            "(2) the specific nature and scope of their DOE work — what programs, facilities, or missions they support, "
+            "(3) why this contractor matters to DOE operations and national security. "
+            "Combine the provided contract record data with your knowledge about the organization. "
+            "For well-known entities (national labs, major defense contractors, universities), include relevant "
+            "context about their broader role. For lesser-known companies, focus on what the contract data reveals. "
+            "Write in a professional intelligence briefing style. Be concrete and specific."
         )},
         {"role": "user", "content": context},
     ]
