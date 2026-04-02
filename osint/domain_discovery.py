@@ -225,6 +225,12 @@ async def discover_domain_via_search(contractor: dict, brave_client=None) -> dic
                 'wikipedia.org', 'bloomberg.com', 'dnb.com', 'zoominfo.com',
                 'opencorporates.com', 'usaspending.gov', 'sam.gov',
                 'fpds.gov', 'google.com', 'youtube.com', 'instagram.com',
+                'mapquest.com', 'yellowpages.com', 'whitepages.com',
+                'manta.com', 'crunchbase.com', 'pitchbook.com',
+                'sec.gov', 'bizjournals.com', 'prnewswire.com',
+                'globenewswire.com', 'reuters.com', 'ap.org',
+                'reddit.com', 'tiktok.com', 'pinterest.com',
+                'amazon.com', 'ebay.com', 'walmart.com',
             }
             base = '.'.join(domain.split('.')[-2:])
             if base in skip_domains:
@@ -236,10 +242,20 @@ async def discover_domain_via_search(contractor: dict, brave_client=None) -> dic
             matches = sum(1 for w in name_words if w in title)
             match_ratio = matches / max(len(name_words), 1)
 
-            if match_ratio >= 0.3:  # At least 30% of name words match
+            # Also check if any name word appears in the domain itself
+            domain_lower = domain.lower()
+            domain_name_match = any(w in domain_lower for w in name_words if len(w) >= 3)
+
+            # Require BOTH: name in title AND name in domain (prevents mapquest-for-lockheed)
+            # Exception: .gov domains are trusted even without domain name match
+            is_gov = domain.endswith('.gov') or domain.endswith('.mil')
+
+            if match_ratio >= 0.3 and (domain_name_match or is_gov):
                 # Verify it resolves
                 if probe_domain(domain, timeout=3.0):
                     confidence = int(min(match_ratio * 80 + 20, 100))
+                    if domain_name_match:
+                        confidence = min(confidence + 10, 100)
                     result['domain'] = domain
                     result['source'] = 'brave_search'
                     result['search_url'] = url
