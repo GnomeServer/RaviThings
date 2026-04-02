@@ -3681,6 +3681,42 @@ async function showStepDetail(stepIndex) {
       container.innerHTML += altHtml;
     }
 
+    // Red Team Analysis (from RED_TEAM_PROMPT.json — only present when authorized)
+    const rt = data.red_team;
+    if (rt) {
+      let rtHtml = `<div class="sd-section red-team"><div class="sd-section-title red">// Red Team Analysis</div>`;
+      if (rt.tools && rt.tools.length) {
+        rtHtml += '<div style="font-size:9px;font-weight:700;color:rgba(255,23,68,0.5);letter-spacing:1px;margin-bottom:4px">TOOLS</div>';
+        rtHtml += '<ul class="sd-list">';
+        for (const t of rt.tools) rtHtml += `<li>${escapeHtml(typeof t === 'string' ? t : JSON.stringify(t))}</li>`;
+        rtHtml += '</ul>';
+      }
+      if (rt.commands && rt.commands.length) {
+        rtHtml += '<div style="font-size:9px;font-weight:700;color:rgba(255,23,68,0.5);letter-spacing:1px;margin-top:8px;margin-bottom:4px">COMMANDS</div>';
+        for (const c of rt.commands) rtHtml += `<div class="sd-code" style="border-color:rgba(255,23,68,0.15)">${escapeHtml(typeof c === 'string' ? c : JSON.stringify(c))}</div>`;
+      }
+      if (rt.techniques && rt.techniques.length) {
+        rtHtml += '<div style="font-size:9px;font-weight:700;color:rgba(255,23,68,0.5);letter-spacing:1px;margin-top:8px;margin-bottom:4px">TECHNIQUES</div>';
+        rtHtml += '<ul class="sd-list">';
+        for (const t of rt.techniques) rtHtml += `<li>${escapeHtml(typeof t === 'string' ? t : JSON.stringify(t))}</li>`;
+        rtHtml += '</ul>';
+      }
+      // Render any other keys as text
+      for (const [k, v] of Object.entries(rt)) {
+        if (['tools', 'commands', 'techniques'].includes(k)) continue;
+        if (typeof v === 'string') {
+          rtHtml += `<div style="margin-top:6px"><span style="font-size:9px;font-weight:700;color:rgba(255,23,68,0.4);letter-spacing:1px;text-transform:uppercase">${escapeHtml(k)}</span>`;
+          rtHtml += `<div class="sd-text">${escapeHtml(v)}</div></div>`;
+        } else if (Array.isArray(v)) {
+          rtHtml += `<div style="margin-top:6px"><span style="font-size:9px;font-weight:700;color:rgba(255,23,68,0.4);letter-spacing:1px;text-transform:uppercase">${escapeHtml(k)}</span>`;
+          for (const item of v) rtHtml += `<div class="sd-code" style="border-color:rgba(255,23,68,0.1)">${escapeHtml(typeof item === 'string' ? item : JSON.stringify(item, null, 2))}</div>`;
+          rtHtml += '</div>';
+        }
+      }
+      rtHtml += '</div>';
+      container.innerHTML += rtHtml;
+    }
+
     // References
     const refs = data.references || [];
     if (refs.length) {

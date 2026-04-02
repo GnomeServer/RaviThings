@@ -212,8 +212,51 @@ TOP CVEs: {', '.join(intel.get('all_vulns', [])[:15])}
 Provide a complete defensive analysis of this specific step."""
 
     system_prompt = STEP_DETAIL_SYSTEM_PROMPT
+
     if _RED_TEAM_EXTENSION:
-        system_prompt += "\n\n" + _RED_TEAM_EXTENSION
+        # Dynamically substitute placeholders with real step data
+        rt_context = _RED_TEAM_EXTENSION
+
+        # Extract the primary IP and port from the step evidence
+        import re as _re
+        ip_match = _re.search(r'(\d+\.\d+\.\d+\.\d+)', step.get('evidence', '') + ' ' + step.get('description', ''))
+        port_match = _re.search(r':(\d+)', step.get('evidence', '') + ' ' + step.get('description', ''))
+        target_ip = ip_match.group(1) if ip_match else (intel.get('onprem_ips', [''])[0] if intel.get('onprem_ips') else '')
+        target_port = port_match.group(1) if port_match else ''
+
+        # Find the matching service for product/version info
+        target_svc = next(
+            (s for s in intel.get('all_services', [])
+             if str(s.get('port')) == target_port or s.get('ip') == target_ip),
+            {}
+        )
+        target_product = f"{target_svc.get('product', '')} {target_svc.get('version', '')}".strip()
+
+        # Map MITRE tactic to the relevant red team phase
+        tactic_to_phase = {
+            'Initial Access': 'reconnaissance + vulnerability_identification',
+            'Execution': 'vulnerability_exploitation',
+            'Credential Access': 'vulnerability_exploitation + exploitation',
+            'Lateral Movement': 'post_exploitation',
+            'Persistence': 'post_exploitation',
+            'Discovery': 'reconnaissance',
+            'Collection': 'post_exploitation',
+            'Exfiltration': 'post_exploitation',
+        }
+        relevant_phase = tactic_to_phase.get(step.get('tactic', ''), 'vulnerability_identification')
+
+        # Perform substitutions
+        rt_context = rt_context.replace('TARGET_IP_HERE', target_ip)
+        rt_context = rt_context.replace('TARGET_PROTOCOL_HERE', target_svc.get('transport', 'tcp'))
+        rt_context = rt_context.replace('TARGET_URL_HERE', f'http://{target_ip}:{target_port}' if target_port else f'http://{target_ip}')
+        rt_context = rt_context.replace('PORT_RANGE', target_port or '1-65535')
+        rt_context = rt_context.replace('SERVICE_NAME', target_product or 'unknown')
+
+        system_prompt += f"\n\n{rt_context}"
+        system_prompt += f"\n\nFOCUS: This step maps to red team phase(s): {relevant_phase}. "
+        system_prompt += f"Target: {target_ip}:{target_port} running {target_product}. "
+        system_prompt += "Provide phase-specific tool commands and techniques for THIS exact target. "
+        system_prompt += "Add a 'red_team' key to your JSON output with: {\"tools\": [...], \"commands\": [...], \"techniques\": [...]}."
 
     messages = [
         {"role": "system", "content": system_prompt},
