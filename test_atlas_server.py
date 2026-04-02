@@ -107,6 +107,140 @@ class KillChainRequest(BaseModel):
     contractor_index: int
 
 
+@app.post("/api/full-assessment")
+async def full_assessment_endpoint(req: KillChainRequest):
+    """Generate a complete assessment: kill chain + detailed analysis of every step.
+
+    Returns SSE stream with progress events:
+      {"phase": "kill_chain", "status": "generating"}
+      {"phase": "kill_chain", "status": "complete", "data": {...}}
+      {"phase": "step_detail", "step": 1, "total": 6, "status": "generating"}
+      {"phase": "step_detail", "step": 1, "total": 6, "status": "complete", "data": {...}}
+      ...
+      {"phase": "complete", "summary": {...}}
+    """
+    import json as _json
+    import re as _re2
+    from backend.kill_chain import assemble_contractor_intel, generate_kill_chain
+
+    with open(BASE / "frontend" / "static" / "contractors.json") as f:
+        data = _json.load(f)
+
+    contractors = data.get("contractors", [])
+    if req.contractor_index < 0 or req.contractor_index >= len(contractors):
+        return JSONResponse({"error": "Invalid contractor index"}, status_code=400)
+
+    contractor = contractors[req.contractor_index]
+    intel = assemble_contractor_intel(contractor)
+
+    async def stream():
+        # Phase 1: Generate kill chain
+        yield f"data: {_json.dumps({'phase': 'kill_chain', 'status': 'generating'})}\n\n"
+
+        if hermes.is_available():
+            kill_chain = await generate_kill_chain(hermes, intel)
+        else:
+            steps = []
+            for i, v in enumerate(intel["vectors"][:8], 1):
+                steps.append({
+                    "step": i, "tactic": v.get("tactic", ""),
+                    "technique_id": v.get("technique", ""),
+                    "technique_name": v.get("name", ""),
+                    "description": v.get("detail", ""),
+                    "evidence": v.get("evidence", f"Port {v.get('port', '')}"),
+                    "impact": "Enables further attack progression",
+                })
+            kill_chain = {
+                "summary": f"{intel['name']} has {len(intel['vectors'])} attack vectors.",
+                "risk_level": "high" if len(intel["vectors"]) > 2 else "medium",
+                "steps": steps, "remediation": [],
+            }
+
+        yield f"data: {_json.dumps({'phase': 'kill_chain', 'status': 'complete', 'data': kill_chain})}\n\n"
+
+        # Phase 2: Detailed analysis for each step
+        steps = kill_chain.get("steps", [])
+        step_details = []
+
+        for idx, step in enumerate(steps):
+            yield f"data: {_json.dumps({'phase': 'step_detail', 'step': idx + 1, 'total': len(steps), 'status': 'generating', 'tactic': step.get('tactic', '')})}\n\n"
+
+            if hermes.is_available():
+                # Build step detail prompt (same as /api/step-detail endpoint)
+                svc_lines = "\n".join(
+                    f"  {s.get('ip','')}:{s['port']}/{s.get('transport','tcp')} "
+                    f"{s.get('product','')} {s.get('version','')}"
+                    for s in intel.get("all_services", [])[:15]
+                )
+
+                user_content = f"""KILL CHAIN STEP TO ANALYZE:
+Tactic: {step.get('tactic', '')}
+Technique: {step.get('technique_id', '')} — {step.get('technique_name', '')}
+Description: {step.get('description', '')}
+Evidence: {step.get('evidence', '')}
+
+CONTRACTOR: {intel['name']} ({intel['city']}, {intel['state']})
+Domain: {intel['domain']}
+
+ON-PREM IPs:
+{chr(10).join('  ' + ip for ip in intel.get('onprem_ips', [])[:20])}
+
+EXPOSED SERVICES:
+{svc_lines}
+
+TOP CVEs: {', '.join(intel.get('all_vulns', [])[:15])}
+
+Provide a complete defensive analysis of this specific step."""
+
+                system_prompt = STEP_DETAIL_SYSTEM_PROMPT
+                if _RED_TEAM_EXTENSION:
+                    rt_context = _RED_TEAM_EXTENSION
+                    ip_match = _re2.search(r'(\d+\.\d+\.\d+\.\d+)', step.get('evidence', '') + ' ' + step.get('description', ''))
+                    port_match = _re2.search(r':(\d+)', step.get('evidence', '') + ' ' + step.get('description', ''))
+                    target_ip = ip_match.group(1) if ip_match else (intel.get('onprem_ips', [''])[0] if intel.get('onprem_ips') else '')
+                    target_port = port_match.group(1) if port_match else ''
+                    target_svc = next((s for s in intel.get('all_services', []) if str(s.get('port')) == target_port or s.get('ip') == target_ip), {})
+                    target_product = f"{target_svc.get('product', '')} {target_svc.get('version', '')}".strip()
+
+                    rt_context = rt_context.replace('TARGET_IP_HERE', target_ip)
+                    rt_context = rt_context.replace('TARGET_PROTOCOL_HERE', target_svc.get('transport', 'tcp'))
+                    rt_context = rt_context.replace('TARGET_URL_HERE', f'http://{target_ip}:{target_port}' if target_port else f'http://{target_ip}')
+                    rt_context = rt_context.replace('PORT_RANGE', target_port or '1-65535')
+                    rt_context = rt_context.replace('SERVICE_NAME', target_product or 'unknown')
+                    system_prompt += f"\n\n{rt_context}\n\nFOCUS: Target {target_ip}:{target_port} running {target_product}. Add 'red_team' key to JSON. IMPORTANT: Escape all backslashes as \\\\\\\\ in JSON strings."
+
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_content},
+                ]
+
+                try:
+                    raw = await hermes.chat(messages, max_tokens=4096)
+                    json_str = raw
+                    if "```json" in raw:
+                        json_str = raw.split("```json")[1].split("```")[0]
+                    elif "```" in raw:
+                        json_str = raw.split("```")[1].split("```")[0]
+                    try:
+                        detail = _json.loads(json_str)
+                    except _json.JSONDecodeError:
+                        fixed = _re2.sub(r'(?<!\\)\\(?!["\\/bfnrtu])', r'\\\\', json_str)
+                        detail = _json.loads(fixed)
+                except Exception as e:
+                    detail = {"vulnerability": {"description": f"Analysis failed: {e}"}, "detection": {}, "remediation": {}, "references": []}
+            else:
+                detail = {"vulnerability": {"description": "Hermes not available"}, "detection": {}, "remediation": {}, "references": []}
+
+            step_details.append(detail)
+            yield f"data: {_json.dumps({'phase': 'step_detail', 'step': idx + 1, 'total': len(steps), 'status': 'complete', 'data': detail})}\n\n"
+
+        # Final summary
+        yield f"data: {_json.dumps({'phase': 'complete', 'total_steps': len(steps), 'total_details': len(step_details)})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
 class StepDetailRequest(BaseModel):
     contractor_index: int
     step: dict  # The kill chain step object
