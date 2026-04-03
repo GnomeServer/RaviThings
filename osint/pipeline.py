@@ -69,12 +69,29 @@ def needs_layer(contractor, layer_name, force=False):
 
 
 def get_contractor_domain(contractor):
-    """Get the best known domain for a contractor."""
-    # Check if domain discovery already found one
-    dd = contractor.get('osint', {}).get('domain_discovery', {})
+    """Get the best known domain for a contractor.
+
+    Priority order:
+    1. AI-researched domain (if validated via DNS probe) — highest confidence
+    2. Domain discovery result (brave_search, dns_probe, csv_url)
+    3. Original URL from CSV
+    """
+    osint = contractor.get('osint', {})
+
+    # Priority 1: AI research found a domain with high confidence
+    # Trust AI at >= 80% even without DNS validation (DNS probe can fail for
+    # CDN-fronted domains, geo-restricted sites, or rate-limited servers)
+    ar = osint.get('ai_research', {})
+    if ar.get('current_domain'):
+        if ar.get('domain_validated') or ar.get('domain_confidence', 0) >= 80:
+            return ar['current_domain']
+
+    # Priority 2: Domain discovery
+    dd = osint.get('domain_discovery', {})
     if dd.get('domain'):
         return dd['domain']
-    # Check original URL
+
+    # Priority 3: Original URL from CSV
     from osint.domain_discovery import extract_domain_from_url
     url = contractor.get('url', '')
     if url:
@@ -283,9 +300,11 @@ def run_layer_domain_verification(contractors, force=False, limit=0):
 
         dns_data = c.get('osint', {}).get('dns')
         ct_data = c.get('osint', {}).get('ct')
+        ai_research = c.get('osint', {}).get('ai_research')
 
         result = verify_domain(c['name'], domain, dba=c.get('dba', ''),
-                               dns_data=dns_data, ct_data=ct_data)
+                               dns_data=dns_data, ct_data=ct_data,
+                               ai_research=ai_research)
 
         if 'osint' not in contractors[i]:
             contractors[i]['osint'] = {}

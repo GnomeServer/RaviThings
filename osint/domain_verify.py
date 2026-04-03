@@ -186,7 +186,8 @@ def _fetch_page(domain: str) -> dict[str, Any]:
 
 
 def verify_domain(contractor_name: str, domain: str, dba: str = "",
-                  dns_data: dict | None = None, ct_data: dict | None = None) -> dict[str, Any]:
+                  dns_data: dict | None = None, ct_data: dict | None = None,
+                  ai_research: dict | None = None) -> dict[str, Any]:
     """Verify whether a domain actually belongs to a contractor.
 
     Args:
@@ -195,6 +196,7 @@ def verify_domain(contractor_name: str, domain: str, dba: str = "",
         dba: Doing-business-as name (alternate name)
         dns_data: Existing DNS enrichment data (optional, avoids re-querying)
         ct_data: Existing CT log data (optional)
+        ai_research: AI research results (optional, boosts confidence if domain matches)
 
     Returns:
         dict with confidence score, verdict, and signal details
@@ -318,6 +320,24 @@ def verify_domain(contractor_name: str, domain: str, dba: str = "",
         if name_words[0] in domain_base:
             score += 15
             signals.append(("domain_name_match", +15))
+
+    # ── Signal 6: AI Research validation ──
+    # If the AI Research Layer confirmed this domain with high confidence + sources,
+    # that's strong evidence — the LLM cross-referenced web search results.
+    if ai_research and ai_research.get('current_domain'):
+        ai_domain = ai_research['current_domain'].lower().strip()
+        if ai_domain == domain.lower().strip():
+            ai_conf = ai_research.get('domain_confidence', 0)
+            ai_sources = len(ai_research.get('sources', []))
+            if ai_conf >= 80:
+                score += 35
+                signals.append(("ai_research_high_confidence", +35, f"conf={ai_conf}%, {ai_sources} sources"))
+            elif ai_conf >= 50:
+                score += 20
+                signals.append(("ai_research_moderate_confidence", +20, f"conf={ai_conf}%, {ai_sources} sources"))
+            elif ai_conf > 0:
+                score += 10
+                signals.append(("ai_research_low_confidence", +10, f"conf={ai_conf}%"))
 
     # ── Clamp and classify ──
     score = max(0, min(100, score))
