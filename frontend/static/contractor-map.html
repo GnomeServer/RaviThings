@@ -5695,12 +5695,45 @@ async function sendAtlasChat() {
       allLines.slice(0, 60).join('\n');
   }
 
+  // Build session state context
+  let sessionContext = '\n\nSESSION STATE:';
+
+  // Active filter info
+  let visibleCount = 0;
+  markerCluster.eachLayer(() => visibleCount++);
+  sessionContext += `\n- visible_count: ${visibleCount} of ${DATA ? DATA.contractors.length : 0}`;
+  sessionContext += `\n- selected_contractor: ${selectedContractor !== null ? selectedContractor : -1}`;
+
+  // Track recent contractor indices from conversation
+  const recentIndices = new Set();
+  for (const msg of atlasChatMessages.slice(-6)) {
+    const matches = (msg.content || '').matchAll(/\[(\d+)\]/g);
+    for (const m of matches) {
+      recentIndices.add(parseInt(m[1]));
+    }
+  }
+  if (recentIndices.size > 0) {
+    sessionContext += `\n- recent_indices: [${[...recentIndices].join(',')}]`;
+  }
+
+  // If a contractor is selected, include their name for reference
+  if (selectedContractor !== null && DATA && DATA.contractors[selectedContractor]) {
+    sessionContext += `\n- selected_name: ${DATA.contractors[selectedContractor].name}`;
+  }
+
+  // If radius circle is active
+  if (window._radiusCircle) {
+    const center = window._radiusCircle.getLatLng();
+    const radiusMiles = Math.round(window._radiusCircle.getRadius() / 1609.34);
+    sessionContext += `\n- active_radius: ${radiusMiles} miles around [${center.lat.toFixed(2)}, ${center.lng.toFixed(2)}]`;
+  }
+
   // Prepare request
   const payload = {
     query: query,
     messages: atlasChatMessages.slice(-10),
     contractor_count: DATA ? DATA.contractors.length : 0,
-    data_context: dataContext,
+    data_context: dataContext + sessionContext,
   };
 
   try {
@@ -5845,6 +5878,7 @@ function executeMapCommand(cmd) {
       markerCluster.clearLayers();
       markerCluster.addLayers(allMarkers);
       activeFilters.clear();
+      if (window._radiusCircle) { map.removeLayer(window._radiusCircle); window._radiusCircle = null; }
       closePanel();
       map.flyTo([39.5, -98.5], 5, { duration: 1 });
       addAtlasMessage('system', 'Map reset — showing all contractors');
@@ -5853,6 +5887,201 @@ function executeMapCommand(cmd) {
     case 'dim_others': {
       // Dim all markers except specified ones — visual only
       // This is handled by CSS opacity on the cluster layer
+      break;
+    }
+
+    case 'research': {
+      // AI Research on a contractor
+      const idx = cmd.contractor_index;
+      if (typeof idx === 'number' && idx >= 0 && idx < DATA.contractors.length) {
+        selectedContractor = idx;
+        openDetailPanel(idx);
+        addAtlasMessage('system', `Running AI research on ${DATA.contractors[idx].name}...`);
+        generateAIResearch();
+      }
+      break;
+    }
+
+    case 'kill_chain': {
+      // Generate MITRE ATT&CK kill chain
+      const idx = cmd.contractor_index;
+      if (typeof idx === 'number' && idx >= 0 && idx < DATA.contractors.length) {
+        selectedContractor = idx;
+        openDetailPanel(idx);
+        addAtlasMessage('system', `Generating kill chain for ${DATA.contractors[idx].name}...`);
+        generateKillChain();
+      }
+      break;
+    }
+
+    case 'assess': {
+      // Full threat assessment
+      const idx = cmd.contractor_index;
+      if (typeof idx === 'number' && idx >= 0 && idx < DATA.contractors.length) {
+        selectedContractor = idx;
+        openDetailPanel(idx);
+        addAtlasMessage('system', `Running full threat assessment on ${DATA.contractors[idx].name}...`);
+        generateFullAssessment();
+      }
+      break;
+    }
+
+    case 'compare': {
+      // Side-by-side comparison of 2-5 contractors
+      const indices = cmd.contractor_indices || [];
+      if (indices.length >= 2 && indices.length <= 5) {
+        const rows = indices.map(i => {
+          const c = DATA.contractors[i];
+          if (!c) return null;
+          const risk = computeRiskScore(c);
+          const o = c.osint || {};
+          const sr = o.service_risk || {};
+          const dns = o.dns || {};
+          const nvd = o.nvd_cvss || {};
+          const sip = o.shodan_ip || {};
+          const onp = o.onprem_network || {};
+          return {
+            name: c.name,
+            index: i,
+            city: `${c.city}, ${c.state}`,
+            category: c.category,
+            risk: risk.score,
+            severity: risk.severity,
+            danger: sr.max_danger || 'none',
+            dmarc: (dns.dmarc_policy || 'unknown'),
+            maxCvss: nvd.max_score || 0,
+            totalVulns: (sip.aggregate || {}).total_vulns || 0,
+            hostsEnriched: sip.ips_enriched || 0,
+            onprem: onp.on_prem_count || 0,
+          };
+        }).filter(Boolean);
+
+        if (rows.length >= 2) {
+          let html = '<div style="overflow-x:auto;margin:8px 0;"><table style="width:100%;border-collapse:collapse;font-size:10px;font-family:var(--font-mono);">';
+          html += '<tr style="border-bottom:1px solid var(--hud-border);">';
+          html += '<th style="text-align:left;padding:4px 6px;color:var(--hud-cyan);">Metric</th>';
+          rows.forEach(r => {
+            html += `<th style="text-align:center;padding:4px 6px;color:var(--hud-text);cursor:pointer;" onclick="openDetailPanel(${r.index})">${escapeHtml(r.name.substring(0, 20))}</th>`;
+          });
+          html += '</tr>';
+
+          const metrics = [
+            { label: 'Risk Score', key: 'risk', format: v => `<span style="color:${v >= 70 ? 'var(--hud-danger)' : v >= 40 ? 'var(--hud-warning)' : 'var(--hud-success)'}">${v}</span>` },
+            { label: 'Severity', key: 'severity', format: v => v.toUpperCase() },
+            { label: 'Max Danger', key: 'danger', format: v => `<span style="color:${v === 'critical' ? 'var(--hud-danger)' : v === 'high' ? 'var(--hud-warning)' : 'var(--hud-text-dim)'}">${v}</span>` },
+            { label: 'DMARC', key: 'dmarc', format: v => `<span style="color:${v === 'reject' ? 'var(--hud-success)' : v === 'not_set' ? 'var(--hud-danger)' : 'var(--hud-warning)'}">${v}</span>` },
+            { label: 'Max CVSS', key: 'maxCvss', format: v => v > 0 ? `<span style="color:${v >= 9 ? 'var(--hud-danger)' : v >= 7 ? 'var(--hud-warning)' : 'var(--hud-text)'}">${v}</span>` : '-' },
+            { label: 'Total Vulns', key: 'totalVulns', format: v => v || '-' },
+            { label: 'Hosts Enriched', key: 'hostsEnriched', format: v => v || '-' },
+            { label: 'On-Prem IPs', key: 'onprem', format: v => v || '-' },
+            { label: 'Location', key: 'city', format: v => v },
+            { label: 'Category', key: 'category', format: v => v },
+          ];
+
+          metrics.forEach(m => {
+            html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.03);">`;
+            html += `<td style="padding:3px 6px;color:var(--hud-text-dim);">${m.label}</td>`;
+            rows.forEach(r => {
+              html += `<td style="text-align:center;padding:3px 6px;">${m.format(r[m.key])}</td>`;
+            });
+            html += '</tr>';
+          });
+
+          html += '</table></div>';
+          addAtlasMessage('system', html);
+        }
+      }
+      break;
+    }
+
+    case 'export_csv': {
+      // Export visible contractors as CSV download
+      const visibleIndices = [];
+      markerCluster.eachLayer(m => {
+        if (m._contractorIdx !== undefined) visibleIndices.push(m._contractorIdx);
+      });
+      const contractors = visibleIndices.map(i => DATA.contractors[i]).filter(Boolean);
+      if (contractors.length === 0) {
+        addAtlasMessage('system', 'No contractors visible to export. Reset filters first.');
+        break;
+      }
+
+      const headers = ['Name', 'City', 'State', 'Category', 'Risk Score', 'Obligation', 'Max Danger', 'DMARC', 'Max CVSS', 'Total Vulns', 'On-Prem IPs', 'Domain'];
+      const csvRows = [headers.join(',')];
+      contractors.forEach(c => {
+        const risk = computeRiskScore(c);
+        const o = c.osint || {};
+        const row = [
+          `"${(c.name || '').replace(/"/g, '""')}"`,
+          `"${c.city || ''}"`,
+          `"${c.state || ''}"`,
+          `"${c.category || ''}"`,
+          risk.score,
+          c.obligation || 0,
+          (o.service_risk || {}).max_danger || 'none',
+          (o.dns || {}).dmarc_policy || 'unknown',
+          (o.nvd_cvss || {}).max_score || 0,
+          ((o.shodan_ip || {}).aggregate || {}).total_vulns || 0,
+          (o.onprem_network || {}).on_prem_count || 0,
+          `"${(o.domain_discovery || {}).domain || ''}"`,
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `osint-atlas-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      addAtlasMessage('system', `Exported ${contractors.length} contractors as CSV.`);
+      break;
+    }
+
+    case 'radius': {
+      // Show contractors within a radius (miles) using haversine
+      const lat = cmd.lat;
+      const lon = cmd.lon;
+      const miles = cmd.miles || 50;
+
+      if (typeof lat !== 'number' || typeof lon !== 'number') break;
+
+      // Haversine distance in miles
+      function haversineMiles(lat1, lon1, lat2, lon2) {
+        const R = 3958.8; // Earth radius in miles
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      }
+
+      markerCluster.clearLayers();
+      const inRadius = allMarkers.filter(m => {
+        const c = DATA.contractors[m._contractorIdx];
+        if (!c || !c.lat || !c.lon) return false;
+        return haversineMiles(lat, lon, c.lat, c.lon) <= miles;
+      });
+      markerCluster.addLayers(inRadius);
+
+      // Draw circle on map
+      if (window._radiusCircle) {
+        map.removeLayer(window._radiusCircle);
+      }
+      // Convert miles to meters for Leaflet
+      window._radiusCircle = L.circle([lat, lon], {
+        radius: miles * 1609.34,
+        color: '#0ea5e9',
+        fillColor: '#0ea5e9',
+        fillOpacity: 0.05,
+        weight: 1,
+        dashArray: '5,5',
+      }).addTo(map);
+
+      map.flyTo([lat, lon], miles <= 25 ? 10 : miles <= 50 ? 9 : miles <= 100 ? 8 : 7, { duration: 1.5 });
+      addAtlasMessage('system', `Showing ${inRadius.length} contractors within ${miles} miles.`);
       break;
     }
 
