@@ -99,22 +99,35 @@ def _top_issuers(entries: list[dict], n: int = _TOP_ISSUERS) -> list[dict[str, A
     ]
 
 
-def _fetch_crt_sh(domain: str) -> requests.Response:
+def _fetch_crt_sh(domain: str, max_retries: int = 3) -> requests.Response:
     """
-    Query crt.sh with one automatic retry on HTTP 429 (rate-limit).
+    Query crt.sh with automatic retry on transient failures.
 
-    Raises on any other HTTP error or connection failure.
+    Retries on HTTP 429 (rate-limit), connection drops (ChunkedEncodingError),
+    and other transient errors. crt.sh is a free public service that frequently
+    drops connections under load.
     """
     params = {"q": f"%.{domain}", "output": "json"}
 
-    resp = requests.get(_CRT_SH_URL, params=params, timeout=_REQUEST_TIMEOUT)
+    for attempt in range(max_retries):
+        try:
+            resp = requests.get(_CRT_SH_URL, params=params, timeout=_REQUEST_TIMEOUT)
 
-    if resp.status_code == 429:
-        time.sleep(_RETRY_WAIT)
-        resp = requests.get(_CRT_SH_URL, params=params, timeout=_REQUEST_TIMEOUT)
+            if resp.status_code == 429:
+                time.sleep(_RETRY_WAIT * (attempt + 1))
+                continue
 
-    resp.raise_for_status()
-    return resp
+            resp.raise_for_status()
+            return resp
+        except (requests.ConnectionError, requests.Timeout,
+                requests.exceptions.ChunkedEncodingError) as exc:
+            if attempt < max_retries - 1:
+                time.sleep(_RETRY_WAIT * (attempt + 1))
+                continue
+            raise
+
+    # Final attempt (shouldn't reach here, but safety net)
+    return requests.get(_CRT_SH_URL, params=params, timeout=_REQUEST_TIMEOUT)
 
 
 # ---------------------------------------------------------------------------
@@ -144,6 +157,7 @@ def enrich_ct(domain: str) -> dict[str, Any]:
         requests.Timeout,
         requests.HTTPError,
         requests.JSONDecodeError,
+        requests.exceptions.ChunkedEncodingError,
     ) as exc:
         return _build_empty_result(domain, error=str(exc))
 
