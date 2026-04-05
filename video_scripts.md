@@ -21,9 +21,9 @@
 7. Pull back to full map view
 
 **Narration concept:**
-"This is every DOE contractor in the United States. 2,214 organizations. $127.6 billion in federal obligations. We mapped their entire internet-facing attack surface from public sources. Every port. Every vulnerability. Every expired certificate. This is what an adversary already knows about the DOE supply chain."
+"This is every DOE contractor in the United States. 2,214 organizations. $127.6 billion in federal obligations. We mapped their entire internet-facing attack surface from public sources. Every port. Every vulnerability. Every expired certificate. This contractor manages the Pantex Plant — where every nuclear warhead in the U.S. arsenal is assembled. We found their attack surface in 30 seconds. This is what an adversary already knows about the DOE supply chain."
 
-**Key "oh my god" moment:** The sheer scale of the threat dashboard numbers appearing over the dark map. 1,464 internet-exposed. 534 with critical CVEs. 1,305 with no email authentication.
+**Key "oh my god" moment:** The sheer scale of the threat dashboard numbers appearing over the dark map. 1,464 internet-exposed. 534 with critical CVEs. 1,305 with no email authentication. Then the Pantex line hits.
 
 ---
 
@@ -71,9 +71,9 @@
    "Searching: company + DOE..." → "Found 12 results" → "Synthesizing..." → brief appears
 
 **Narration concept:**
-"DNS probing found gsaelibrary.gsa.gov as Centerra's domain. That's a government catalog site — completely wrong. The AI researched the company, found it was acquired by Constellis Holdings, and corrected the domain to constellis.com. Then it re-ran all downstream scans against the real domain. 987 domains were corrected this way — automatically."
+"DNS probing found gsaelibrary.gsa.gov as Centerra's domain. That's a government catalog site — completely wrong. For months, every scan, every vulnerability check, every certificate lookup hit the wrong target. The real attack surface was invisible. The AI researched the company, found it was acquired by Constellis Holdings, and corrected the domain to constellis.com. Then it automatically re-ran every downstream scan against the real domain. 987 contractors had wrong domains. 987 blind spots in our security picture. The AI found them all."
 
-**Key "oh my god" moment:** The domain correction callout — old domain struck through, new domain in green. The realization that the platform self-corrected its own data using AI reasoning.
+**Key "oh my god" moment:** "987 blind spots." The realization that without the AI, nearly half the attack surface data was pointed at the wrong targets.
 
 ---
 
@@ -132,21 +132,28 @@
 **Opening shot:** Heat map toggle → geographic risk concentration glows.
 
 **Sequence:**
-1. Heat map shows risk concentration in DC/Maryland/Virginia corridor
-2. Type: "show me contractors in Maryland with high risk"
-   → Filters → several contractors appear
-3. Click on ALLIANCE TECHNOLOGY GROUP, LLC [1915] — risk score 91
-4. 166 exposed hosts, 337 vulnerabilities, DMARC=not_set
-5. Scroll to correlation section — show any shared IP infrastructure
-6. Type: "compare the top 3 riskiest contractors in Maryland"
-   → Comparison table: side by side risk scores, vulns, services
-7. Toggle back to heat map — show how risk clusters geographically
-8. Close with: "Supply chain risk isn't abstract. It has IP addresses."
+1. Heat map shows risk concentration — bright clusters at Oak Ridge, Hanford, DC corridor
+2. Type: "show me contractors that share IP infrastructure"
+   → Map highlights clusters of co-located contractors
+3. Reveal the finding: **IP 23.103.199.138 is shared by 26 DOE contractors**
+   - BWXT Y-12 (nuclear weapons components)
+   - Pantexas Deterrence ($3.2B — nuclear warhead assembly)
+   - General Atomics ($130M — nuclear research)
+   - Anduril Industries ($25M — defense technology)
+   - Combined: $4.5 billion in obligations on one IP address
+4. Show: "26 nuclear weapons complex contractors. One IP address. Compromise one, you're inside the network of all 26."
+5. Cut to second example: **IP 67.231.154.163 — 36 Hanford contractors**
+   - Hanford Tank Waste Operations ($1.15B)
+   - Hanford Laboratory Management ($278M)
+   - Hanford Mission Integration ($1.2B)
+   - Combined: $2.66 billion
+6. "36 nuclear cleanup contractors. Same IP. Same risk."
+7. Toggle back to heat map — close on the glowing clusters
 
 **Narration concept:**
-"Risk concentrates geographically. The DC-Maryland-Virginia corridor has the highest density of DOE contractors — and the highest density of exposed infrastructure. These contractors share IP ranges, mail providers, and DNS infrastructure. Compromise one, you're inside the network neighborhood of dozens."
+"We found 1,051 IP addresses shared by two or more DOE contractors. One IP is shared by twenty-six nuclear weapons complex contractors — including the company that assembles warheads. Combined obligation: four and a half billion dollars. A single compromised host is inside the network of all twenty-six. Supply chain risk isn't abstract. It has an IP address."
 
-**Key "oh my god" moment:** The heat map showing risk concentration, then the realization that these contractors are physically and digitally co-located.
+**Key "oh my god" moment:** "26 nuclear weapons contractors. One IP address." The number 26 appearing on screen next to the list of contractor names. The audience realizes this is a single point of failure for the nuclear weapons complex.
 
 ---
 
