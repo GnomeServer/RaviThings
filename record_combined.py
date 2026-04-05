@@ -95,6 +95,23 @@ def wait_until(start_time, target_sec):
 
 
 SCREENSHOT_DIR = os.path.join(VIDEO_DIR, "alignment_check")
+TRANSITION_LOG = os.path.join(VIDEO_DIR, "transition_timestamps.txt")
+_transitions = []  # (timestamp_sec, act_name)
+
+
+def mark_transition(t0, act_name):
+    """Record the exact timestamp where an act's visual begins."""
+    sec = time.time() - t0
+    _transitions.append((sec, act_name))
+    print(f"  MARK [{int(sec)//60}:{int(sec)%60:02d}] {act_name}")
+
+
+def save_transitions():
+    """Save all transition timestamps to a file for the compositing script."""
+    with open(TRANSITION_LOG, "w") as f:
+        for sec, name in _transitions:
+            f.write(f"{sec:.3f}\t{name}\n")
+    print(f"  Transitions saved: {TRANSITION_LOG}")
 
 
 def snap(page, t0, label):
@@ -111,8 +128,21 @@ def snap(page, t0, label):
 
 def open_console(page):
     try:
-        page.locator("#atlasChatToggle").click(timeout=5000)
-        wait(1)
+        panel = page.locator("#atlasChatPanel")
+        if not panel.is_visible():
+            page.locator("#atlasChatToggle").click(timeout=5000)
+            wait(1)
+    except Exception:
+        pass
+
+
+def close_console(page):
+    """Close the command console if it's open."""
+    try:
+        panel = page.locator("#atlasChatPanel")
+        if panel.is_visible():
+            page.locator("#atlasChatToggle").click(timeout=3000)
+            wait(0.5)
     except Exception:
         pass
 
@@ -141,6 +171,12 @@ def scroll_panel_to_top(page):
 
 
 def main():
+    """Video-first recording with transition markers.
+
+    The video is the master clock. Each act gets generous visual time.
+    mark_transition() records the exact timestamp where each act begins.
+    A separate compositing step places per-act audio at those timestamps.
+    """
     os.makedirs(VIDEO_DIR, exist_ok=True)
     record_dir = os.path.join(VIDEO_DIR, "recording_tmp")
     os.makedirs(record_dir, exist_ok=True)
@@ -161,290 +197,255 @@ def main():
         wait(2)
         inject_transition_styles(page)
 
-        # ── INTRO: Dark fade-in ──
-        fade_to_black(page, duration_ms=50)  # Start fully black
+        # ── INTRO ──
+        fade_to_black(page, duration_ms=50)
         wait(1)
-
-        # Show a title card before revealing the map
-        show_title_card(page,
-                        "OSINT ATLAS",
+        show_title_card(page, "OSINT ATLAS",
                         "DOE CONTRACTOR ATTACK SURFACE",
                         "UNCLASSIFIED // FOR OFFICIAL USE ONLY",
                         hold_sec=3.0)
-
-        # Reveal the map
         fade_from_black(page, duration_ms=1500)
 
-        # ── START CLOCK ──
-        # The audio starts here. All subsequent actions are timed
-        # relative to this moment.
         t0 = time.time()
-        print("Audio clock started.")
+        print("Clock started.")
 
         # ═══════════════════════════════════════════════════════
-        # ACT 1: THE HOOK (0:00 – 0:57)
-        # "What you're looking at..." → console query → map flies
+        # ACT 1: THE HOOK (~60s of visual time)
         # ═══════════════════════════════════════════════════════
         print("Act 1: The Hook")
+        mark_transition(t0, "act1_hook")
 
-        # 0:00–0:35 — "What you're looking at is every DOE contractor..."
-        # Hold on map overview with threat dashboard visible
-        snap(page, t0, "01_map_overview")
-        wait_until(t0, T["platform_takes"] - 5)
+        # Hold on map overview — let the viewer see the scale
+        wait(25)
 
-        # 0:35 — "The platform takes plain English queries. Watch..."
+        # Open console, type query
         open_console(page)
         wait(2)
-
-        # 0:42 — "Show me contractors with critical exposed services."
-        # Type the query visually, then send
         type_slowly(page, "#atlasChatInput",
                     "show me contractors with critical exposed services", delay_ms=30)
         wait(0.5)
         page.keyboard.press("Enter")
+        wait(15)  # Wait for LLM + map fly animation
 
-        # Wait for LLM response + map animation (fly_to happens automatically)
-        wait(12)
+        # Close console so detail panel is visible
+        close_console(page)
+        wait(5)
 
         # ═══════════════════════════════════════════════════════
-        # ACT 2: FOUR RIVERS (0:57 – 2:00)
-        # Direct navigation — don't rely on chat results
+        # ACT 2: FOUR RIVERS (~65s of visual time)
         # ═══════════════════════════════════════════════════════
         print("Act 2: Four Rivers")
+        fade_to_black(page)
+        show_title_card(page, "\u25c6  CASE STUDY",
+                        "FOUR RIVERS NUCLEAR",
+                        "$462M DOE Obligations \u00b7 Paducah Plant",
+                        hold_sec=2.0)
+        fade_from_black(page)
+        mark_transition(t0, "act2_findings")
 
-        # 0:57 — "This is Four Rivers Nuclear Partnership."
-        # Fly to Four Rivers and open its detail panel
-        wait_until(t0, T["four_rivers"] - 3)
-        snap(page, t0, "02_before_four_rivers")
+        # Fly directly to Four Rivers, open detail panel
         open_contractor(page, FOUR_RIVERS_IDX, fly=True, fly_zoom=10, fly_duration=2.0)
+        close_console(page)  # Ensure console is closed
         scroll_panel_to_top(page)
+        wait(8)
 
-        # 1:10 — "On a single IP address, Shodan product banners..."
-        wait_until(t0, T["on_single_ip"] - 2)
-        snap(page, t0, "03_four_rivers_panel_open")
+        # Scroll to Shodan section
         smooth_scroll_to(page, "#panelBody", "Shodan")
         highlight_section(page, "Shodan")
-        wait(3)
+        wait(8)
 
-        # Scroll to Host Intelligence for service details
+        # Host Intelligence — service details
         smooth_scroll_to(page, "#panelBody", "Host Intelligence")
         highlight_section(page, "Host Intelligence")
         zoom_section(page, "Host Intelligence", scale=1.15)
+        wait(12)
 
-        # 1:42 — "Three database engines. Remote desktop. SMB version one."
-        wait_until(t0, T["three_databases"] - 2)
+        # Dangerous Services
         unzoom_section(page, "Host Intelligence")
         smooth_scroll_to(page, "#panelBody", "Dangerous")
         highlight_section(page, "Dangerous")
         zoom_section(page, "Dangerous", scale=1.15)
-        wait(8)
+        wait(10)
         unzoom_section(page, "Dangerous")
 
-        # "Hosted on GoDaddy shared infrastructure" — scroll to hosting badges
+        # Hosting attribution
         smooth_scroll_panel(page, "#panelBody", 200)
-        wait(5)
+        wait(8)
 
         # ═══════════════════════════════════════════════════════
-        # ACT 3: ATTACK PATH (2:00 – 3:30)
-        # Kill chain for Four Rivers, then UC Regents
+        # ACT 3: ATTACK PATH (~95s of visual time)
         # ═══════════════════════════════════════════════════════
         print("Act 3: Attack Path")
-
-        # 2:00 — "the system generates an attack path mapped to MITRE ATT&CK"
-        wait_until(t0, T["attack_path"] - 3)
         fade_to_black(page)
         show_title_card(page, "\u25c6  ATTACK PATH",
                         "MITRE ATT&CK KILL CHAIN",
-                        "Automated from Observed Services", hold_sec=2.0)
+                        "Automated from Observed Services",
+                        hold_sec=2.0)
         fade_from_black(page)
+        mark_transition(t0, "act3_attack")
 
-        # Generate kill chain via console (this one IS the right contractor)
+        # Open console for kill chain query
+        open_console(page)
         send_chat(page, "generate a kill chain for Four Rivers Nuclear",
                   wait_seconds=35)
+        close_console(page)
 
         # Scroll through kill chain result
         smooth_scroll_panel(page, "#panelBody", 400, steps=20)
+        wait(10)
 
-        # 2:43 — "A second example. The University of California system."
-        wait_until(t0, T["uc_regents"] - 3)
-        snap(page, t0, "05_before_uc_regents")
-
-        # DIRECT navigation to UC Regents — don't use a query
+        # UC Regents — fly directly
         open_contractor(page, UC_REGENTS_IDX, fly=True, fly_zoom=10, fly_duration=2.0)
+        close_console(page)
         scroll_panel_to_top(page)
-        wait(2)
+        wait(3)
 
-        # Scroll to their Host Intelligence
+        # Show their Host Intelligence
         smooth_scroll_to(page, "#panelBody", "Host Intelligence")
         highlight_section(page, "Host Intelligence")
         zoom_section(page, "Host Intelligence", scale=1.15)
-
-        # 3:23 — "A fourteen-year-old SSH implementation..."
-        wait_until(t0, T["fourteen_year_ssh"] - 2)
+        wait(15)
         unzoom_section(page, "Host Intelligence")
         smooth_scroll_panel(page, "#panelBody", 300, steps=15)
+        wait(8)
 
         # ═══════════════════════════════════════════════════════
-        # ACT 4: DMARC BLIND SPOT (3:30 – 5:00)
-        # Triad, UT-Battelle, LLNS
+        # ACT 4: DMARC (~90s of visual time)
         # ═══════════════════════════════════════════════════════
-        print("Act 4: DMARC Blind Spot")
-
-        # 3:30 — "A finding that may be the most operationally significant..."
-        wait_until(t0, T["dmarc_finding"] - 3)
+        print("Act 4: DMARC")
         fade_to_black(page)
         show_title_card(page, "\u25c6  FINDING OF NOTE",
                         "EMAIL AUTHENTICATION",
-                        "Management Company DMARC Gap", hold_sec=2.0)
+                        "Management Company DMARC Gap",
+                        hold_sec=2.0)
         fade_from_black(page)
+        mark_transition(t0, "act4_dmarc")
 
-        # Navigate directly to Triad National Security
-        wait_until(t0, T["triad_manages"] - 5)
-        snap(page, t0, "07_before_triad")
-        open_contractor(page, TRIAD_IDX, fly=True, fly_zoom=10, fly_duration=2.0)
+        # Navigate to Triad National Security
+        open_contractor(page, TRIAD_IDX, fly=True, fly_zoom=8, fly_duration=2.0)
+        close_console(page)
         scroll_panel_to_top(page)
+        wait(5)
 
-        # Scroll to DNS/Infrastructure section to show DMARC
+        # Show DNS/Infrastructure section with DMARC
         smooth_scroll_to(page, "#panelBody", "Infrastructure")
         highlight_section(page, "Infrastructure")
         zoom_section(page, "Infrastructure", scale=1.15)
+        wait(40)
 
-        # 4:50 — "The laboratory .gov domains are hardened..."
-        wait_until(t0, T["lab_hardened"])
+        # Hold on DMARC display
         unzoom_section(page, "Infrastructure")
+        smooth_scroll_panel(page, "#panelBody", 150)
+        wait(25)
 
         # ═══════════════════════════════════════════════════════
-        # ACT 5: FULL PICTURE + IMPLICATIONS (5:00 – 8:20)
-        # Attack surface stats, then strategic implications
+        # ACT 5: ATTACK SURFACE (~145s of visual time)
         # ═══════════════════════════════════════════════════════
-        print("Act 5: The Full Picture")
-
-        # 5:00 — "Let me put the full picture in front of you."
-        wait_until(t0, T["full_picture"] - 5)
+        print("Act 5: Attack Surface")
         fade_to_black(page)
         show_title_card(page, "\u25c6  ASSESSMENT",
                         "ATTACK SURFACE",
-                        "The Full Picture", hold_sec=2.0)
+                        "The Full Picture",
+                        hold_sec=2.0)
         fade_from_black(page)
+        mark_transition(t0, "act5_surface")
 
-        # Close EVERYTHING — panel, console — show clean full map
+        # Close everything — clean full map with threat dashboard
         page.keyboard.press("Escape")
         wait(1)
-        # Close console if open
+        close_console(page)
+        cinematic_fly(page, 39.5, -98.0, 4, duration_sec=2.0)
+        wait(60)  # Stats recitation — hold on map/dashboard
+
+        # Heat map for "not a projection" / implications section
         try:
-            panel = page.locator("#atlasChatPanel")
-            if panel.is_visible():
-                page.locator("#atlasChatToggle").click(timeout=3000)
-                wait(1)
+            page.locator("#heatmapToggle").click(timeout=3000)
+            wait(2)
         except Exception:
             pass
-        # Fly to full US overview to show the scale
-        cinematic_fly(page, 39.5, -98.0, 4, duration_sec=2.0)
+        wait(70)  # Hold on heat map through implications
 
-        # Hold on threat dashboard during the stats recitation
-        snap(page, t0, "09_threat_dashboard")
-        wait_until(t0, T["not_projection"])
-
-        # 6:29 — "This is not a projection..." → heat map
+        # Turn off heat map
         try:
             page.locator("#heatmapToggle").click(timeout=3000)
             wait(2)
         except Exception:
             pass
 
-        # 6:49–8:20 — implications (foreign intelligence, supply chain, DMARC highway)
-        # Hold on heat map — the geographic spread reinforces the "scale" argument
-        wait_until(t0, T["how_we_built"] - 3)
-
-        # Turn off heat map before pipeline section
-        try:
-            page.locator("#heatmapToggle").click(timeout=3000)
-            wait(1)
-        except Exception:
-            pass
-
         # ═══════════════════════════════════════════════════════
-        # ACT 6: PIPELINE (8:20 – 10:46)
-        # "So — how did we get all of this?"
-        # Show 4 quad-panel images
+        # ACT 6: PIPELINE (~115s of visual time)
         # ═══════════════════════════════════════════════════════
-        print("Act 6: The Pipeline")
-
-        wait_until(t0, T["how_we_built"])
+        print("Act 6: Pipeline")
         fade_to_black(page)
         show_title_card(page, "\u25c6  METHODOLOGY",
                         "14-LAYER PIPELINE",
-                        "Automated Open-Source Collection", hold_sec=2.0)
+                        "Automated Open-Source Collection",
+                        hold_sec=2.0)
         fade_from_black(page)
+        mark_transition(t0, "act6_pipeline")
 
         panels_available = all(os.path.exists(p) for p in PANEL_IMAGES.values())
 
         if panels_available:
-            # Panel 1: Discovery (layers 1-4) — 8:31 to ~9:16
-            wait_until(t0, T["domain_discovery"] - 2)
+            # Panel 1: Discovery (layers 1-4)
             show_image_overlay(page, PANEL_IMAGES["discovery"], fade_in_ms=800)
-            snap(page, t0, "11_panel1_discovery")
-            wait_until(t0, T["ct_queries"] - 2)
+            wait(28)
             hide_image_overlay(page, fade_out_ms=500)
 
-            # Panel 2: Infrastructure (layers 5-8) — 9:16 to ~9:56
+            # Panel 2: Infrastructure (layers 5-8)
             show_image_overlay(page, PANEL_IMAGES["infrastructure"], fade_in_ms=800)
-            wait_until(t0, T["asn_enum"] - 2)
+            wait(25)
             hide_image_overlay(page, fade_out_ms=500)
 
-            # Panel 3: Classification (layers 9-12) — 9:56 to ~10:21
+            # Panel 3: Classification (layers 9-12)
             show_image_overlay(page, PANEL_IMAGES["classification"], fade_in_ms=800)
-            wait_until(t0, T["nvd_scoring"] + 15)
+            wait(22)
             hide_image_overlay(page, fade_out_ms=500)
 
-            # Panel 4: Synthesis (layers 13-14) — 10:21 to ~10:46
+            # Panel 4: Synthesis (layers 13-14)
             show_image_overlay(page, PANEL_IMAGES["synthesis"], fade_in_ms=800)
-            wait_until(t0, T["produced_everything"])
+            wait(22)
             hide_image_overlay(page, fade_out_ms=500)
         else:
             print("  Panel images not found — holding on map")
-            wait_until(t0, T["produced_everything"])
+            wait(100)
+
+        wait(5)
 
         # ═══════════════════════════════════════════════════════
-        # ACT 7: CONCLUSION (10:46 – 13:30)
-        # "The data shows something..." + four alarming points
+        # ACT 7: CONCLUSION (~150s of visual time)
         # ═══════════════════════════════════════════════════════
         print("Act 7: Conclusion")
-
-        wait_until(t0, T["data_shows"] - 2)
         fade_to_black(page, duration_ms=500)
         show_title_card(page, "\u25c6  ASSESSMENT",
-                        "CONCLUSIONS", "", hold_sec=1.5)
+                        "CONCLUSIONS", "",
+                        hold_sec=1.5)
         fade_from_black(page)
+        mark_transition(t0, "act7_conclusion")
 
-        # Show heat map during conclusion
+        # Heat map during conclusion
         try:
             page.locator("#heatmapToggle").click(timeout=3000)
             wait(2)
         except Exception:
             pass
-        snap(page, t0, "13_conclusion_heatmap")
 
-        # Hold through the four alarming points
-        # 11:31–12:46 — "Four things... First... Second... Third..."
-        wait_until(t0, T["fourth_scale"] + 10)
+        # Hold through four alarming points + close
+        wait(120)
 
-        # "This assessment was conducted entirely from open sources..."
-        wait_until(t0, T["assessment_conducted"])
+        # Cinematic zoom out
         cinematic_fly(page, 39.5, -98.0, 4, duration_sec=3.0)
+        wait(15)
 
-        # "Classification: unclassified..."
-        wait_until(t0, T["classification"])
-        wait(10)
-
-        # Final fade to black — hold long enough for audio to finish
+        # Final fade to black
         fade_to_black(page, duration_ms=2000)
-        # Audio is ~655s — ensure recording runs past that with padding
-        wait_until(t0, AUDIO_DURATION + 10)
-        wait(5)
+        wait(10)
 
         total_elapsed = elapsed(t0)
         print(f"Recording complete. Total: {int(total_elapsed)//60}:{int(total_elapsed)%60:02d}")
+
+        # Save transitions for compositing
+        save_transitions()
 
         # ── Save video ──
         dst = os.path.join(VIDEO_DIR, "osint_atlas_briefing.webm")
@@ -455,31 +456,7 @@ def main():
         size = os.path.getsize(dst)
         print(f"Saved: {dst} ({size / 1024 / 1024:.1f} MB)")
 
-    # ── Merge with audio ──
-    print("\nMerging video + audio...")
-    video_file = os.path.join(VIDEO_DIR, "osint_atlas_briefing.webm")
-    audio_file = os.path.join(VIDEO_DIR, "audio", "osint_atlas_briefing_gemini.mp3")
-    output_file = os.path.join(VIDEO_DIR, "osint_atlas_briefing_final.mp4")
-
-    if os.path.exists(video_file) and os.path.exists(audio_file):
-        result = subprocess.run([
-            "ffmpeg", "-y",
-            "-i", video_file,
-            "-i", audio_file,
-            "-c:v", "libx264",
-            "-c:a", "aac",
-            "-shortest",
-            "-movflags", "+faststart",
-            output_file,
-        ], capture_output=True, text=True)
-
-        if result.returncode == 0:
-            size = os.path.getsize(output_file)
-            print(f"Final video: {output_file} ({size / 1024 / 1024:.1f} MB)")
-        else:
-            print(f"ffmpeg error: {result.stderr[:300]}")
-    else:
-        print("Missing video or audio file — skipping merge")
+    print("\nVideo recorded. Run composite_act_audio.py to add per-act audio.")
 
 
 if __name__ == "__main__":

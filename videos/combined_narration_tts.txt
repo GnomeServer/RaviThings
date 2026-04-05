@@ -24,7 +24,7 @@ A second example. The University of California system. Three billion sixty-one m
 
 A fourteen-year-old SSH implementation on a three-billion-dollar research contractor.
 
-Now. A finding that may be the most operationally significant in this entire assessment.
+Now. A significant finding.
 
 The national laboratory dot gov domains — Sandia, LANL, ORNL — have DMARC set to reject. Verified live. Properly configured.
 
