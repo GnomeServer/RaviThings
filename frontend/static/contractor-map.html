@@ -3416,7 +3416,15 @@ function buildOSINTSection(c) {
     if (dns.dmarc_policy) {
       const dmarcColors = {reject: '#00e676', quarantine: '#ffd740', none: '#ff1744', not_set: '#ff1744'};
       const color = dmarcColors[dns.dmarc_policy] || 'var(--text-secondary)';
-      gridItems.push({label: 'DMARC Policy', value: dns.dmarc_policy, color});
+      let dmarcValue = dns.dmarc_policy;
+      const dnsQueryTime = dns.query_time || '';
+      if (dnsQueryTime) {
+        const scanned = new Date(dnsQueryTime);
+        const days = Math.floor((Date.now() - scanned.getTime()) / 86400000);
+        const ageLabel = days === 0 ? 'today' : days === 1 ? '1 day ago' : `${days} days ago`;
+        dmarcValue += `</span><span style="color:var(--text-muted);font-size:8px;margin-left:6px;">(scanned ${ageLabel})`;
+      }
+      gridItems.push({label: 'DMARC Policy', value: dmarcValue, color});
     }
 
     if (gridItems.length) {
@@ -4576,12 +4584,30 @@ function buildHostIntelSection(c) {
     const hvulns = host.vulns || [];
     const hostnames = (host.hostnames || []).join(', ');
 
+    // Hosting provider attribution
+    const hostOrg = host.org || host.isp || '';
+    const hostingProviders = ['GoDaddy', 'Namecheap', 'Cloudflare', 'Amazon', 'AWS', 'Google',
+      'Microsoft', 'DigitalOcean', 'Linode', 'Vultr', 'OVH', 'Hetzner', 'HostGator',
+      'Bluehost', 'SiteGround', 'Shopify', 'Wix', 'Squarespace', 'Pressable',
+      'DreamHost', 'InMotion', 'Liquid Web', 'Limestone', 'Hostinger', 'ZOHO', 'Proofpoint'];
+    const isHosted = hostingProviders.some(p => hostOrg.toLowerCase().includes(p.toLowerCase()));
+    const isSelfHosted = hostOrg && c.name && hostOrg.toLowerCase().includes(c.name.toLowerCase().split(' ')[0].toLowerCase());
+
     html += `<div class="host-card" style="margin-bottom:6px;border-left-color:${hvulns.length > 5 ? '#ff1744' : hvulns.length > 0 ? '#ff9100' : 'rgba(0,229,255,0.15)'}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
         <span class="host-ip">${host.ip}</span>
         ${host.org ? `<span class="host-meta">${host.org}</span>` : ''}
         ${host.os ? `<span class="ip-badge on-prem" style="background:rgba(124,77,255,0.1);border-color:rgba(124,77,255,0.2);color:#b388ff">${host.os}</span>` : ''}
       </div>`;
+    if (hostOrg) {
+      html += `<div style="font-size:9px;color:var(--text-muted);margin-top:2px;">`;
+      if (isSelfHosted) {
+        html += `<span style="color:#00e676;font-size:8px;border:1px solid #00e676;padding:0 3px;border-radius:2px;margin-right:4px;">SELF-HOSTED</span>`;
+      } else if (isHosted) {
+        html += `<span style="color:var(--hud-warning);font-size:8px;border:1px solid var(--hud-warning);padding:0 3px;border-radius:2px;margin-right:4px;">HOSTED</span>`;
+      }
+      html += `${escapeHtml(hostOrg)}</div>`;
+    }
 
     if (hostnames) {
       html += `<div class="host-meta" style="margin-bottom:4px">${hostnames}</div>`;

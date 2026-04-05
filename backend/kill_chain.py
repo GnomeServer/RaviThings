@@ -180,6 +180,14 @@ def assemble_contractor_intel(contractor: dict) -> dict:
     # Collect all on-prem IPs for explicit listing in prompt
     onprem_ips = onprem.get("on_prem_ips", [])
 
+    # Hosting context from per-IP Shodan data
+    hosting_context = []
+    for host in shodan_ip.get("hosts", []):
+        org = host.get("org", "")
+        ip = host.get("ip", "")
+        if org and ip:
+            hosting_context.append(f"{ip}: {org}")
+
     return {
         "name": contractor.get("name", ""),
         "city": contractor.get("city", ""),
@@ -199,6 +207,7 @@ def assemble_contractor_intel(contractor: dict) -> dict:
         "ssl_issues_count": len(ssl_issues),
         "all_services": all_services[:20],  # Cap for prompt size
         "all_vulns": sorted(all_vulns)[:20],
+        "hosting_context": hosting_context,
     }
 
 
@@ -268,6 +277,14 @@ def build_kill_chain_prompt(intel: dict) -> list[dict]:
             svc_text += " [SSL EXPIRED]"
         svc_text += "\n"
 
+    # Build hosting context section
+    hosting_section = ""
+    if intel.get('hosting_context'):
+        hosting_lines = ["HOSTING CONTEXT (note: services on third-party hosting providers affect the attack path):"]
+        for entry in intel['hosting_context']:
+            hosting_lines.append(f"  {entry}")
+        hosting_section = chr(10).join(hosting_lines) + chr(10)
+
     user_content = f"""CONTRACTOR INTEL BRIEF:
 Name: {intel['name']}
 Location: {intel['city']}, {intel['state']}
@@ -284,7 +301,7 @@ OS Detected: {', '.join(intel['os_list']) or 'unknown'}
 ON-PREM IP ADDRESSES (use these exact IPs in your kill chain steps):
 {chr(10).join('  ' + ip for ip in intel.get('onprem_ips', [])) or '  none identified'}
 
-ATTACK VECTORS IDENTIFIED:
+{hosting_section}ATTACK VECTORS IDENTIFIED:
 {vector_text}
 EXPOSED SERVICES (IP:port/protocol product):
 {svc_text}
