@@ -32,26 +32,26 @@
 **Opening shot:** Console open, cursor blinking.
 
 **Sequence:**
-1. Type: "show me nuclear contractors with no DMARC"
-   → Map filters → markers remain for Sandia, Isotek, Four Rivers Nuclear → "Filtered to N contractors"
-2. Type: "which one has the highest obligation"
-   → Map flies to SANDIA / NTESS [1] → detail panel opens → $14.1 billion
-3. Show detail: FTP exposed (Pure-FTPd), SMTP exposed (Exim), DMARC=none
-4. Type: "show me contractors within 100 miles of Albuquerque"
+1. Type: "show me contractors with critical exposed services"
+   → Map filters → markers remain → "Filtered to N contractors"
+2. Type: "which one has the most exposed services"
+   → Map flies to FOUR RIVERS NUCLEAR PARTNERSHIP [199] → detail panel opens → $462M
+3. Show detail: MySQL 5.5, 2x MSSQL, RDP, SMB, FTP — nine services on one IP
+4. Type: "show me contractors within 100 miles"
    → Radius circle appears → nearby DOE contractors highlighted
 5. Type: "export as CSV"
    → Download triggers
-6. Close with: "what's the biggest risk to the nuclear weapons complex?"
-   → LLM answers with specific data
+6. Close with: "what's the biggest risk in the nuclear supply chain?"
+   → LLM answers with specific data, names the most vulnerable contractors
 
 **TABLE OF HORRORS insert (after step 3, hold 5 seconds):**
-"SANDIA NATIONAL LABORATORIES — $14.1B nuclear weapons contractor"
-"FTP exposed (cleartext credentials). SMTP exposed (direct mail relay). No DMARC (anyone can spoof their email)."
+"FOUR RIVERS NUCLEAR PARTNERSHIP — $462M nuclear decommissioning"
+"MySQL 5.5 (EOL). Two MSSQL 2012 instances. RDP. SMB v1. FTP. WinRM. One IP address."
 
 **Narration concept:**
-"No buttons. No menus. Type a question in English and the system finds the answer. 'Show me nuclear contractors with no email authentication.' The fourteen billion dollar nuclear weapons laboratory appears. With FTP and SMTP exposed to the internet."
+"No buttons. No menus. Type a question in English and the system finds the answer. 'Show me contractors with critical exposed services.' A nuclear decommissioning contractor appears with nine services exposed on a single IP. Three databases. Remote desktop. SMB version 1. All on an end-of-life Windows Server."
 
-**Key "oh my god" moment:** The $14.1B number appearing next to "DMARC: none" and "FTP exposed."
+**Key "oh my god" moment:** The nine-service stack appearing in the detail panel. The audience counts them.
 
 ---
 
@@ -115,7 +115,7 @@
 | **Four Rivers Nuclear ($462M)** | MS-SQL Server 2012 on :50371, :52162 | Two database engines, EOL OS | Shodan live 2026-04-04 |
 | **Four Rivers Nuclear ($462M)** | RDP on :3389 | Remote desktop on nuclear contractor | Shodan live 2026-04-04 |
 | **Four Rivers Nuclear ($462M)** | SMB v1 on :445 | EternalBlue / WannaCry vector | Shodan live 2026-04-04 |
-| **Sandia ($14.1B)** | FTP + SMTP exposed, DMARC=none | Cleartext creds + email spoofing | Shodan live 2026-04-04 |
+| **Sandia hosting ($14.1B)** | FTP (Pure-FTPd) + SMTP (Exim) exposed | Cleartext creds on hosting server | Shodan live 2026-04-04 |
 | **UC Regents ($3.06B)** | PostgreSQL 11 on :5432 | Database exposed to internet | Shodan live 2026-04-04 |
 | **UC Regents ($3.06B)** | OpenSSH 6.0p1 — CVE-2023-38408 | CVSS 9.8 RCE, 14-year-old SSH | Shodan live 2026-04-04 |
 | **Isotek Systems ($123M)** | ProFTPD 1.3.5 — 112 CVEs | Vulnerable FTP, no DMARC | Shodan live 2026-04-04 |
@@ -127,30 +127,36 @@
 
 ---
 
-## Video 5: "The Supply Chain" (2 min)
+## Video 5: "The Phishing Surface" (2 min)
 
-**Opening shot:** Heat map toggle → geographic risk concentration glows.
+**Opening shot:** Console query: "show me nuclear lab management companies with no DMARC"
+
+**The setup:** DOE's national labs are managed by private companies — LLCs that employ the scientists, engineers, and security personnel. The .gov lab domains (sandia.gov, lanl.gov, llnl.gov) have proper DMARC. But the management companies that actually run these labs? Different story.
 
 **Sequence:**
-1. Heat map shows risk concentration — bright clusters at Oak Ridge, Hanford, DC corridor
-2. Type: "show me contractors at Hanford"
-   → Map filters to Hanford, Washington → cluster of nuclear cleanup contractors
-3. Reveal the finding: **5 Hanford nuclear contractors share a GoDaddy hosting server**
-   - IP 23.229.228.195 — GoDaddy shared hosting with MySQL:3306, FTP:21, SMTP:25
-   - Hanford Tank Waste Operations ($1.15B)
-   - Hanford Mission Integration ($1.2B)
-   - Hanford Laboratory Management ($278M)
-   - Combined: $2.63 billion in nuclear cleanup obligations
-4. Show: "Three nuclear cleanup contractors. Same shared hosting server. MySQL and FTP exposed."
-5. Type: "show me contractors with no DMARC and over $100 million"
-   → Large contractors with no email authentication appear
-6. Show the DMARC gap: 1,305 contractors with no email spoofing protection
-7. Toggle back to heat map — close with geographic risk clusters
+1. Show the management company domains — verified live via DNS:
+   - ut-battelle.org (manages ORNL, $6.2B) — **NO DMARC RECORD**
+   - llnsllc.com (manages LLNL, $9.5B) — **NO DMARC RECORD**
+   - triadns.org (manages LANL, $14.9B) — **NO DMARC RECORD**
+   - savannahrivermissioncompletion.com ($2.3B) — **NO DMARC RECORD**
+   - fermi-forward.org (manages Fermilab, $2.0B) — **NO DMARC RECORD**
+   - fbportsmouth.com ($938M) — **NO DMARC RECORD**
+   - jsallc.org (manages Jefferson Lab, $554M) — **NO DMARC RECORD**
+
+2. Show the implication: "These are the companies whose employees have security clearances. Whose email addresses end in @triadns.org, @ut-battelle.org, @llnsllc.com. And anyone can send email pretending to be them."
+
+3. Show combined obligation: **$36.4 billion** in DOE contracts managed by companies with no email authentication.
+
+4. Type: `dig _dmarc.triadns.org TXT` — live DNS query returns empty. On screen.
+
+5. Close: "The lab .gov domains are secure. The companies that run them are not."
 
 **Narration concept:**
-"Five Hanford nuclear contractors share a single GoDaddy hosting server — with MySQL and FTP exposed on the same IP. Two and a half billion dollars in nuclear cleanup obligations, co-hosted on shared infrastructure. And 1,305 DOE contractors have no DMARC — meaning anyone can send email that appears to come from their domain. Supply chain risk is infrastructure you share and email you can't authenticate."
+"The national lab domains — sandia.gov, lanl.gov, ornl.gov — all have DMARC reject. Properly configured. But the private companies that manage these labs? We checked their domains live. Triad National Security — manages Los Alamos — no DMARC. Lawrence Livermore National Security — manages LLNL — no DMARC. UT-Battelle — manages Oak Ridge — no DMARC. Thirty-six billion dollars in nuclear security managed by companies whose email can be spoofed by anyone. The .gov is locked. The .org is wide open."
 
-**Key "oh my god" moment:** "Nuclear cleanup contractors on shared GoDaddy hosting" — the contrast between the gravity of the mission and the casualness of the infrastructure.
+**Key "oh my god" moment:** The `dig` command returning empty for triadns.org, live on screen. The audience realizes the company that manages Los Alamos has no email authentication. The gap between the .gov security and the management company security.
+
+*All DMARC claims live-verified via DNS on 2026-04-05. Verifiable by anyone with `dig _dmarc.{domain} TXT`.*
 
 ---
 
