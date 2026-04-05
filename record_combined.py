@@ -127,24 +127,19 @@ def snap(page, t0, label):
 
 
 def open_console(page):
-    try:
-        panel = page.locator("#atlasChatPanel")
-        if not panel.is_visible():
-            page.locator("#atlasChatToggle").click(timeout=5000)
-            wait(1)
-    except Exception:
-        pass
+    """Open the command console if it's closed."""
+    page.evaluate("""() => {
+        if (!atlasChatOpen) toggleAtlasChat();
+    }""")
+    wait(1)
 
 
 def close_console(page):
     """Close the command console if it's open."""
-    try:
-        panel = page.locator("#atlasChatPanel")
-        if panel.is_visible():
-            page.locator("#atlasChatToggle").click(timeout=3000)
-            wait(0.5)
-    except Exception:
-        pass
+    page.evaluate("""() => {
+        if (atlasChatOpen) toggleAtlasChat();
+    }""")
+    wait(0.5)
 
 
 def send_chat(page, query, wait_seconds=25):

@@ -320,7 +320,8 @@ def ensure_dark_background(page):
 def type_slowly(page, selector, text, delay_ms=50):
     """Type text character by character into an input element."""
     el = page.locator(selector)
-    el.click()
+    # Use force=True to bypass pointer interception from map overlay
+    el.click(force=True)
     el.fill("")
     for char in text:
         el.type(char, delay=delay_ms)
