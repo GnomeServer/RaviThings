@@ -177,13 +177,15 @@ def highlight_section(page, section_text, duration_ms=2000):
 
 
 def cinematic_fly(page, lat, lon, zoom, duration_sec=2.5):
-    """Smoothly fly the Leaflet map to a location with a slow ease."""
+    """Smoothly fly the Leaflet map to a location with a slow ease.
+
+    Note: The frontend declares `let map` at script top-level, which is
+    accessible in page.evaluate() but NOT as window.map.
+    """
     page.evaluate("""([lat, lon, z, dur]) => {
-        if (window.map) {
-            window.map.flyTo([lat, lon], z, {
-                duration: dur,
-                easeLinearity: 0.25
-            });
+        // 'map' is a top-level let binding, accessible directly (not on window)
+        if (typeof map !== 'undefined' && map && map.flyTo) {
+            map.flyTo([lat, lon], z, { duration: dur, easeLinearity: 0.25 });
         }
     }""", [lat, lon, zoom, duration_sec])
     wait(duration_sec + 0.5)

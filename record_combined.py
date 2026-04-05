@@ -333,6 +333,7 @@ def main():
 
         # ── Save video ──
         dst = os.path.join(VIDEO_DIR, "osint_atlas_briefing.webm")
+        page.close()  # Must close page before save_as
         page.video.save_as(dst)
         context.close()
         browser.close()
