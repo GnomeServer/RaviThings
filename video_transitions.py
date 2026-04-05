@@ -249,6 +249,74 @@ def hide_image_overlay(page, fade_out_ms=800):
     wait(fade_out_ms / 1000 + 0.2)
 
 
+def open_contractor(page, idx, fly=True, fly_zoom=13, fly_duration=1.5):
+    """Open a contractor's detail panel by index and optionally fly the map to it.
+
+    Uses the frontend's global openDetailPanel() function directly —
+    no chat query needed, guaranteed to open the right contractor.
+    """
+    if fly:
+        page.evaluate(f"""(idx) => {{
+            const c = DATA.contractors[idx];
+            if (c && typeof map !== 'undefined' && map && map.flyTo) {{
+                map.flyTo([c.lat, c.lon], {fly_zoom}, {{ duration: {fly_duration} }});
+            }}
+        }}""", idx)
+        wait(fly_duration + 0.3)
+
+    page.evaluate("""(idx) => { openDetailPanel(idx); }""", idx)
+    wait(1.5)
+
+
+def zoom_section(page, section_text, scale=1.3, duration_ms=500):
+    """Zoom into a panel section by applying a CSS transform.
+
+    Creates a visual 'focus' effect that draws the eye to the relevant data.
+    """
+    page.evaluate(f"""([text, scale, ms]) => {{
+        const sections = document.querySelectorAll('.panel-section');
+        for (const s of sections) {{
+            const title = s.querySelector('.section-title');
+            if (title && title.textContent.includes(text)) {{
+                s.style.transition = `transform ${{ms}}ms ease-in-out, box-shadow ${{ms}}ms ease-in-out`;
+                s.style.transformOrigin = 'top left';
+                s.style.transform = `scale(${{scale}})`;
+                s.style.boxShadow = '0 0 30px rgba(0, 229, 255, 0.2)';
+                s.style.position = 'relative';
+                s.style.zIndex = '100';
+                return;
+            }}
+        }}
+    }}""", [section_text, scale, duration_ms])
+    wait(duration_ms / 1000 + 0.1)
+
+
+def unzoom_section(page, section_text, duration_ms=300):
+    """Remove the zoom effect from a panel section."""
+    page.evaluate(f"""([text, ms]) => {{
+        const sections = document.querySelectorAll('.panel-section');
+        for (const s of sections) {{
+            const title = s.querySelector('.section-title');
+            if (title && title.textContent.includes(text)) {{
+                s.style.transition = `transform ${{ms}}ms ease-in-out, box-shadow ${{ms}}ms ease-in-out`;
+                s.style.transform = 'scale(1)';
+                s.style.boxShadow = 'none';
+                s.style.zIndex = '';
+                return;
+            }}
+        }}
+    }}""", [section_text, duration_ms])
+    wait(duration_ms / 1000 + 0.1)
+
+
+def ensure_dark_background(page):
+    """Inject a dark background immediately to prevent white flash on load."""
+    page.evaluate("""() => {
+        document.documentElement.style.background = '#0a0e1a';
+        document.body.style.background = '#0a0e1a';
+    }""")
+
+
 def type_slowly(page, selector, text, delay_ms=50):
     """Type text character by character into an input element."""
     el = page.locator(selector)
