@@ -93,6 +93,21 @@ def wait_until(start_time, target_sec):
         time.sleep(remaining)
 
 
+SCREENSHOT_DIR = os.path.join(VIDEO_DIR, "alignment_check")
+
+
+def snap(page, t0, label):
+    """Take a screenshot for alignment verification."""
+    os.makedirs(SCREENSHOT_DIR, exist_ok=True)
+    sec = int(time.time() - t0)
+    path = os.path.join(SCREENSHOT_DIR, f"{sec:04d}s_{label}.png")
+    try:
+        page.screenshot(path=path)
+        print(f"  SNAP [{sec//60}:{sec%60:02d}] {label}")
+    except Exception:
+        pass
+
+
 def open_console(page):
     try:
         page.locator("#atlasChatToggle").click(timeout=5000)
@@ -173,6 +188,7 @@ def main():
 
         # 0:00–0:35 — "What you're looking at is every DOE contractor..."
         # Hold on map overview with threat dashboard visible
+        snap(page, t0, "01_map_overview")
         wait_until(t0, T["platform_takes"] - 5)
 
         # 0:35 — "The platform takes plain English queries. Watch..."
@@ -198,11 +214,13 @@ def main():
         # 0:57 — "This is Four Rivers Nuclear Partnership."
         # Fly to Four Rivers and open its detail panel
         wait_until(t0, T["four_rivers"] - 3)
+        snap(page, t0, "02_before_four_rivers")
         open_contractor(page, FOUR_RIVERS_IDX, fly=True, fly_zoom=10, fly_duration=2.0)
         scroll_panel_to_top(page)
 
         # 1:10 — "On a single IP address, Shodan product banners..."
         wait_until(t0, T["on_single_ip"] - 2)
+        snap(page, t0, "03_four_rivers_panel_open")
         smooth_scroll_to(page, "#panelBody", "Shodan")
         highlight_section(page, "Shodan")
         wait(3)
@@ -248,6 +266,7 @@ def main():
 
         # 2:43 — "A second example. The University of California system."
         wait_until(t0, T["uc_regents"] - 3)
+        snap(page, t0, "05_before_uc_regents")
 
         # DIRECT navigation to UC Regents — don't use a query
         open_contractor(page, UC_REGENTS_IDX, fly=True, fly_zoom=10, fly_duration=2.0)
@@ -280,6 +299,7 @@ def main():
 
         # Navigate directly to Triad National Security
         wait_until(t0, T["triad_manages"] - 5)
+        snap(page, t0, "07_before_triad")
         open_contractor(page, TRIAD_IDX, fly=True, fly_zoom=10, fly_duration=2.0)
         scroll_panel_to_top(page)
 
@@ -312,6 +332,7 @@ def main():
 
         # Hold on threat dashboard during the stats recitation
         # 5:00–6:29 — all the numbers (1,460 exposed, 237 CVEs, etc.)
+        snap(page, t0, "09_threat_dashboard")
         wait_until(t0, T["not_projection"])
 
         # 6:29 — "This is not a projection..." → heat map
@@ -352,6 +373,7 @@ def main():
             # Panel 1: Discovery (layers 1-4) — 8:31 to ~9:16
             wait_until(t0, T["domain_discovery"] - 2)
             show_image_overlay(page, PANEL_IMAGES["discovery"], fade_in_ms=800)
+            snap(page, t0, "11_panel1_discovery")
             wait_until(t0, T["ct_queries"] - 2)
             hide_image_overlay(page, fade_out_ms=500)
 
@@ -391,6 +413,7 @@ def main():
             wait(2)
         except Exception:
             pass
+        snap(page, t0, "13_conclusion_heatmap")
 
         # Hold through the four alarming points
         # 11:31–12:46 — "Four things... First... Second... Third..."
@@ -402,10 +425,12 @@ def main():
 
         # "Classification: unclassified..."
         wait_until(t0, T["classification"])
-        wait(8)
+        wait(10)
 
-        # Final fade to black
+        # Final fade to black — hold long enough for audio to finish
         fade_to_black(page, duration_ms=2000)
+        # Audio is 810.6s — ensure recording runs past that with padding
+        wait_until(t0, 820)
         wait(5)
 
         total_elapsed = elapsed(t0)
