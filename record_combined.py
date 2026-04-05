@@ -18,10 +18,20 @@ from video_transitions import (
     wait, inject_transition_styles, fade_to_black, fade_from_black,
     show_title_card, smooth_scroll_to, smooth_scroll_panel,
     highlight_section, cinematic_fly, type_slowly,
+    show_image_overlay, hide_image_overlay,
 )
 
 BASE_URL = "http://127.0.0.1:8000"
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "videos")
+PANELS_DIR = os.path.join(VIDEO_DIR, "panels")
+
+# Panel images for Section 1 pipeline visualization (generate externally)
+PANEL_IMAGES = {
+    "discovery":      os.path.join(PANELS_DIR, "panel1_discovery.png"),
+    "infrastructure": os.path.join(PANELS_DIR, "panel2_infrastructure.png"),
+    "classification": os.path.join(PANELS_DIR, "panel3_classification.png"),
+    "synthesis":      os.path.join(PANELS_DIR, "panel4_synthesis.png"),
+}
 
 # Contractor indices (from contractors.json)
 BATTELLE_IDX = 11      # Battelle Memorial Institute — richest data (11/14 layers)
@@ -114,76 +124,82 @@ def main():
         # "DOE maintains contractual relationships..." — show the full map
         wait(12)
 
-        # "We conducted an open-source intelligence assessment..." — still map overview
+        # "We conducted an open-source intelligence assessment..." — still map
         wait(10)
 
         # "The collection architecture is a fourteen-layer pipeline..."
-        # Click Battelle to open detail panel — walk through layers
-        click_contractor_by_index(page, BATTELLE_IDX)
-        scroll_panel_to_top(page)
-        wait(3)
+        # Check if panel images exist; fall back to detail-panel scrolling if not
+        panels_available = all(os.path.exists(p) for p in PANEL_IMAGES.values())
 
-        # "domain discovery" — Mission Profile visible at top of panel
-        wait(10)
+        if panels_available:
+            # ── PANEL-BASED PIPELINE WALKTHROUGH ──
+            # Panel 1: Discovery & Validation (layers 1-4)
+            # Covers: domain discovery, AI research, domain verification, DNS intelligence
+            show_image_overlay(page, PANEL_IMAGES["discovery"], fade_in_ms=1000)
+            wait(75)  # ~75s of narration covering layers 1-4
+            hide_image_overlay(page, fade_out_ms=600)
+            wait(0.5)
 
-        # "AI research layer validates each domain" → scroll to AI Research
-        smooth_scroll_to(page, "#panelBody", "AI Research")
-        highlight_section(page, "AI Research")
-        wait(14)
+            # Panel 2: Infrastructure Mapping (layers 5-8)
+            # Covers: CT logs, web fingerprinting, Shodan org, Shodan per-IP
+            show_image_overlay(page, PANEL_IMAGES["infrastructure"], fade_in_ms=1000)
+            wait(75)  # ~75s of narration covering layers 5-8
+            hide_image_overlay(page, fade_out_ms=600)
+            wait(0.5)
 
-        # "Domain verification follows" → scroll slightly
-        smooth_scroll_panel(page, "#panelBody", 200)
-        wait(10)
+            # Panel 3: Network Classification (layers 9-12)
+            # Covers: ASN, on-prem, service risk, NVD CVSS
+            show_image_overlay(page, PANEL_IMAGES["classification"], fade_in_ms=1000)
+            wait(65)  # ~65s of narration covering layers 9-12
+            hide_image_overlay(page, fade_out_ms=600)
+            wait(0.5)
 
-        # "DNS intelligence extracts MX, SPF, DMARC" → Infrastructure section
-        smooth_scroll_to(page, "#panelBody", "Infrastructure")
-        highlight_section(page, "Infrastructure")
-        wait(12)
+            # Panel 4: Intelligence Synthesis (layers 13-14 + summary)
+            # Covers: entity extraction, knowledge graph, pipeline overview, scale
+            show_image_overlay(page, PANEL_IMAGES["synthesis"], fade_in_ms=1000)
+            wait(45)  # ~45s of narration covering layers 13-14
+            hide_image_overlay(page, fade_out_ms=600)
 
-        # "Certificate transparency queries crt.sh" → scroll down in same section
-        smooth_scroll_panel(page, "#panelBody", 250)
-        wait(12)
-
-        # "Web fingerprinting analyzes HTTP response headers" → scroll to web data
-        smooth_scroll_panel(page, "#panelBody", 200)
-        wait(10)
-
-        # "Shodan queries identify internet-facing hosts" → Shodan section
-        smooth_scroll_to(page, "#panelBody", "Shodan")
-        highlight_section(page, "Shodan")
-        wait(12)
-
-        # "Per-IP enrichment returns service banners" → Host Intelligence
-        smooth_scroll_to(page, "#panelBody", "Host Intelligence")
-        highlight_section(page, "Host Intelligence")
-        wait(12)
-
-        # "ASN enumeration... On-premises classification" → On-Prem section
-        smooth_scroll_to(page, "#panelBody", "On-Prem")
-        highlight_section(page, "On-Prem")
-        wait(10)
-
-        # "Service risk classification" → Dangerous Services
-        smooth_scroll_to(page, "#panelBody", "Dangerous")
-        highlight_section(page, "Dangerous")
-        wait(10)
-
-        # "NVD CVSS scoring" → scroll to vulnerabilities
-        smooth_scroll_panel(page, "#panelBody", 300)
-        wait(10)
-
-        # "knowledge graph... 24,700 nodes..." → close panel, show network graph briefly
-        page.keyboard.press("Escape")
-        wait(2)
-
-        # Toggle heat map for the knowledge graph / geographic concentration visual
-        try:
-            page.locator("#heatmapToggle").click(timeout=3000)
-            wait(12)
-            page.locator("#heatmapToggle").click(timeout=3000)
+        else:
+            print("  Panel images not found — using detail-panel fallback")
+            # ── FALLBACK: Detail panel scrolling ──
+            click_contractor_by_index(page, BATTELLE_IDX)
+            scroll_panel_to_top(page)
             wait(3)
-        except Exception:
-            wait(15)
+
+            # Walk through layers by scrolling the detail panel
+            wait(10)  # domain discovery
+            smooth_scroll_to(page, "#panelBody", "AI Research")
+            highlight_section(page, "AI Research")
+            wait(14)
+            smooth_scroll_panel(page, "#panelBody", 200)
+            wait(10)  # domain verification
+            smooth_scroll_to(page, "#panelBody", "Infrastructure")
+            highlight_section(page, "Infrastructure")
+            wait(24)  # DNS + CT logs
+            smooth_scroll_panel(page, "#panelBody", 200)
+            wait(10)  # web fingerprinting
+            smooth_scroll_to(page, "#panelBody", "Shodan")
+            highlight_section(page, "Shodan")
+            wait(24)  # Shodan org + per-IP
+            smooth_scroll_to(page, "#panelBody", "On-Prem")
+            highlight_section(page, "On-Prem")
+            wait(10)
+            smooth_scroll_to(page, "#panelBody", "Dangerous")
+            highlight_section(page, "Dangerous")
+            wait(10)  # service risk
+            smooth_scroll_panel(page, "#panelBody", 300)
+            wait(10)  # CVSS
+            page.keyboard.press("Escape")
+            wait(2)
+            # Heat map for knowledge graph visual
+            try:
+                page.locator("#heatmapToggle").click(timeout=3000)
+                wait(12)
+                page.locator("#heatmapToggle").click(timeout=3000)
+                wait(3)
+            except Exception:
+                wait(15)
 
         # Pause before Section 2 transition
         wait(5)

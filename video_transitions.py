@@ -191,6 +191,64 @@ def cinematic_fly(page, lat, lon, zoom, duration_sec=2.5):
     wait(duration_sec + 0.5)
 
 
+def show_image_overlay(page, image_path, fade_in_ms=800):
+    """Display a full-screen image overlay (for panel visualizations).
+
+    The image_path should be relative to the server root or an absolute URL.
+    For local files, serve them via the test server or use a data URI.
+    """
+    import base64
+    import os
+
+    # Read image and convert to data URI
+    abs_path = os.path.abspath(image_path)
+    if not os.path.exists(abs_path):
+        print(f"  WARNING: Image not found: {abs_path}")
+        return
+
+    with open(abs_path, "rb") as f:
+        img_data = base64.b64encode(f.read()).decode("utf-8")
+
+    ext = os.path.splitext(abs_path)[1].lower()
+    mime = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg",
+            "webp": "image/webp"}.get(ext.lstrip("."), "image/png")
+
+    page.evaluate(f"""(dataUri) => {{
+        // Create or reuse overlay
+        let overlay = document.getElementById('video-image-overlay');
+        if (!overlay) {{
+            overlay = document.createElement('div');
+            overlay.id = 'video-image-overlay';
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                z-index: 99998; pointer-events: none; opacity: 0;
+                transition: opacity {fade_in_ms}ms ease-in-out;
+                background-color: #0a0e1a; background-size: contain;
+                background-repeat: no-repeat; background-position: center;
+            `;
+            document.body.appendChild(overlay);
+        }}
+        overlay.style.transition = 'opacity {fade_in_ms}ms ease-in-out';
+        overlay.style.backgroundImage = 'url(' + dataUri + ')';
+        // Force reflow then fade in
+        overlay.offsetHeight;
+        overlay.style.opacity = '1';
+    }}""", f"data:{mime};base64,{img_data}")
+    wait(fade_in_ms / 1000 + 0.2)
+
+
+def hide_image_overlay(page, fade_out_ms=800):
+    """Hide the full-screen image overlay."""
+    page.evaluate(f"""() => {{
+        const overlay = document.getElementById('video-image-overlay');
+        if (overlay) {{
+            overlay.style.transition = 'opacity {fade_out_ms}ms ease-in-out';
+            overlay.style.opacity = '0';
+        }}
+    }}""")
+    wait(fade_out_ms / 1000 + 0.2)
+
+
 def type_slowly(page, selector, text, delay_ms=50):
     """Type text character by character into an input element."""
     el = page.locator(selector)
