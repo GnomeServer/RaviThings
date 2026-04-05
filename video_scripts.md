@@ -79,39 +79,51 @@
 
 ## Video 4: "The Kill Chain" (3 min)
 
-**Opening shot:** Console query: "show me the highest obligation contractor with exposed services"
+**Opening shot:** Console query: "show me nuclear contractors with exposed databases"
 
 **Sequence:**
-1. Console identifies NTESS / Sandia National Laboratories [1] — $14.1B
-2. Detail panel opens → shows exposed FTP (Pure-FTPd), SMTP (Exim)
-3. DMARC: none — no email spoofing protection on a nuclear weapons lab
-4. Click "Kill Chain" → MITRE ATT&CK steps generate:
-   - **Initial Access (T1566):** Phishing — no DMARC means spoofed emails from @sandia.gov are not rejected by recipients
-   - **Credential Access (T1110):** FTP brute force — Pure-FTPd directly accessible, cleartext protocol
-   - **Lateral Movement (T1021):** SSH pivot using harvested credentials
-   - **Collection (T1114):** Email access via exposed SMTP relay
-5. Click a step → detailed analysis with specific IPs and ports
+1. Console filters → flies to FOUR RIVERS NUCLEAR PARTNERSHIP [199] — $462M
+2. Detail panel opens → the worst single host in the dataset:
+   - MySQL 5.5 (end-of-life since 2018)
+   - **Two** MS-SQL Server 2012 instances
+   - RDP (Remote Desktop) exposed
+   - SMB v1 enabled (EternalBlue/WannaCry vector)
+   - FTP, SMTP, RPC — all on the same IP
+   - Windows Server 2012 R2 (EOL since October 2023)
+3. Hold on this — let the audience count the exposed services
+4. Show: "Nine exposed services. Three databases. One IP address. A nuclear decommissioning contractor."
 
-**Cut to secondary example:** UC Regents [7] — $3.06B
-6. PostgreSQL 11 confirmed exposed on port 5432 (banner verified)
-7. OpenSSH 6.0p1 from 2012 running on 10+ ports — 191 CVEs
-8. Show: "This SSH version is 13 years old. It has a CVSS 9.8 remote code execution."
+**Cut to:** Sandia/NTESS [1] — $14.1B
+5. FTP (Pure-FTPd) + SMTP (Exim) exposed, DMARC=none
+6. "The nuclear weapons laboratory. No email authentication."
 
-**TABLE OF HORRORS overlay (10 seconds)**
+**Cut to:** UC Regents [7] — $3.06B
+7. PostgreSQL 11 confirmed on :5432, OpenSSH 6.0p1 (2012) on 6 ports
 
-| Target | Finding | Impact |
-|--------|---------|--------|
-| **Sandia ($14.1B)** | FTP (Pure-FTPd) exposed to internet | Cleartext credential capture |
-| **Sandia ($14.1B)** | SMTP (Exim) exposed to internet | Direct mail relay access |
-| **Sandia ($14.1B)** | DMARC policy: **none** | Any email from @sandia.gov can be spoofed |
-| **UC Regents ($3.06B)** | PostgreSQL 11 on :5432 | Confirmed database exposed to internet |
-| **UC Regents ($3.06B)** | OpenSSH 6.0p1 (2012) — CVE-2023-38408 | CVSS 9.8 RCE, public exploit |
-| **Four Rivers Nuclear ($462M)** | MySQL 5.5 (EOL) on :3306 | End-of-life database, no security patches |
-| **Isotek Systems ($123M)** | ProFTPD 1.3.5 — 112 CVEs | Known vulnerable FTP, no DMARC |
+8. Click "Kill Chain" on Four Rivers → MITRE ATT&CK steps generate:
+   - **Initial Access (T1190):** Exploit MySQL 5.5 — EOL, no patches since 2018
+   - **Credential Access (T1110):** RDP brute force — directly accessible
+   - **Lateral Movement (T1021):** SMB v1 — EternalBlue wormable RCE
+   - **Persistence (T1505):** MSSQL stored procedures for backdoor
+   - **Exfiltration (T1048):** FTP — cleartext data transfer
 
-**Narration over table:** "These findings are verified. Product banners confirmed by Shodan. A fourteen billion dollar nuclear weapons contractor with FTP and no email authentication. A three billion dollar research contractor with a database and 13-year-old SSH exposed. A nuclear decommissioning contractor running end-of-life MySQL. All from public data. All right now."
+**TABLE OF HORRORS overlay (12 seconds)**
 
-**Key "oh my god" moment:** The table showing dollar amounts next to specific, verified vulnerabilities. The cumulative weight of $17.7 billion in DOE obligations with confirmed exposed services.
+| Target | Finding | Impact | Verified |
+|--------|---------|--------|----------|
+| **Four Rivers Nuclear ($462M)** | MySQL 5.5 EOL on :3306 | No security patches since 2018 | Shodan live 2026-04-04 |
+| **Four Rivers Nuclear ($462M)** | MS-SQL Server 2012 on :50371, :52162 | Two database engines, EOL OS | Shodan live 2026-04-04 |
+| **Four Rivers Nuclear ($462M)** | RDP on :3389 | Remote desktop on nuclear contractor | Shodan live 2026-04-04 |
+| **Four Rivers Nuclear ($462M)** | SMB v1 on :445 | EternalBlue / WannaCry vector | Shodan live 2026-04-04 |
+| **Sandia ($14.1B)** | FTP + SMTP exposed, DMARC=none | Cleartext creds + email spoofing | Shodan live 2026-04-04 |
+| **UC Regents ($3.06B)** | PostgreSQL 11 on :5432 | Database exposed to internet | Shodan live 2026-04-04 |
+| **UC Regents ($3.06B)** | OpenSSH 6.0p1 — CVE-2023-38408 | CVSS 9.8 RCE, 14-year-old SSH | Shodan live 2026-04-04 |
+| **Isotek Systems ($123M)** | ProFTPD 1.3.5 — 112 CVEs | Vulnerable FTP, no DMARC | Shodan live 2026-04-04 |
+| **Goldbelt ($7.4M)** | MongoDB 8.0 on :27017 | Database exposed to internet | Shodan live 2026-04-04 |
+
+**Narration over table:** "Every line was verified live against Shodan on April 4th. A nuclear decommissioning contractor running three databases, RDP, and SMB version 1 — on a single IP address. Windows Server 2012, end of life. The nuclear weapons laboratory with FTP and zero email authentication. A three billion dollar research contractor with a database and fourteen-year-old SSH. All from public data. All right now."
+
+**Key "oh my god" moment:** Four Rivers — nine exposed services on one IP. The audience counts them and realizes this is a $462M nuclear contractor with everything exposed. Then the table piles on Sandia, UC Regents, Isotek, Goldbelt. Cumulative: $17.7 billion in DOE obligations with live-verified exposed services.
 
 ---
 
