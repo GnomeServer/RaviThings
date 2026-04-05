@@ -133,27 +133,24 @@
 
 **Sequence:**
 1. Heat map shows risk concentration — bright clusters at Oak Ridge, Hanford, DC corridor
-2. Type: "show me contractors that share IP infrastructure"
-   → Map highlights clusters of co-located contractors
-3. Reveal the finding: **IP 23.103.199.138 is shared by 26 DOE contractors**
-   - BWXT Y-12 (nuclear weapons components)
-   - Pantexas Deterrence ($3.2B — nuclear warhead assembly)
-   - General Atomics ($130M — nuclear research)
-   - Anduril Industries ($25M — defense technology)
-   - Combined: $4.5 billion in obligations on one IP address
-4. Show: "26 nuclear weapons complex contractors. One IP address. Compromise one, you're inside the network of all 26."
-5. Cut to second example: **IP 67.231.154.163 — 36 Hanford contractors**
+2. Type: "show me contractors at Hanford"
+   → Map filters to Hanford, Washington → cluster of nuclear cleanup contractors
+3. Reveal the finding: **5 Hanford nuclear contractors share a GoDaddy hosting server**
+   - IP 23.229.228.195 — GoDaddy shared hosting with MySQL:3306, FTP:21, SMTP:25
    - Hanford Tank Waste Operations ($1.15B)
-   - Hanford Laboratory Management ($278M)
    - Hanford Mission Integration ($1.2B)
-   - Combined: $2.66 billion
-6. "36 nuclear cleanup contractors. Same IP. Same risk."
-7. Toggle back to heat map — close on the glowing clusters
+   - Hanford Laboratory Management ($278M)
+   - Combined: $2.63 billion in nuclear cleanup obligations
+4. Show: "Three nuclear cleanup contractors. Same shared hosting server. MySQL and FTP exposed."
+5. Type: "show me contractors with no DMARC and over $100 million"
+   → Large contractors with no email authentication appear
+6. Show the DMARC gap: 1,305 contractors with no email spoofing protection
+7. Toggle back to heat map — close with geographic risk clusters
 
 **Narration concept:**
-"We found 1,051 IP addresses shared by two or more DOE contractors. One IP is shared by twenty-six nuclear weapons complex contractors — including the company that assembles warheads. Combined obligation: four and a half billion dollars. A single compromised host is inside the network of all twenty-six. Supply chain risk isn't abstract. It has an IP address."
+"Five Hanford nuclear contractors share a single GoDaddy hosting server — with MySQL and FTP exposed on the same IP. Two and a half billion dollars in nuclear cleanup obligations, co-hosted on shared infrastructure. And 1,305 DOE contractors have no DMARC — meaning anyone can send email that appears to come from their domain. Supply chain risk is infrastructure you share and email you can't authenticate."
 
-**Key "oh my god" moment:** "26 nuclear weapons contractors. One IP address." The number 26 appearing on screen next to the list of contractor names. The audience realizes this is a single point of failure for the nuclear weapons complex.
+**Key "oh my god" moment:** "Nuclear cleanup contractors on shared GoDaddy hosting" — the contrast between the gravity of the mission and the casualness of the infrastructure.
 
 ---
 
