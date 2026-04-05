@@ -4609,6 +4609,14 @@ function buildHostIntelSection(c) {
       html += `${escapeHtml(hostOrg)}</div>`;
     }
 
+    // Shodan scan date
+    if (host.last_update) {
+      const scanDate = new Date(host.last_update);
+      const scanDays = Math.floor((Date.now() - scanDate.getTime()) / 86400000);
+      const scanAge = scanDays === 0 ? 'today' : scanDays === 1 ? '1 day ago' : `${scanDays}d ago`;
+      html += `<div style="font-size:8px;color:var(--text-muted);margin-top:1px;">Scanned: ${scanAge}</div>`;
+    }
+
     if (hostnames) {
       html += `<div class="host-meta" style="margin-bottom:4px">${hostnames}</div>`;
     }

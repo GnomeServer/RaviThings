@@ -21,7 +21,7 @@
 7. Pull back to full map view
 
 **Narration concept:**
-"This is every DOE contractor in the United States. 2,214 organizations. $127.6 billion in federal obligations. We mapped their entire internet-facing attack surface from public sources. Every port. Every vulnerability. Every expired certificate. This contractor manages the Pantex Plant — where every nuclear warhead in the U.S. arsenal is assembled. We found their attack surface in 30 seconds. This is what an adversary already knows about the DOE supply chain."
+"This is every DOE contractor in the United States. 2,214 organizations. $127.6 billion in federal obligations. We mapped their entire public-facing attack surface from open sources. Every port. Every vulnerability. Every expired certificate. This contractor manages the Pantex Plant — where every nuclear warhead in the U.S. arsenal is assembled. We found their attack surface in 30 seconds. This is what an adversary already knows about the DOE supply chain."
 
 **Key "oh my god" moment:** The sheer scale of the threat dashboard numbers appearing over the dark map. 1,464 internet-exposed. 534 with critical CVEs. 1,305 with no email authentication. Then the Pantex line hits.
 
