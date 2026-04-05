@@ -41,39 +41,40 @@ UC_REGENTS_IDX = 7       # Regents of the University of California — $3.06B
 TRIAD_IDX = 10           # Triad National Security (Los Alamos) — $14.9B
 BATTELLE_IDX = 11        # Battelle Memorial Institute — $3.93B
 
-# ── Audio timestamps (calculated from char positions, ~810s total) ──
-# These are approximate — the recording should be ~5-10s ahead of each
-# timestamp to give the visual time to settle before the narration hits.
+# ── Audio timestamps for GEMINI TTS (~655s / 10:55 total) ──
+# Calculated from character positions against Gemini Enceladus voice.
+# Visual actions fire 2-3s before each timestamp to settle before narration.
+AUDIO_DURATION = 655  # seconds
 T = {
-    "platform_takes":       35,   # "The platform takes plain English"
-    "show_me":              42,   # "Show me contractors with critical"
-    "four_rivers":          57,   # "This is Four Rivers Nuclear"
-    "on_single_ip":         70,   # "On a single IP address"
-    "three_databases":     102,   # "Three database engines"
-    "attack_path":         120,   # "the system generates an attack path"
-    "uc_regents":          163,   # "A second example. The University of California"
-    "fourteen_year_ssh":   203,   # "A fourteen-year-old SSH"
-    "dmarc_finding":       210,   # "A finding that may be"
-    "triad_manages":       239,   # "Triad National Security manages"
-    "lab_hardened":        290,   # "The laboratory dot gov domains are hardened"
-    "full_picture":        300,   # "Let me put the full picture"
-    "not_projection":      389,   # "This is not a projection"
-    "what_means":          409,   # "What that means in practice"
-    "supply_chain":        489,   # "The supply chain is the perimeter"
-    "how_we_built":        500,   # "So — how did we get all of this"
-    "domain_discovery":    511,   # "It starts with domain discovery"
-    "ct_queries":          556,   # "Certificate transparency queries"
-    "asn_enum":            596,   # "ASN enumeration"
-    "nvd_scoring":         621,   # "NVD scoring"
-    "produced_everything": 646,   # "That is what produced everything"
-    "data_shows":          650,   # "The data shows something"
-    "four_things":         691,   # "Four things make this genuinely"
-    "first_supply":        697,   # "First — the supply chain"
-    "second_dmarc":        720,   # "Second — the DMARC gap"
-    "third_observable":    747,   # "Third — the exposure"
-    "fourth_scale":        766,   # "Fourth — scale defeats"
-    "assessment_conducted":788,   # "This assessment was conducted"
-    "classification":      801,   # "Classification: unclassified"
+    "platform_takes":    29,   # 0:29 — "The platform takes plain English"
+    "show_me":           34,   # 0:34 — "Show me contractors with critical"
+    "four_rivers":       46,   # 0:46 — "This is Four Rivers Nuclear"
+    "on_single_ip":      56,   # 0:56 — "On a single IP address"
+    "three_databases":   82,   # 1:22 — "Three database engines"
+    "attack_path":       97,   # 1:37 — "the system generates an attack path"
+    "uc_regents":       131,   # 2:11 — "A second example. UC system"
+    "fourteen_year_ssh":164,   # 2:44 — "A fourteen-year-old SSH"
+    "dmarc_finding":    169,   # 2:49 — "A finding that may be"
+    "triad_manages":    193,   # 3:13 — "Triad National Security manages"
+    "lab_hardened":     234,   # 3:54 — "The lab .gov domains are hardened"
+    "full_picture":     242,   # 4:02 — "Let me put the full picture"
+    "not_projection":   314,   # 5:14 — "This is not a projection"
+    "what_means":       331,   # 5:31 — "What that means in practice"
+    "supply_chain":     395,   # 6:35 — "The supply chain is the perimeter"
+    "how_we_built":     404,   # 6:44 — "So — how did we get all of this"
+    "domain_discovery": 413,   # 6:53 — "It starts with domain discovery"
+    "ct_queries":       449,   # 7:29 — "Certificate transparency queries"
+    "asn_enum":         482,   # 8:02 — "ASN enumeration"
+    "nvd_scoring":      502,   # 8:22 — "NVD scoring"
+    "produced_everything":522, # 8:42 — "That is what produced everything"
+    "data_shows":       525,   # 8:45 — "The data shows something"
+    "four_things":      558,   # 9:18 — "Four things make this genuinely"
+    "first_supply":     563,   # 9:23 — "First — the supply chain"
+    "second_dmarc":     582,   # 9:42 — "Second — the DMARC gap"
+    "third_observable": 604,   # 10:04 — "Third — the exposure"
+    "fourth_scale":     619,   # 10:19 — "Fourth — scale defeats"
+    "assessment_conducted":637,# 10:37 — "This assessment was conducted"
+    "classification":   647,   # 10:47 — "Classification: unclassified"
 }
 
 
@@ -326,12 +327,21 @@ def main():
                         "The Full Picture", hold_sec=2.0)
         fade_from_black(page)
 
-        # Close panel, show full map with threat dashboard
+        # Close EVERYTHING — panel, console — show clean full map
         page.keyboard.press("Escape")
-        wait(3)
+        wait(1)
+        # Close console if open
+        try:
+            panel = page.locator("#atlasChatPanel")
+            if panel.is_visible():
+                page.locator("#atlasChatToggle").click(timeout=3000)
+                wait(1)
+        except Exception:
+            pass
+        # Fly to full US overview to show the scale
+        cinematic_fly(page, 39.5, -98.0, 4, duration_sec=2.0)
 
         # Hold on threat dashboard during the stats recitation
-        # 5:00–6:29 — all the numbers (1,460 exposed, 237 CVEs, etc.)
         snap(page, t0, "09_threat_dashboard")
         wait_until(t0, T["not_projection"])
 
@@ -429,8 +439,8 @@ def main():
 
         # Final fade to black — hold long enough for audio to finish
         fade_to_black(page, duration_ms=2000)
-        # Audio is 810.6s — ensure recording runs past that with padding
-        wait_until(t0, 820)
+        # Audio is ~655s — ensure recording runs past that with padding
+        wait_until(t0, AUDIO_DURATION + 10)
         wait(5)
 
         total_elapsed = elapsed(t0)
@@ -448,7 +458,7 @@ def main():
     # ── Merge with audio ──
     print("\nMerging video + audio...")
     video_file = os.path.join(VIDEO_DIR, "osint_atlas_briefing.webm")
-    audio_file = os.path.join(VIDEO_DIR, "audio", "osint_atlas_briefing.mp3")
+    audio_file = os.path.join(VIDEO_DIR, "audio", "osint_atlas_briefing_gemini.mp3")
     output_file = os.path.join(VIDEO_DIR, "osint_atlas_briefing_final.mp4")
 
     if os.path.exists(video_file) and os.path.exists(audio_file):

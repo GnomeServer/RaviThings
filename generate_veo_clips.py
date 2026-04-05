@@ -126,19 +126,20 @@ def generate_clip(client, name, config):
     kwargs = {
         "model": MODEL,
         "prompt": config["prompt"],
-        "config": types.GenerateVideoConfig(
-            aspect_ratio="16:9",
-            duration_seconds=int(config["duration"]),
+        "config": types.GenerateVideosConfig(
+            aspectRatio="16:9",
+            durationSeconds=int(config["duration"]),
             resolution=config["resolution"],
-            person_generation="allow_all",
+            personGeneration="allow_all",
+            generateAudio=False,  # We have our own voiceover
+            numberOfVideos=1,
         ),
     }
 
     # Image-to-video if source image provided
     if config.get("image") and os.path.exists(config["image"]):
         print(f"  Source image: {config['image']}")
-        from google.genai.types import Image
-        img = Image.from_file(config["image"])
+        img = types.Image.from_file(config["image"])
         kwargs["image"] = img
 
     # Generate
