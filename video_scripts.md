@@ -177,25 +177,35 @@
 
 ### UC Regents / University of California [7] — $3.06B obligation, 191 CVEs
 
+*Live Shodan verified 2026-04-04. Org confirmed: "The Regents of the University of California - University of California, San Diego."*
+
 | Service | Product Banner (Shodan-verified) | Port | IP | Risk |
 |---------|--------------------------------|------|----|------|
 | PostgreSQL | PostgreSQL 11.19-11.22 | 5432 | 67.58.57.42 | **Confirmed database exposed** |
-| SSH (ancient) | OpenSSH 6.0p1 Debian (2012) | 22, 1433, 3306, 3389, 5432, 27017 | Multiple | 13-year-old SSH, CVE-2023-38408 (CVSS 9.8) |
-| HTTP | Apache httpd | 80, 443 | Multiple | CVE-2024-38475 (CVSS 9.1) |
-| SMTP | (port 25 open) | 25 | — | Mail exposure |
+| SSH (ancient) | OpenSSH 6.0p1 Debian (2012) | 1433, 2222, 3306, 3389, 5432, 27017 | 67.58.63.9 | **14-year-old SSH on 6 non-standard ports** |
+| SSH (modern) | OpenSSH 9.6p1 Ubuntu | 22 | 67.58.63.9 | Standard SSH |
+| HTTP | Apache httpd | 80, 443 | 67.58.57.42 | CVE-2024-38475 (CVSS 9.1) |
 
-*Note: Ports 1433/3306/3389 show OpenSSH, not MSSQL/MySQL/RDP. The service_risk labels by port number are misleading for these services. SSH on database ports is itself suspicious but should not be described as "exposed databases."*
+*Note: Ports 1433/3306/3389 show OpenSSH 6.0p1, not MSSQL/MySQL/RDP. SSH on database ports is suspicious (tunneling?) but should not be called "exposed databases." Port 5432 on 67.58.57.42 IS confirmed PostgreSQL.*
 
 ### Four Rivers Nuclear Partnership [199] — $462M obligation (nuclear decommissioning)
+
+*Live Shodan verified 2026-04-04. OS: Windows Server 2012 R2 (build 6.3.9600). Org: GoDaddy.com, LLC.*
 
 | Service | Product Banner (Shodan-verified) | Port | IP | Risk |
 |---------|--------------------------------|------|----|------|
 | MySQL | MySQL 5.5.45-log | 3306 | 192.169.249.165 | **EOL database, no patches since 2018** |
+| MS-SQL | MS-SQL Server 2012 RTM 11.0.2100.0 | 50371 | Same host | **Second database engine exposed** |
+| MS-SQL | MS-SQL Server 2012 SP2 11.0.5058.0 | 52162 | Same host | **Third database instance** |
+| RDP | Remote Desktop Protocol | 3389 | Same host | **Remote desktop on nuclear contractor** |
+| SMB | SMB v1 enabled | 445 | Same host | **EternalBlue/WannaCry vector** |
 | FTP | Microsoft ftpd | 21 | Same host | Cleartext credentials |
 | SMTP | MailEnable smptd 10.12 | 25 | Same host | Exposed mail relay |
 | RPC | Microsoft RPC Endpoint Mapper | 135 | Same host | Service enumeration |
 | HTTP | Microsoft IIS 8.5 | 80, 443 | Same host | Older IIS version |
 | DMARC | **not_set** | — | — | No email authentication |
+
+*This is the worst single host in the dataset: a $462M nuclear decommissioning contractor running Windows Server 2012 R2 with MySQL, two MSSQL instances, RDP, SMB v1, FTP, and SMTP all exposed on the same IP. EOL operating system — no security patches since October 2023.*
 
 ### Isotek Systems LLC [50] — $123M obligation (nuclear waste processing)
 
