@@ -102,6 +102,18 @@ def classify_services(contractor: dict) -> dict[str, Any]:
         "error": None,
     }
 
+    # Build a map of port -> product banner from per-IP Shodan data
+    # This lets us override port-based labels with actual product identification
+    osint = contractor.get("osint", {})
+    port_products: dict[int, str] = {}  # port -> product name from Shodan banner
+    sip = osint.get("shodan_ip", {})
+    for host in sip.get("hosts", []):
+        for svc in host.get("services", []):
+            port = svc.get("port", 0)
+            product = svc.get("product", "")
+            if port and product:
+                port_products[port] = product
+
     # Collect all exposed ports
     seen_ports: set[int] = set()
     port_counts: dict[int, int] = {}
@@ -114,13 +126,18 @@ def classify_services(contractor: dict) -> dict[str, Any]:
             port_counts[port] = max(port_counts.get(port, 0), p.get("count", 1))
 
     # Also check enhanced Shodan
-    osint = contractor.get("osint", {})
     es = osint.get("enhanced_shodan", {})
     for p in es.get("top_ports", []):
         port = p.get("port", 0) if isinstance(p, dict) else 0
         if port:
             seen_ports.add(port)
             port_counts[port] = max(port_counts.get(port, 0), p.get("count", 1))
+
+    # Also scan per-IP hosts for ports
+    for host in sip.get("hosts", []):
+        for p in host.get("ports", []):
+            if p:
+                seen_ports.add(p)
 
     # Also scan sample hosts for additional ports
     for host in shodan.get("sample_hosts", []):
@@ -130,19 +147,51 @@ def classify_services(contractor: dict) -> dict[str, Any]:
 
     result["total_services"] = len(seen_ports)
 
-    # Classify
+    # Services that indicate the port-based label is WRONG
+    # (e.g., OpenSSH on port 1433 is NOT MSSQL)
+    _SSH_PRODUCTS = {"OpenSSH", "Dropbear"}
+    _HTTP_PRODUCTS = {"nginx", "Apache httpd", "Microsoft IIS httpd", "lighttpd"}
+
+    # Classify — using product banner to override port-based labels
     danger_order = {"critical": 0, "high": 1, "medium": 2}
     dangerous = []
 
     for port in sorted(seen_ports):
         svc = _DANGEROUS_SERVICES.get(port)
         if svc:
+            product = port_products.get(port, "")
+            svc_name = svc["name"]
+            danger = svc["danger"]
+            reason = svc["reason"]
+
+            # Check for product mismatch — SSH on a database port is NOT a database
+            if product:
+                product_base = product.split()[0] if product else ""
+                is_ssh = any(p in product for p in _SSH_PRODUCTS)
+                is_http = any(p in product for p in _HTTP_PRODUCTS)
+
+                # If Shodan says it's SSH but the port says database/RDP → override
+                if is_ssh and svc_name in ("MSSQL", "MySQL", "PostgreSQL", "Redis",
+                                           "MongoDB", "RDP", "VNC", "Elasticsearch",
+                                           "Cassandra", "Oracle DB", "Memcached"):
+                    svc_name = f"SSH-on-:{port}"
+                    danger = "medium"
+                    reason = f"SSH ({product}) on non-standard port {port} — tunneling or misconfig, not {svc['name']}"
+
+                # If Shodan says it's HTTP but port says database → override
+                elif is_http and svc_name in ("MSSQL", "MySQL", "PostgreSQL", "Redis",
+                                              "MongoDB", "Elasticsearch", "Cassandra"):
+                    svc_name = f"HTTP-on-:{port}"
+                    danger = "medium"
+                    reason = f"HTTP ({product}) on port {port} — web service, not {svc['name']}"
+
             dangerous.append({
                 "port": port,
-                "name": svc["name"],
-                "danger": svc["danger"],
-                "reason": svc["reason"],
+                "name": svc_name,
+                "danger": danger,
+                "reason": reason,
                 "host_count": port_counts.get(port, 1),
+                "product": product,  # Include the actual product for transparency
             })
             result["danger_summary"][svc["danger"]] += 1
 
