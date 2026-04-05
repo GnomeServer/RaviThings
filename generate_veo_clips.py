@@ -123,23 +123,25 @@ def generate_clip(client, name, config):
     print(f"Generating: {name}")
     print(f"  Prompt: {config['prompt'][:80]}...")
 
+    has_image = config.get("image") and os.path.exists(config["image"])
+
+    # Build config — personGeneration differs between text-to-video and image-to-video
+    video_config = types.GenerateVideosConfig(
+        aspectRatio="16:9",
+        durationSeconds=int(config["duration"]),
+        numberOfVideos=1,
+        personGeneration="allow_adult" if has_image else "allow_all",
+    )
+
     kwargs = {
         "model": MODEL,
         "prompt": config["prompt"],
-        "config": types.GenerateVideosConfig(
-            aspectRatio="16:9",
-            durationSeconds=int(config["duration"]),
-            resolution=config["resolution"],
-            personGeneration="allow_all",
-            generateAudio=False,  # We have our own voiceover
-            numberOfVideos=1,
-        ),
+        "config": video_config,
     }
 
-    # Image-to-video if source image provided
-    if config.get("image") and os.path.exists(config["image"]):
+    if has_image:
         print(f"  Source image: {config['image']}")
-        img = types.Image.from_file(config["image"])
+        img = types.Image.from_file(location=config["image"])
         kwargs["image"] = img
 
     # Generate
