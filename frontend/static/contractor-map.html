@@ -1148,6 +1148,26 @@
     box-shadow: 0 0 6px #ff1744;
   }
 
+  .reset-btn {
+    padding: 3px 10px;
+    border-radius: var(--hud-radius);
+    border: 1px solid rgba(0, 229, 255, 0.15);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 8px;
+    font-family: inherit;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: 6px;
+  }
+  .reset-btn:hover {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.15);
+  }
+
   /* ─── RISK SCORE — TACTICAL GAUGE ─── */
   .risk-score-banner {
     display: flex;
@@ -2111,6 +2131,9 @@
       <div class="toggle-dot"></div>
       Heat Map
     </button>
+    <button class="reset-btn" id="resetMapBtn" onclick="resetMap()" title="Reset all filters and show all contractors">
+      RESET
+    </button>
   </div>
 </div>
 
@@ -2599,6 +2622,21 @@ function buildHeatmapData() {
   return DATA.contractors
     .filter(c => c._riskScore > 0)
     .map(c => [c.lat, c.lon, c._riskScore / 100]);
+}
+
+function resetMap() {
+  // Reset all filters, show all markers, close panels, fly to US overview
+  markerCluster.clearLayers();
+  markerCluster.addLayers(allMarkers);
+  activeFilters.clear();
+  if (window._radiusCircle) { map.removeLayer(window._radiusCircle); window._radiusCircle = null; }
+  closePanel();
+  // Reset legend checkboxes
+  document.querySelectorAll('#legendItems .legend-item').forEach(el => el.style.opacity = '1');
+  // Reset dimmed markers
+  allMarkers.forEach(m => { if (m._icon) m._icon.style.opacity = '1'; });
+  map.flyTo([39.5, -98.5], 5, { duration: 1 });
+  updateStats();
 }
 
 function toggleHeatmap() {
