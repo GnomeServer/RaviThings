@@ -29,15 +29,50 @@ frontend/.svelte-kit/
 # OS
 .DS_Store
 
-# Test artifacts
-test_*.py
-!tests/test_*.py
-
-# Screenshots & development images
-*.png
+# Test artifacts (keep test_atlas_server.py but not other test_ scripts)
+!test_atlas_server.py
 
 # Playwright MCP logs
 .playwright-mcp/
 
 # Log files
 *.log
+chroma_ingestion.log
+
+# Video production artifacts (large binary files)
+videos/acts/
+videos/audio/
+videos/normalized/
+videos/veo_clips/
+videos/panels/
+videos/timeline/
+videos/recording_tmp/
+videos/*.webm
+videos/*.mp4
+videos/*.mp3
+videos/acts_concat.txt
+videos/concat_list.txt
+videos/final_concat.txt
+videos/silence.mp3
+videos/transition_timestamps.txt
+
+# Keep video scripts and narration text
+!videos/combined_narration.txt
+!videos/combined_narration_tts.txt
+!videos/panel_prompts.md
+!videos/video_scripts.md
+
+# One-off scripts (video production helpers)
+generate_detail_narration.py
+generate_stepdetail_narration.py
+split_act3_audio.py
+check_data.py
+osint_analysis_full.txt
+
+# Screenshots and development images
+*.png
+map-*.png
+
+# Temporary files
+*.pyc
+*.pyo

@@ -245,8 +245,9 @@ def main():
             wait(max(0, audio_dur - 45))
 
         # ── ACT 3: ATTACK PATH ──
+        # Audio: kill chain (50s) + 5s silence + UC Regents (50s) = ~105s
         def act3_attack(page, audio_dur):
-            # Start with Four Rivers already visible — open it again
+            # Start with Four Rivers
             close_console(page)
             open_contractor(page, FOUR_RIVERS_IDX, fly=True, fly_zoom=10, fly_duration=1.5)
             close_console(page)
@@ -257,10 +258,28 @@ def main():
                       wait_seconds=30)
             close_console(page)
 
-            smooth_scroll_panel(page, "#panelBody", 400, steps=20)
-            wait(8)
+            # Scroll to see kill chain steps
+            smooth_scroll_panel(page, "#panelBody", 300, steps=15)
+            wait(3)
 
-            # UC Regents
+            # Click specific kill chain steps to show detail overlays
+            # Step 1: Initial Access (MySQL exploit)
+            page.evaluate("() => { if (typeof showStepDetail === 'function') showStepDetail(0); }")
+            wait(6)
+            # Close detail overlay
+            page.evaluate("() => { const o = document.getElementById('stepDetailOverlay'); if (o) o.classList.remove('visible'); }")
+            wait(1)
+
+            # Step 3: Lateral Movement (SMBv1)
+            page.evaluate("() => { if (typeof showStepDetail === 'function') showStepDetail(2); }")
+            wait(6)
+            page.evaluate("() => { const o = document.getElementById('stepDetailOverlay'); if (o) o.classList.remove('visible'); }")
+            wait(2)
+
+            # 5s silence gap happens here in audio — visual transition to UC
+            wait(5)
+
+            # UC Regents — direct navigation
             open_contractor(page, UC_REGENTS_IDX, fly=True, fly_zoom=10, fly_duration=2.0)
             close_console(page)
             scroll_panel_to_top(page)
@@ -269,10 +288,10 @@ def main():
             smooth_scroll_to(page, "#panelBody", "Host Intelligence")
             highlight_section(page, "Host Intelligence")
             zoom_section(page, "Host Intelligence", scale=1.15)
-            wait(12)
+            wait(15)
             unzoom_section(page, "Host Intelligence")
             smooth_scroll_panel(page, "#panelBody", 300, steps=15)
-            wait(max(0, audio_dur - 70))
+            wait(max(5, audio_dur - 85))
 
         # ── ACT 4: DMARC ──
         def act4_dmarc(page, audio_dur):
@@ -303,13 +322,14 @@ def main():
                 wait(2)
             except Exception:
                 pass
-            wait(max(0, audio_dur - 70))  # Implications on heat map
+            wait(max(0, audio_dur - 65))  # Implications on heat map (extra padding)
 
             try:
                 page.locator("#heatmapToggle").click(timeout=3000)
                 wait(1)
             except Exception:
                 pass
+            wait(5)  # Safety padding to ensure video > audio
 
         # ── ACT 6: PIPELINE ──
         def act6_pipeline(page, audio_dur):
@@ -374,41 +394,39 @@ def main():
     print(f"\n{'='*50}")
     print("Concatenating all acts...")
 
+    def prepare_veo_clip(name):
+        """Scale Veo clip to 1080p and add silent audio track."""
+        src = os.path.join(CLIPS_DIR, f"{name}.mp4")
+        dst = os.path.join(CLIPS_DIR, f"{name}_1080.mp4")
+        if not os.path.exists(src):
+            return None
+        # Scale to 1080p + add silent audio (required for concat with audio clips)
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-i", src,
+            "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+            "-vf", "scale=1920:1080:flags=lanczos,setsar=1",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+            "-c:a", "aac", "-b:a", "128k",
+            "-shortest",
+            dst,
+        ], capture_output=True)
+        return dst if os.path.exists(dst) else None
+
     concat_list = os.path.join(VIDEO_DIR, "acts_concat.txt")
     with open(concat_list, "w") as f:
-        # Veo opening (if exists)
-        veo_opening = os.path.join(CLIPS_DIR, "opening_1080.mp4")
-        if os.path.exists(veo_opening):
-            f.write(f"file '{veo_opening}'\n")
-        elif os.path.exists(os.path.join(CLIPS_DIR, "opening.mp4")):
-            # Scale it
-            src = os.path.join(CLIPS_DIR, "opening.mp4")
-            subprocess.run([
-                "ffmpeg", "-y", "-i", src,
-                "-vf", "scale=1920:1080:flags=lanczos,setsar=1",
-                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
-                "-c:a", "aac", "-b:a", "128k",
-                veo_opening,
-            ], capture_output=True)
+        # Veo opening
+        veo_opening = prepare_veo_clip("opening")
+        if veo_opening:
             f.write(f"file '{veo_opening}'\n")
 
         # All act clips
         for path in merged_files:
             f.write(f"file '{path}'\n")
 
-        # Veo closing (if exists)
-        veo_closing = os.path.join(CLIPS_DIR, "closing_1080.mp4")
-        if os.path.exists(veo_closing):
-            f.write(f"file '{veo_closing}'\n")
-        elif os.path.exists(os.path.join(CLIPS_DIR, "closing.mp4")):
-            src = os.path.join(CLIPS_DIR, "closing.mp4")
-            subprocess.run([
-                "ffmpeg", "-y", "-i", src,
-                "-vf", "scale=1920:1080:flags=lanczos,setsar=1",
-                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
-                "-c:a", "aac", "-b:a", "128k",
-                veo_closing,
-            ], capture_output=True)
+        # Veo closing
+        veo_closing = prepare_veo_clip("closing")
+        if veo_closing:
             f.write(f"file '{veo_closing}'\n")
 
     output = os.path.join(VIDEO_DIR, "osint_atlas_final.mp4")

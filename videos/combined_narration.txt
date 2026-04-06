@@ -1,0 +1,67 @@
+OSINT ATLAS: DOE Contractor Attack Surface Assessment
+CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY
+SOURCES: Open Source Intelligence — no classified methods or systems employed
+
+[SECTION 1 — SITUATION]
+
+The Department of Energy maintains contractual relationships with twenty-two hundred fourteen organizations across fifty-one states and territories. Combined federal obligations exceed one hundred twenty-seven billion dollars. These contractors operate the nuclear weapons complex, the national laboratory system, and critical energy infrastructure.
+
+We conducted an open-source intelligence assessment of the public-facing attack surface across the entire contractor population. No networks were penetrated. No active exploitation was attempted. Every data source used is commercially or publicly available.
+
+The collection architecture is a fourteen-layer automated pipeline. I'll walk through what each layer does.
+
+The pipeline begins with domain discovery — identifying each contractor's internet presence from a company name and address using DNS resolution and web search. An AI research layer then validates each domain by cross-referencing web sources against the contract record. This layer determines current company status — active, acquired, merged, or dissolved — and traces ownership chains. It corrected nine hundred eighty-seven domains where initial discovery assigned the wrong website.
+
+Domain verification follows — the system fetches each homepage, inspects the SSL certificate, checks whether the contractor name appears in page content, and flags parking pages or domain squatters. Each domain receives a confidence score.
+
+DNS intelligence extracts MX, SPF, DMARC, and NS records. This identifies email providers, DNS hosting, and critically — whether the contractor has deployed DMARC email authentication. Certificate transparency queries crt.sh for every TLS certificate issued against the domain, extracting subdomains — VPN endpoints, authentication portals, internal application servers — effectively mapping the contractor's infrastructure from public certificate records.
+
+Web fingerprinting analyzes HTTP response headers and page content to identify server software, content management systems, and the presence or absence of security headers. Shodan queries then identify internet-facing hosts — first by organization name, then by individual IP address. Per-IP enrichment returns service banners with product names and version numbers, SSL certificate details, and associated CVEs.
+
+ASN enumeration establishes network ownership for each IP. On-premises classification separates contractor-owned infrastructure from cloud and hosting providers — a distinction that matters operationally. Service risk classification cross-references exposed ports against Shodan product banners. If the banner identifies OpenSSH on a database port, the system labels it accordingly rather than assuming the port implies the service. NVD CVSS scoring then grades every CVE by severity.
+
+The final layer extracts named entities — technologies, facilities, processes, materials — from each contractor's intelligence brief and builds them into a knowledge graph. Twenty-four thousand seven hundred nodes. Seventy-two thousand relationships. The retrieval system searches this graph through four parallel methods, fused and re-ranked.
+
+[SECTION 2 — KEY FINDINGS]
+
+Top-line numbers. Fourteen hundred sixty-four contractors with internet-exposed infrastructure. Five hundred thirty-four with critical CVEs on their hosts. Thirteen hundred five with no DMARC email authentication. Fifteen hundred eighty-five with on-premises IP addresses identified.
+
+The platform provides a natural language interface for querying this data. An analyst types a question in plain English. The system filters the map, flies to the relevant location, opens contractor detail panels, and generates analysis — all from the query.
+
+I'll demonstrate with a specific case.
+
+Four Rivers Nuclear Partnership. Four hundred sixty-two million dollars in DOE obligations. Mission: deactivation of the Paducah Gaseous Diffusion Plant.
+
+On a single IP address, Shodan product banners confirm the following exposed services: MySQL five-point-five, end of life since twenty-eighteen — no security patches available. Two separate instances of Microsoft SQL Server twenty-twelve. Remote Desktop Protocol. SMB version one — the protocol exploited by WannaCry and EternalBlue. FTP for cleartext file transfer. The underlying operating system is Windows Server twenty-twelve R2, which reached end of life in October twenty-twenty-three.
+
+Nine services. Three database engines. Remote desktop and SMB version one. On a single IP address. Hosted on GoDaddy shared infrastructure. The platform displays this hosting attribution so analysts distinguish between contractor-owned and third-party infrastructure.
+
+[SECTION 3 — ATTACK PATH ANALYSIS]
+
+From the observed services, the system generates MITRE ATT and CK mapped attack paths.
+
+For this contractor: initial access exploits MySQL five-point-five — unpatched for six years with known public exploit code. Credential harvesting targets the exposed RDP endpoint via brute force or credential stuffing. Lateral movement leverages SMB version one — a wormable protocol with reliable public exploits. Persistence is established through SQL Server stored procedures. Data exfiltration uses the FTP service in cleartext.
+
+Each step in the chain references a specific IP address, port number, and product version confirmed by Shodan banner. The model receives hosting context so the attack path reflects whether services reside on contractor-owned or third-party infrastructure.
+
+A second example. The University of California system — three billion sixty-one million in DOE obligations. The pipeline confirmed PostgreSQL eleven on port fifty-four thirty-two via product banner. Certificate transparency returned forty-two subdomains. DNS intelligence identified their email provider. Per-IP enrichment found OpenSSH six-point-zero-p-one — released in twenty-twelve — running on six non-standard ports. That version carries CVE twenty-twenty-three dash thirty-eight four-zero-eight. CVSS nine-point-eight. Unauthenticated remote code execution with public exploit code. A fourteen-year-old SSH implementation on a three-billion-dollar research contractor.
+
+[SECTION 4 — FINDING OF NOTE: MANAGEMENT COMPANY EMAIL AUTHENTICATION]
+
+The national laboratory dot gov domains — sandia dot gov, LANL dot gov, ORNL dot gov — have DMARC set to reject. This was verified live via DNS query. These domains are properly configured for email authentication.
+
+However, DOE national laboratories are not operated by the government directly. They are managed by private limited liability corporations. These management companies maintain separate corporate domains — and those domains present a different security posture.
+
+Triad National Security, LLC manages Los Alamos National Laboratory. Their corporate domain is triadns dot org. DMARC record: none. UT-Battelle, LLC manages Oak Ridge National Laboratory. Corporate domain: ut-battelle dot org. DMARC record: none. Lawrence Livermore National Security, LLC manages Lawrence Livermore National Laboratory. Corporate domain: llnsllc dot com. DMARC record: none.
+
+Seven management companies were identified with this gap. Combined DOE obligations: thirty-six point four billion dollars. None have email authentication on their corporate domains.
+
+The operational implication: an adversary can craft email that appears to originate from the management company operating Los Alamos National Laboratory. The receiving mail infrastructure checks for a DMARC policy, finds no record, and delivers the message. This is verifiable in real time by any party — the command is dig underscore dmarc dot triadns dot org TXT. The response is empty.
+
+The laboratory dot gov domains are hardened. The management company domains used daily by thousands of cleared personnel are not.
+
+[CLOSE]
+
+This assessment was conducted entirely from open sources. The collection pipeline runs fourteen layers against twenty-two hundred fourteen contractors. Every finding is reproducible and independently verifiable. The platform is operational and available for analyst use.
+
+Classification: UNCLASSIFIED. No classified methods, systems, or access was employed at any point in this assessment.
