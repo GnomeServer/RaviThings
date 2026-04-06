@@ -55,8 +55,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if not SITE_PASSWORD:
             return await call_next(request)
 
-        # Allow the auth endpoint itself
-        if request.url.path == "/auth":
+        # Allow health check and auth endpoint without auth
+        if request.url.path in ("/health", "/auth"):
             return await call_next(request)
 
         # Check auth cookie
@@ -72,6 +72,12 @@ app.add_middleware(AuthMiddleware)
 BASE = pathlib.Path(__file__).parent
 
 # Try to import LLM clients
+# ── Health check (bypasses auth for Railway) ──
+@app.get("/health")
+async def health():
+    return JSONResponse({"status": "ok"})
+
+
 # ── Auth endpoint ──
 @app.post("/auth")
 async def authenticate(request: Request):
