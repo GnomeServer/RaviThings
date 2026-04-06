@@ -5516,6 +5516,11 @@ function setupSearch() {
   const results = document.getElementById('searchResults');
   let debounceTimer = null;
 
+  input.addEventListener('focus', () => {
+    // Reset map when user starts a new search (clears any LLM filters)
+    resetMap();
+  });
+
   input.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -5644,11 +5649,15 @@ let atlasChatMessages = [];
 let atlasChatAbort = null;
 
 function toggleAtlasChat() {
+  const wasOpen = atlasChatOpen;
   atlasChatOpen = !atlasChatOpen;
   document.getElementById('atlasChatPanel').classList.toggle('open', atlasChatOpen);
   document.getElementById('atlasChatToggle').classList.toggle('open', atlasChatOpen);
   if (atlasChatOpen) {
     setTimeout(() => document.getElementById('atlasChatInput').focus(), 300);
+  } else if (wasOpen) {
+    // Console closing — reset map to show all contractors
+    resetMap();
   }
 }
 
@@ -5681,6 +5690,9 @@ async function sendAtlasChat() {
   const input = document.getElementById('atlasChatInput');
   const query = input.value.trim();
   if (!query || atlasChatStreaming) return;
+
+  // Reset map before each new query (clear previous LLM filters)
+  resetMap();
 
   input.value = '';
   input.style.height = 'auto';
