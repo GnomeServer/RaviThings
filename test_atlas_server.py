@@ -1,21 +1,89 @@
 """Test server for Atlas — uses real Hermes/Ollama for chat, no ChromaDB dependency."""
 import asyncio
+import hashlib
 import json
 import os
 import pathlib
+import secrets
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import FastAPI, Request, Response, Cookie
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 from pydantic import BaseModel
 from starlette.responses import StreamingResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 load_dotenv()
 
 app = FastAPI()
+
+# ── Simple password protection ──
+SITE_PASSWORD = os.environ.get("SITE_PASSWORD", "")
+AUTH_COOKIE = "osint_atlas_auth"
+AUTH_TOKEN = hashlib.sha256(SITE_PASSWORD.encode()).hexdigest()[:32] if SITE_PASSWORD else ""
+
+LOGIN_PAGE = """<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>OSINT Atlas — Access Required</title>
+<style>
+  body { background: #0a0e1a; color: #c8d6e5; font-family: 'JetBrains Mono', monospace;
+         display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+  .login { text-align: center; }
+  .login h1 { color: #00e5ff; font-size: 14px; letter-spacing: 6px; text-transform: uppercase; }
+  .login h2 { color: #e0e6ed; font-size: 24px; margin: 8px 0 24px; }
+  input { background: #111827; border: 1px solid #1e3a5f; color: #00e5ff; padding: 12px 20px;
+          font-size: 16px; font-family: inherit; width: 260px; text-align: center; outline: none; }
+  input:focus { border-color: #00e5ff; }
+  button { background: #00e5ff; color: #0a0e1a; border: none; padding: 12px 32px; font-size: 14px;
+           font-family: inherit; font-weight: 700; cursor: pointer; margin-top: 12px; letter-spacing: 2px; }
+  button:hover { background: #00b8d4; }
+  .error { color: #ff1744; font-size: 12px; margin-top: 8px; }
+  .class { color: #8899aa; font-size: 10px; margin-top: 24px; letter-spacing: 2px; }
+</style></head><body>
+<div class="login">
+  <h1>OSINT ATLAS</h1>
+  <h2>Access Required</h2>
+  <form method="POST" action="/auth">
+    <input type="password" name="password" placeholder="Enter access code" autofocus><br>
+    <button type="submit">AUTHENTICATE</button>
+  </form>
+  <div class="class">UNCLASSIFIED // FOR OFFICIAL USE ONLY</div>
+</div></body></html>"""
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if not SITE_PASSWORD:
+            return await call_next(request)
+
+        # Allow the auth endpoint itself
+        if request.url.path == "/auth":
+            return await call_next(request)
+
+        # Check auth cookie
+        token = request.cookies.get(AUTH_COOKIE)
+        if token == AUTH_TOKEN:
+            return await call_next(request)
+
+        # Show login page
+        return HTMLResponse(LOGIN_PAGE, status_code=401)
+
+
+app.add_middleware(AuthMiddleware)
 BASE = pathlib.Path(__file__).parent
 
 # Try to import LLM clients
+# ── Auth endpoint ──
+@app.post("/auth")
+async def authenticate(request: Request):
+    form = await request.form()
+    password = form.get("password", "")
+    if password == SITE_PASSWORD:
+        response = HTMLResponse('<script>window.location="/"</script>')
+        response.set_cookie(AUTH_COOKIE, AUTH_TOKEN, httponly=True, max_age=86400 * 7)
+        return response
+    return HTMLResponse(LOGIN_PAGE.replace("</form>", '<div class="error">Invalid access code</div></form>'), status_code=401)
+
+
 from backend.mercury_client import HermesClient
 from backend.ollama_client import OllamaClient
 
