@@ -72,6 +72,13 @@ app.add_middleware(AuthMiddleware)
 BASE = pathlib.Path(__file__).parent
 
 # Try to import LLM clients
+# ── Root redirect ──
+@app.get("/")
+async def root():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse("/atlas")
+
+
 # ── Health check (bypasses auth for Railway) ──
 @app.get("/health")
 async def health():
@@ -84,7 +91,7 @@ async def authenticate(request: Request):
     form = await request.form()
     password = form.get("password", "")
     if password == SITE_PASSWORD:
-        response = HTMLResponse('<script>window.location="/"</script>')
+        response = HTMLResponse('<script>window.location="/atlas"</script>')
         response.set_cookie(AUTH_COOKIE, AUTH_TOKEN, httponly=True, max_age=86400 * 7)
         return response
     return HTMLResponse(LOGIN_PAGE.replace("</form>", '<div class="error">Invalid access code</div></form>'), status_code=401)
