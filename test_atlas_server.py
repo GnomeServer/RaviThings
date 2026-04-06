@@ -527,7 +527,19 @@ Provide a complete defensive analysis of this specific step."""
                         detail = _json.loads(json_str)
                     except _json.JSONDecodeError:
                         fixed = _re2.sub(r'(?<!\\)\\(?!["\\/bfnrtu])', r'\\\\', json_str)
-                        detail = _json.loads(fixed)
+                        try:
+                            detail = _json.loads(fixed)
+                        except _json.JSONDecodeError:
+                            # Strip control chars, try brace extraction
+                            clean = _re2.sub(r'[\x00-\x1f]', ' ', json_str)
+                            b0, b1 = clean.find('{'), clean.rfind('}')
+                            if b0 >= 0 and b1 > b0:
+                                try:
+                                    detail = _json.loads(clean[b0:b1+1])
+                                except _json.JSONDecodeError:
+                                    detail = {"vulnerability": {"description": raw[:2000]}, "detection": {}, "remediation": {}, "references": []}
+                            else:
+                                detail = {"vulnerability": {"description": raw[:2000]}, "detection": {}, "remediation": {}, "references": []}
                 except Exception as e:
                     detail = {"vulnerability": {"description": f"Analysis failed: {e}"}, "detection": {}, "remediation": {}, "references": []}
             else:
@@ -720,9 +732,30 @@ Provide a complete defensive analysis of this specific step."""
                 try:
                     result = _json.loads(fixed)
                 except _json.JSONDecodeError:
-                    # Last resort: strip control chars and try again
-                    cleaned = json_str.encode('utf-8', errors='replace').decode('unicode_escape', errors='replace')
-                    result = _json.loads(cleaned)
+                    # Try finding first { to last }
+                    brace_start = json_str.find('{')
+                    brace_end = json_str.rfind('}')
+                    if brace_start >= 0 and brace_end > brace_start:
+                        subset = json_str[brace_start:brace_end+1]
+                        # Remove control characters that break JSON
+                        subset = _re2.sub(r'[\x00-\x1f]', ' ', subset)
+                        try:
+                            result = _json.loads(subset)
+                        except _json.JSONDecodeError:
+                            # Truly broken — return raw as vulnerability description
+                            result = {
+                                "vulnerability": {"description": raw[:2000]},
+                                "detection": {"signatures": [], "log_indicators": [], "monitoring_advice": "See raw analysis above."},
+                                "remediation": {"immediate": [], "long_term": [], "commands": []},
+                                "references": [],
+                            }
+                    else:
+                        result = {
+                            "vulnerability": {"description": raw[:2000]},
+                            "detection": {"signatures": [], "log_indicators": [], "monitoring_advice": ""},
+                            "remediation": {"immediate": [], "long_term": [], "commands": []},
+                            "references": [],
+                        }
         except Exception as e:
             result = {
                 "vulnerability": {"description": f"Analysis generation failed: {e}"},
