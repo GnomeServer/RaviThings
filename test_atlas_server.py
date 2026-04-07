@@ -1214,14 +1214,16 @@ async def atlas_chat(req: AtlasChatRequest):
     # appended to the frontend's local history until the response completes),
     # but we defensively exclude any trailing user message that matches
     # req.query to stay robust to old frontends during rollout.
-    history = list(req.messages[-6:])
-    if history and history[-1].get("role") == "user" and history[-1].get("content") == req.query:
-        history = history[:-1]
+    # ── Token-budgeted history (Task 5, replaces the 6-turn / 500-char cap) ──
+    from backend.history_budget import budget_history
+    history_msgs = budget_history(req.messages, target_tokens=8000)
+    if history_msgs and history_msgs[-1].get("role") == "user" and history_msgs[-1].get("content") == req.query:
+        history_msgs = history_msgs[:-1]
 
     messages = [{"role": "system", "content": system_content}]
-    for msg in history:
+    for msg in history_msgs:
         if msg.get("role") in ("user", "assistant"):
-            messages.append({"role": msg["role"], "content": (msg.get("content") or "")[:500]})
+            messages.append({"role": msg["role"], "content": msg.get("content") or ""})
     messages.append({"role": "user", "content": req.query})
 
     start_time = time.time()
