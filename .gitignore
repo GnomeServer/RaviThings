@@ -39,6 +39,9 @@ frontend/.svelte-kit/
 *.log
 chroma_ingestion.log
 
+# Client error telemetry — captured at runtime, never committed
+logs/*.jsonl
+
 # Video production artifacts (large binary files)
 videos/acts/
 videos/audio/

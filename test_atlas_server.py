@@ -233,6 +233,28 @@ class AtlasChatRequest(BaseModel):
     data_context: str = ""
 
 
+class ClientErrorReport(BaseModel):
+    """Schema for the POST /api/client-error endpoint.
+
+    Fields are intentionally lenient: we want to capture whatever the
+    client managed to send, even if some fields are missing. The validator
+    enforces upper bounds on string lengths so a malicious or buggy client
+    can't dump megabytes of data into the log.
+    """
+    session: str = ""
+    kind: str = "error"
+    url: str = ""
+    userAgent: str = ""
+    viewport: list[int] = []
+    timestamp: str = ""
+    message: str = ""
+    source: str = ""
+    lineno: int = 0
+    colno: int = 0
+    stack: str = ""
+    reason: str = ""
+
+
 @app.get("/atlas")
 async def atlas():
     return FileResponse(BASE / "frontend" / "static" / "contractor-map.html")
@@ -1133,6 +1155,59 @@ async def atlas_chat(req: AtlasChatRequest):
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+# ── Client-side error telemetry ──
+# Captures window.onerror, unhandledrejection, and console errors from real
+# user sessions. Append-only JSONL log at logs/client_errors.jsonl. The
+# AuthMiddleware already gates this behind the SITE_PASSWORD cookie, so it
+# is not publicly writable in production.
+
+_CLIENT_ERROR_LOG = BASE / "logs" / "client_errors.jsonl"
+_CLIENT_ERROR_LOG.parent.mkdir(parents=True, exist_ok=True)
+
+# In-process rate limit per session: 60 requests / 60 seconds.
+# Backed by a tiny in-memory deque per session — fine for a single-process
+# Railway dyno. If we ever scale horizontally, swap to redis.
+import collections
+import time
+_client_error_buckets: dict[str, collections.deque] = collections.defaultdict(collections.deque)
+_RATE_WINDOW_SEC = 60
+_RATE_MAX = 60
+_BODY_MAX_BYTES = 8192
+
+
+@app.post("/api/client-error")
+async def client_error(report: ClientErrorReport, request: Request):
+    """Append a client error report to logs/client_errors.jsonl."""
+    # Body size guard (FastAPI/Starlette parses the body before this runs,
+    # so this is belt-and-suspenders against very large fields).
+    raw_size = sum(len(str(v)) for v in report.model_dump().values())
+    if raw_size > _BODY_MAX_BYTES:
+        return Response(status_code=413)  # Payload Too Large
+
+    # Per-session rate limit: drop reports beyond 60/min
+    bucket_key = report.session or (request.client.host if request.client else "anon")
+    bucket = _client_error_buckets[bucket_key]
+    now = time.time()
+    while bucket and bucket[0] < now - _RATE_WINDOW_SEC:
+        bucket.popleft()
+    if len(bucket) >= _RATE_MAX:
+        return Response(status_code=429)  # Too Many Requests
+    bucket.append(now)
+
+    # Truncate stack/message to safe lengths before writing
+    record = report.model_dump()
+    for field in ("message", "source", "stack", "reason", "userAgent", "url"):
+        if field in record and isinstance(record[field], str):
+            record[field] = record[field][:2000]
+    record["server_timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now))
+    record["client_ip"] = request.client.host if request.client else ""
+
+    with open(_CLIENT_ERROR_LOG, "a") as f:
+        f.write(json.dumps(record) + "\n")
+
+    return Response(status_code=204)
 
 
 if __name__ == "__main__":

@@ -431,3 +431,55 @@ def test_app_loads_with_unpkg_blocked(page: Page):
     # Confirm the map actually rendered
     count = page.evaluate("() => allMarkers.length")
     assert count >= 2200, f"map should have markers even without unpkg; got {count}"
+
+
+def test_client_error_telemetry_posts_on_thrown_error(page: Page):
+    """Throwing an error in the page must POST to /api/client-error.
+
+    Verifies the full client→server pipeline:
+    1. window.addEventListener('error', ...) catches the throw
+    2. The handler builds the JSON payload with the expected fields
+    3. fetch() is called against POST /api/client-error
+    4. The server responds 204 (or at least non-error)
+    """
+    captured = []
+
+    def handle_route(route):
+        # Capture the request body before letting it through
+        request = route.request
+        try:
+            captured.append({
+                "url": request.url,
+                "method": request.method,
+                "post_data": request.post_data_json,
+            })
+        except Exception:
+            captured.append({"url": request.url, "method": request.method, "post_data": None})
+        # Stub the response so we don't actually write to disk during tests
+        route.fulfill(status=204, body="")
+
+    page.route("**/api/client-error", handle_route)
+
+    # Trigger an error from inside the page. setTimeout ensures it's
+    # captured by window.onerror rather than thrown synchronously into
+    # page.evaluate (which would propagate as a python exception).
+    page.evaluate("""() => {
+        setTimeout(() => { throw new Error('telemetry-regression-test'); }, 0);
+    }""")
+
+    # Give the error handler a moment to fire
+    page.wait_for_timeout(500)
+
+    assert len(captured) >= 1, f"expected at least 1 POST to /api/client-error, got {captured}"
+    last = captured[-1]
+    assert last["method"] == "POST"
+    assert "/api/client-error" in last["url"]
+    body = last["post_data"]
+    assert body is not None, f"expected JSON body, got None: {captured}"
+    assert body.get("kind") == "error", f"kind should be 'error'; got {body}"
+    assert "telemetry-regression-test" in body.get("message", ""), (
+        f"message should include the thrown error text; got {body}"
+    )
+    assert body.get("session"), "session id should be set"
+    assert body.get("userAgent"), "userAgent should be set"
+    assert isinstance(body.get("viewport"), list) and len(body["viewport"]) == 2

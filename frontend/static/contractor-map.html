@@ -2318,6 +2318,71 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════════
+// CLIENT ERROR TELEMETRY
+// Captures window.onerror, unhandledrejection, and posts to
+// /api/client-error so we have a feedback loop on real-user bugs.
+// Rate-limited to 10 reports/min/session client-side. Auth-protected
+// by the AuthMiddleware on the server. Never throws — telemetry
+// failure must never break the app.
+// ═══════════════════════════════════════════════════════════════
+(function setupErrorTelemetry() {
+  var SESSION_ID = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('s_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10));
+  var rateCount = 0;
+  var RATE_LIMIT_PER_MIN = 10;
+  setInterval(function () { rateCount = 0; }, 60000);
+
+  function report(kind, payload) {
+    if (rateCount >= RATE_LIMIT_PER_MIN) return;
+    rateCount++;
+    try {
+      var body = {
+        session: SESSION_ID,
+        kind: kind,
+        url: location.href,
+        userAgent: navigator.userAgent,
+        viewport: [window.innerWidth, window.innerHeight],
+        timestamp: new Date().toISOString(),
+        message: payload.message || '',
+        source: payload.source || '',
+        lineno: payload.lineno || 0,
+        colno: payload.colno || 0,
+        stack: payload.stack || '',
+        reason: payload.reason || ''
+      };
+      var opts = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      };
+      // keepalive lets the request survive a navigation, but Safari 15.4
+      // doesn't support it; pass it conditionally so we don't throw on
+      // older WebKit.
+      try { opts.keepalive = true; } catch (_) {}
+      fetch('/api/client-error', opts).catch(function () { /* swallow */ });
+    } catch (_) { /* never throw from telemetry */ }
+  }
+
+  window.addEventListener('error', function (e) {
+    report('error', {
+      message: e.message,
+      source: e.filename,
+      lineno: e.lineno,
+      colno: e.colno,
+      stack: e.error && e.error.stack ? String(e.error.stack) : ''
+    });
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    report('unhandled_rejection', {
+      reason: String(e.reason),
+      stack: e.reason && e.reason.stack ? String(e.reason.stack) : ''
+    });
+  });
+
+  // Expose for testing — Playwright tests can call window.__telemetry.report(...)
+  window.__telemetry = { sessionId: SESSION_ID, report: report };
+})();
+
+// ═══════════════════════════════════════════════════════════════
 // SVG MARKER SHAPES
 // ═══════════════════════════════════════════════════════════════
 
