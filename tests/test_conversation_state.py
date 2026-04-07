@@ -1,5 +1,6 @@
 import time
 import pytest
+from unittest.mock import AsyncMock, MagicMock
 
 from backend.conversation_state import ConversationState, ConversationStore
 
@@ -55,3 +56,64 @@ def test_get_or_create_resets_last_used():
     time.sleep(0.05)
     store.get_or_create("s1")
     assert store._sessions["s1"].last_used_at > t0
+
+
+# ── Task 7: rolling summary + entity tracker ─────────────────────────────
+
+def test_extract_entities_finds_known_names():
+    from backend.conversation_state import _extract_entities
+    names = ["HONEYWELL FED MFG", "LOCKHEED MARTIN", "BOEING"]
+    text = "I want to know about Honeywell and lockheed martin."
+    found = _extract_entities(text, names)
+    assert "HONEYWELL FED MFG" in found
+    assert "LOCKHEED MARTIN" in found
+    assert "BOEING" not in found
+
+
+def test_update_entities_dedupes_and_orders_by_recency():
+    store = ConversationStore()
+    names = ["HONEYWELL", "LOCKHEED", "BOEING"]
+    store.update_entities("s1", "user", "tell me about Honeywell", names)
+    store.update_entities("s1", "user", "now lockheed", names)
+    store.update_entities("s1", "user", "back to honeywell", names)
+    state = store.get_or_create("s1")
+    # Honeywell should be most recent (re-mentioned), Lockheed before
+    assert state.entity_tracker[-1] == "HONEYWELL"
+    assert "LOCKHEED" in state.entity_tracker
+    # Each name appears at most once
+    assert len(state.entity_tracker) == len(set(state.entity_tracker))
+
+
+@pytest.mark.asyncio
+async def test_maybe_summarize_triggers_above_budget():
+    store = ConversationStore()
+    # 30 turns × ~500 chars = ~3700 tokens — under default 8K budget, won't trigger
+    # 30 turns × ~2000 chars = ~15000 tokens — over default 8K, should trigger
+    long_content = "x" * 2000
+    for i in range(30):
+        store.append_turn("s1", "user" if i % 2 == 0 else "assistant", long_content)
+
+    fake_hermes = MagicMock()
+    fake_hermes.chat = AsyncMock(return_value="The user has been discussing X, Y, Z.")
+    fake_hermes.is_available = lambda: True
+
+    summarized = await store.maybe_summarize("s1", fake_hermes, target_tokens=8000)
+    assert summarized is True
+
+    state = store.get_or_create("s1")
+    assert state.rolling_summary == "The user has been discussing X, Y, Z."
+    # Older verbatim turns should be trimmed (we keep only the tail that fits)
+    assert len(state.verbatim_turns) < 30
+
+
+@pytest.mark.asyncio
+async def test_maybe_summarize_skips_when_under_budget():
+    store = ConversationStore()
+    store.append_turn("s1", "user", "short")
+    store.append_turn("s1", "assistant", "short")
+    fake_hermes = MagicMock()
+    fake_hermes.chat = AsyncMock()
+    fake_hermes.is_available = lambda: True
+    summarized = await store.maybe_summarize("s1", fake_hermes, target_tokens=8000)
+    assert summarized is False
+    fake_hermes.chat.assert_not_called()

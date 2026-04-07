@@ -1228,6 +1228,32 @@ async def atlas_chat(req: AtlasChatRequest):
     # messages on first request after a server restart (state would be empty).
     if req.session_id:
         state = _conversation_store.get_or_create(req.session_id)
+
+        # ── Memory layer (Task 7) ──
+        # Update entity tracker with the user's query (assistant response is added after stream)
+        from backend.conversation_state import _load_contractor_names
+        contractor_names = _load_contractor_names()
+        _conversation_store.update_entities(
+            req.session_id, "user", req.query, contractor_names
+        )
+
+        # Maybe summarize older turns (only fires if budget exceeded)
+        await _conversation_store.maybe_summarize(
+            req.session_id, hermes, target_tokens=8000
+        )
+
+        # Re-read state after potential summarization/trimming
+        state = _conversation_store.get_or_create(req.session_id)
+        if state.rolling_summary:
+            system_content += (
+                f"\n\nPRIOR DISCUSSION SUMMARY:\n{state.rolling_summary}"
+            )
+        if state.entity_tracker:
+            system_content += (
+                "\n\nUSER IS CURRENTLY INVESTIGATING: "
+                + ", ".join(state.entity_tracker[-10:])
+            )
+
         if state.verbatim_turns:
             source_messages = state.verbatim_turns
         else:
@@ -1293,6 +1319,11 @@ async def atlas_chat(req: AtlasChatRequest):
             if req.session_id:
                 _conversation_store.append_turn(req.session_id, "user", req.query)
                 _conversation_store.append_turn(req.session_id, "assistant", final_text)
+                # Update entities from the assistant's response too (Task 7)
+                from backend.conversation_state import _load_contractor_names
+                _conversation_store.update_entities(
+                    req.session_id, "assistant", final_text, _load_contractor_names()
+                )
 
         except Exception as e:
             error_message = str(e)
