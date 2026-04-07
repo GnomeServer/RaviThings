@@ -1412,6 +1412,33 @@
     opacity: 1;
     pointer-events: all;
   }
+  /* When a detail panel is open, slide chat to the left so both are visible */
+  #atlasChatPanel.left-side {
+    right: auto;
+    left: 20px;
+  }
+  /* Stop button shown only while a chat response is streaming */
+  .atlas-chat-stop {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--hud-radius);
+    border: 1px solid rgba(255,23,68,0.25);
+    background: rgba(255,23,68,0.08);
+    color: #ff1744;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .atlas-chat-stop:hover {
+    background: rgba(255,23,68,0.18);
+    border-color: rgba(255,23,68,0.5);
+  }
+  #atlasChatPanel.streaming .atlas-chat-stop { display: flex; }
+  #atlasChatPanel.streaming .atlas-chat-send { display: none; }
 
   /* Terminal scan-line effect on chat */
   #atlasChatPanel::before {
@@ -2216,6 +2243,7 @@
   <div class="atlas-chat-input-area">
     <textarea id="atlasChatInput" rows="1" placeholder="query> contractors with exposed RDP…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAtlasChat()}"></textarea>
     <button class="atlas-chat-send" id="atlasChatSend" onclick="sendAtlasChat()">↵</button>
+    <button class="atlas-chat-stop" id="atlasChatStop" onclick="cancelAtlasChat()" title="Stop response">■</button>
   </div>
 </div>
 
@@ -2625,12 +2653,14 @@ function buildHeatmapData() {
 }
 
 function resetMap() {
-  // Reset all filters, show all markers, close panels, fly to US overview
+  // Reset all filters, show all markers, fly to US overview.
+  // NOTE: Intentionally does NOT close the detail panel — that would nuke
+  // a kill chain / research panel the user is currently reading. The detail
+  // panel has its own close button.
   markerCluster.clearLayers();
   markerCluster.addLayers(allMarkers);
   activeFilters.clear();
   if (window._radiusCircle) { map.removeLayer(window._radiusCircle); window._radiusCircle = null; }
-  closePanel();
   // Reset legend checkboxes
   document.querySelectorAll('#legendItems .legend-item').forEach(el => el.style.opacity = '1');
   // Reset dimmed markers
@@ -2865,6 +2895,9 @@ function openDetailPanel(idx) {
 function closePanel() {
   document.getElementById('detailPanel').classList.remove('open');
   selectedContractor = null;
+  // If chat is open and was slid left to make room for the detail panel,
+  // slide it back to its default right-side position.
+  document.getElementById('atlasChatPanel').classList.remove('left-side');
 }
 
 function buildPanelBody(c) {
@@ -5646,6 +5679,43 @@ let atlasChatOpen = false;
 let atlasChatStreaming = false;
 let atlasChatMessages = [];
 let atlasChatAbort = null;
+let atlasChatTimeoutId = null;
+const ATLAS_CHAT_TIMEOUT_MS = 90000; // 90s — generous bound for slow LLM responses
+
+function moveChatLeftIfOpen() {
+  // Slide chat panel to the left when a detail panel opens, so both are visible.
+  // Only takes effect if chat is currently open.
+  if (atlasChatOpen) {
+    document.getElementById('atlasChatPanel').classList.add('left-side');
+  }
+}
+
+function setChatStreamingUI(streaming) {
+  // Single source of truth for streaming-related UI state.
+  // Toggles the panel's "streaming" class (which controls Send/Stop visibility),
+  // updates the streaming flag, and ensures the typing indicator is consistent.
+  atlasChatStreaming = streaming;
+  const panel = document.getElementById('atlasChatPanel');
+  if (panel) panel.classList.toggle('streaming', streaming);
+  const sendBtn = document.getElementById('atlasChatSend');
+  if (sendBtn) sendBtn.disabled = streaming;
+  if (!streaming) {
+    hideAtlasTyping();
+    if (atlasChatTimeoutId) {
+      clearTimeout(atlasChatTimeoutId);
+      atlasChatTimeoutId = null;
+    }
+  }
+}
+
+function cancelAtlasChat() {
+  // User-initiated cancel — abort the in-flight fetch and reset UI.
+  if (atlasChatAbort) {
+    try { atlasChatAbort.abort(); } catch (_) { /* ignore */ }
+  }
+  setChatStreamingUI(false);
+  addAtlasMessage('system', 'Response cancelled.');
+}
 
 function toggleAtlasChat() {
   const wasOpen = atlasChatOpen;
@@ -5655,8 +5725,12 @@ function toggleAtlasChat() {
   if (atlasChatOpen) {
     setTimeout(() => document.getElementById('atlasChatInput').focus(), 300);
   } else if (wasOpen) {
-    // Console closing — reset map to show all contractors
+    // Console closing — reset map filters back to all contractors.
+    // resetMap() no longer touches the detail panel, so any open kill chain /
+    // research panel is preserved for the user to keep reading.
     resetMap();
+    // Slide chat back to right-side default for next open
+    document.getElementById('atlasChatPanel').classList.remove('left-side');
   }
 }
 
@@ -5688,7 +5762,17 @@ function hideAtlasTyping() {
 async function sendAtlasChat() {
   const input = document.getElementById('atlasChatInput');
   const query = input.value.trim();
-  if (!query || atlasChatStreaming) return;
+  if (!query) return;
+  if (atlasChatStreaming) {
+    // Self-heal: if a streaming flag is stuck but no abort controller is active,
+    // the previous request died without resetting state. Reset and continue.
+    if (!atlasChatAbort) {
+      console.warn('[atlas-chat] streaming flag was stuck — self-healing');
+      setChatStreamingUI(false);
+    } else {
+      return; // genuine in-flight request, ignore duplicate submission
+    }
+  }
 
   // Reset map before each new query (clear previous LLM filters)
   resetMap();
@@ -5700,9 +5784,8 @@ async function sendAtlasChat() {
   addAtlasMessage('user', escapeHtml(query));
   atlasChatMessages.push({ role: 'user', content: query });
 
-  // Show typing indicator
-  atlasChatStreaming = true;
-  document.getElementById('atlasChatSend').disabled = true;
+  // Show typing indicator + flip UI to streaming state
+  setChatStreamingUI(true);
   showAtlasTyping();
 
   // Build rich data context: query-relevant + top-risk + visible contractors
@@ -5821,6 +5904,13 @@ async function sendAtlasChat() {
 
   try {
     atlasChatAbort = new AbortController();
+    // Watchdog: abort the fetch if no response within ATLAS_CHAT_TIMEOUT_MS.
+    // Without this, a hung backend leaves the chat permanently "streaming".
+    atlasChatTimeoutId = setTimeout(() => {
+      if (atlasChatAbort) {
+        try { atlasChatAbort.abort(); } catch (_) { /* ignore */ }
+      }
+    }, ATLAS_CHAT_TIMEOUT_MS);
     const response = await fetch('/api/atlas-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -5881,12 +5971,18 @@ async function sendAtlasChat() {
 
   } catch (e) {
     hideAtlasTyping();
-    if (e.name !== 'AbortError') {
+    if (e.name === 'AbortError') {
+      // Aborted via Stop button or timeout watchdog — already handled by caller
+      // (cancelAtlasChat shows its own message). Distinguish timeout from user cancel
+      // by whether the timeout id is still set when we get here.
+      if (atlasChatTimeoutId) {
+        addAtlasMessage('system', 'Response timed out (90s). The backend may be slow or unreachable.');
+      }
+    } else {
       addAtlasMessage('system', `Connection error. Is the server running?`);
     }
   } finally {
-    atlasChatStreaming = false;
-    document.getElementById('atlasChatSend').disabled = false;
+    setChatStreamingUI(false);
     atlasChatAbort = null;
   }
 }
@@ -5918,7 +6014,6 @@ function executeMapCommand(cmd) {
       const value = cmd.value;
       const op = cmd.op || 'eq';
 
-      markerCluster.clearLayers();
       const visible = allMarkers.filter(m => {
         const c = DATA.contractors[m._contractorIdx];
         const fieldVal = getNestedField(c, field);
@@ -5930,6 +6025,14 @@ function executeMapCommand(cmd) {
         if (op === 'exists') return fieldVal !== null && fieldVal !== undefined && fieldVal !== '';
         return true;
       });
+      // Empty-result guard: if a filter matches nothing, don't blank the map.
+      // The LLM sometimes hallucinates field/value combinations that match
+      // zero contractors — silently dropping all markers feels broken.
+      if (visible.length === 0) {
+        addAtlasMessage('system', `Filter <code>${escapeHtml(field)} ${escapeHtml(op)} ${escapeHtml(String(value))}</code> matched 0 contractors — keeping current view. Use RESET to clear filters.`);
+        break;
+      }
+      markerCluster.clearLayers();
       markerCluster.addLayers(visible);
       addAtlasMessage('system', `Filtered to ${visible.length} contractors`);
       break;
@@ -5946,6 +6049,7 @@ function executeMapCommand(cmd) {
       // Open first highlighted contractor's panel
       if (ids.length > 0) {
         openDetailPanel(ids[0]);
+        moveChatLeftIfOpen();
       }
       break;
     }
@@ -5953,6 +6057,7 @@ function executeMapCommand(cmd) {
     case 'open_panel':
       if (typeof cmd.contractor_index === 'number') {
         openDetailPanel(cmd.contractor_index);
+        moveChatLeftIfOpen();
       }
       break;
 
@@ -5979,6 +6084,7 @@ function executeMapCommand(cmd) {
       if (typeof idx === 'number' && idx >= 0 && idx < DATA.contractors.length) {
         selectedContractor = idx;
         openDetailPanel(idx);
+        moveChatLeftIfOpen();
         addAtlasMessage('system', `Running AI research on ${DATA.contractors[idx].name}...`);
         generateAIResearch();
       }
@@ -5991,6 +6097,7 @@ function executeMapCommand(cmd) {
       if (typeof idx === 'number' && idx >= 0 && idx < DATA.contractors.length) {
         selectedContractor = idx;
         openDetailPanel(idx);
+        moveChatLeftIfOpen();
         addAtlasMessage('system', `Generating kill chain for ${DATA.contractors[idx].name}...`);
         generateKillChain();
       }
@@ -6003,6 +6110,7 @@ function executeMapCommand(cmd) {
       if (typeof idx === 'number' && idx >= 0 && idx < DATA.contractors.length) {
         selectedContractor = idx;
         openDetailPanel(idx);
+        moveChatLeftIfOpen();
         addAtlasMessage('system', `Running full threat assessment on ${DATA.contractors[idx].name}...`);
         generateFullAssessment();
       }
