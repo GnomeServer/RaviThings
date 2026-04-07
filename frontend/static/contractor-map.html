@@ -552,6 +552,17 @@
     font-weight: 800;
   }
 
+  /* Small muted suffix rendered next to a .data-value (e.g. "(scanned 13 days ago)").
+     Historically some cells smuggled raw HTML into the value string to inject
+     this styling and were caught by escapeHtml(). Use item.suffix instead. */
+  .data-suffix {
+    color: var(--text-muted);
+    font-size: 8px;
+    margin-left: 6px;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
   .tag-list {
     display: flex;
     flex-wrap: wrap;
@@ -3657,24 +3668,26 @@ function buildOSINTSection(c) {
     if (dns.dmarc_policy) {
       const dmarcColors = {reject: '#00e676', quarantine: '#ffd740', none: '#ff1744', not_set: '#ff1744'};
       const color = dmarcColors[dns.dmarc_policy] || 'var(--text-secondary)';
-      let dmarcValue = dns.dmarc_policy;
+      const dmarcValue = dns.dmarc_policy;
+      let dmarcSuffix = '';
       const dnsQueryTime = dns.query_time || '';
       if (dnsQueryTime) {
         const scanned = new Date(dnsQueryTime);
         const days = Math.floor((Date.now() - scanned.getTime()) / 86400000);
         const ageLabel = days === 0 ? 'today' : days === 1 ? '1 day ago' : `${days} days ago`;
-        dmarcValue += `</span><span style="color:var(--text-muted);font-size:8px;margin-left:6px;">(scanned ${ageLabel})`;
+        dmarcSuffix = `(scanned ${ageLabel})`;
       }
-      gridItems.push({label: 'DMARC Policy', value: dmarcValue, color});
+      gridItems.push({label: 'DMARC Policy', value: dmarcValue, color, suffix: dmarcSuffix});
     }
 
     if (gridItems.length) {
       html += '<div class="data-grid" style="margin-bottom:12px">';
       gridItems.forEach(item => {
         const style = item.highlight ? 'color:var(--accent-cyan);font-weight:600' : item.color ? 'color:' + item.color : '';
+        const suffixHtml = item.suffix ? `<span class="data-suffix">${escapeHtml(item.suffix)}</span>` : '';
         html += `<div class="data-cell">
           <span class="data-label">${item.label}</span>
-          <span class="data-value" style="${style}">${escapeHtml(item.value)}</span>
+          <span class="data-value" style="${style}">${escapeHtml(item.value)}${suffixHtml}</span>
         </div>`;
       });
       html += '</div>';

@@ -292,6 +292,79 @@ def test_risk_label_not_clipped(page: Page):
     )
 
 
+def test_dmarc_cell_does_not_leak_raw_html(page: Page):
+    """Regression test for the details panel DMARC cell leaking raw HTML.
+
+    The DMARC Policy cell used to compute its value as:
+        dmarcValue += `</span><span style="...">(scanned N days ago)`
+    hoping to break out of the parent .data-value span and inject a
+    styled suffix. But the grid renderer wraps every value in
+    escapeHtml(item.value), so the angle brackets got escaped and the
+    user saw the literal text:
+        "none</span><span style=...;">(scanned 13 days ago)"
+
+    Fix: values stay plain text; suffix moved to a separate item.suffix
+    field rendered inside its own .data-suffix span. This test finds a
+    contractor whose DNS block carries both dmarc_policy and query_time
+    (so the suffix path fires), opens its detail panel, and asserts the
+    DMARC cell's textContent contains no raw HTML fragments.
+    """
+    result = page.evaluate("""() => {
+        // Find a contractor whose DNS block will populate DMARC + age suffix
+        let targetIdx = -1;
+        for (let i = 0; i < DATA.contractors.length; i++) {
+            const dns = (DATA.contractors[i].osint || {}).dns || {};
+            if (dns.dmarc_policy && dns.query_time) { targetIdx = i; break; }
+        }
+        if (targetIdx === -1) {
+            return { error: 'no contractor has both dmarc_policy and query_time' };
+        }
+        openDetailPanel(targetIdx);
+
+        // Locate the DMARC Policy cell by its label text
+        const labels = Array.from(document.querySelectorAll('.data-label'));
+        const dmarcLabel = labels.find(el => el.textContent.trim() === 'DMARC Policy');
+        if (!dmarcLabel) return { error: 'DMARC Policy cell not rendered', idx: targetIdx };
+
+        const cell = dmarcLabel.closest('.data-cell');
+        const valueEl = cell.querySelector('.data-value');
+        const suffixEl = cell.querySelector('.data-suffix');
+
+        return {
+            idx: targetIdx,
+            valueText: valueEl ? valueEl.textContent : null,
+            valueInnerHTML: valueEl ? valueEl.innerHTML : null,
+            suffixText: suffixEl ? suffixEl.textContent : null,
+            suffixComputedFontSize: suffixEl ? window.getComputedStyle(suffixEl).fontSize : null,
+        };
+    }""")
+
+    assert not result.get("error"), f"setup failure: {result}"
+    # The raw HTML escape bug would leave '<span' or '</span>' visible in textContent
+    assert "<span" not in (result["valueText"] or ""), (
+        f"DMARC cell textContent contains raw '<span' — escape-then-inject bug is back: {result}"
+    )
+    assert "</span>" not in (result["valueText"] or ""), (
+        f"DMARC cell textContent contains raw '</span>' — escape-then-inject bug is back: {result}"
+    )
+    # The value itself should be the raw policy string (not the concatenated HTML)
+    assert result["valueText"] is not None, f"no .data-value found: {result}"
+    assert len(result["valueText"]) < 100, (
+        f"DMARC value is suspiciously long — expected a short policy name, got: {result['valueText'][:200]}"
+    )
+    # The suffix must be rendered as its own span with the 8px styling
+    assert result["suffixText"] is not None, (
+        f"expected .data-suffix span to exist when query_time is set: {result}"
+    )
+    assert "scanned" in result["suffixText"], (
+        f"suffix should contain 'scanned ... ago', got: {result['suffixText']}"
+    )
+    assert result["suffixComputedFontSize"] == "8px", (
+        f"suffix should be rendered at 8px (the styling we moved from inline to .data-suffix), "
+        f"got: {result['suffixComputedFontSize']}"
+    )
+
+
 # ─────────────────────────────────────────────────────────────────────
 # Bug 3 — Typography and panel sizing
 # ─────────────────────────────────────────────────────────────────────
