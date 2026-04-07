@@ -5,20 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OSINT Atlas — DOE Contractor Intelligence</title>
 
-<!-- Leaflet -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet (self-hosted to survive CDN outages — see frontend/static/vendor/README.md) -->
+<link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css" />
+<script src="/static/vendor/leaflet/leaflet.js"></script>
 
 <!-- Leaflet MarkerCluster -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<link rel="stylesheet" href="/static/vendor/markercluster/MarkerCluster.css" />
+<link rel="stylesheet" href="/static/vendor/markercluster/MarkerCluster.Default.css" />
+<script src="/static/vendor/markercluster/leaflet.markercluster.js"></script>
 
 <!-- Leaflet Heat Map -->
-<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="/static/vendor/leaflet-heat/leaflet-heat.js"></script>
 
 <!-- D3.js for network graph -->
-<script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script>
+<script src="/static/vendor/d3/d3.min.js"></script>
 
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -26,6 +26,7 @@ import secrets
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Response, Cookie
 from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.responses import StreamingResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -240,6 +241,12 @@ async def atlas():
 @app.get("/contractors.json")
 async def contractors():
     return FileResponse(BASE / "frontend" / "static" / "contractors.json")
+
+
+# Serve static assets (vendor JS, CSS, images) from frontend/static/
+# under the /static URL prefix. The /atlas, /contractors.json, and other
+# explicit routes still take precedence because they're registered first.
+app.mount("/static", StaticFiles(directory=BASE / "frontend" / "static"), name="static")
 
 
 class KillChainRequest(BaseModel):

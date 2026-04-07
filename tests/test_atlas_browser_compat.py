@@ -404,3 +404,30 @@ def test_textarea_auto_grows_on_multiline_input(page: Page):
     }""")
     assert result["grown"] > result["initial"], f"textarea should grow; got {result}"
     assert result["grown"] <= 120, f"textarea should cap at 120px; got {result}"
+
+
+def test_app_loads_with_unpkg_blocked(page: Page):
+    """The app must still load even if unpkg.com / Google Fonts is unreachable.
+
+    This is the canonical "corporate proxy blocks the CDN" use case. After
+    self-hosting Leaflet/MarkerCluster/heat/d3 in frontend/static/vendor/,
+    the page should be entirely independent of unpkg.com.
+    """
+    # Intercept all unpkg.com requests and abort them
+    page.route("https://unpkg.com/**", lambda r: r.abort())
+    page.route("https://fonts.googleapis.com/**", lambda r: r.abort())
+    page.route("https://fonts.gstatic.com/**", lambda r: r.abort())
+
+    errors = []
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+    # Re-navigate so the route blocking takes effect
+    page.goto(ATLAS_URL)
+    page.wait_for_function(
+        "typeof markerCluster !== 'undefined' && markerCluster !== null && "
+        "typeof allMarkers !== 'undefined' && allMarkers.length > 0",
+        timeout=15000,
+    )
+    assert errors == [], f"Page errors with unpkg blocked: {errors}"
+    # Confirm the map actually rendered
+    count = page.evaluate("() => allMarkers.length")
+    assert count >= 2200, f"map should have markers even without unpkg; got {count}"
