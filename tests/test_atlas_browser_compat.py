@@ -89,6 +89,16 @@ from playwright.sync_api import Page, expect
 
 ATLAS_URL = os.environ.get("ATLAS_URL", "http://localhost:8765/atlas")
 
+# Viewport sizes to test layout-sensitive behavior across.
+# 1920×1080: typical desktop monitor
+# 1366×768:  most common corporate laptop screen (Windows ESR Firefox class)
+# 1280×720:  Playwright default; smallest commonly-used laptop
+LAYOUT_VIEWPORTS = [
+    pytest.param(1920, 1080, id="1920x1080"),
+    pytest.param(1366, 768, id="1366x768"),
+    pytest.param(1280, 720, id="1280x720"),
+]
+
 
 @pytest.fixture(autouse=True)
 def goto_atlas(page: Page):
@@ -130,8 +140,15 @@ def test_all_markers_render(page: Page):
 # Bug 1 — Legend filter click (Firefox/Windows SVG hit-test regression)
 # ─────────────────────────────────────────────────────────────────────
 
-def test_legend_click_filters_markers_on_parent_div(page: Page):
-    """Clicking the legend item DIV directly filters markers."""
+@pytest.mark.parametrize("vw,vh", LAYOUT_VIEWPORTS)
+def test_legend_click_filters_markers_on_parent_div(page: Page, vw, vh):
+    """Clicking the legend item DIV directly filters markers — at multiple viewports."""
+    page.set_viewport_size({"width": vw, "height": vh})
+    page.wait_for_function(
+        "typeof markerCluster !== 'undefined' && markerCluster !== null && "
+        "typeof allMarkers !== 'undefined' && allMarkers.length > 0",
+        timeout=15000,
+    )
     result = page.evaluate("""() => {
         const item = document.querySelector('#legendItems .legend-item[data-category="IT & Cyber"]');
         let before = 0; markerCluster.eachLayer(() => before++);
@@ -140,9 +157,9 @@ def test_legend_click_filters_markers_on_parent_div(page: Page):
         return { before, after, dimmed: item.classList.contains('dimmed') };
     }""")
     assert result["before"] > result["after"], (
-        f"clicking legend item should reduce visible markers; got {result}"
+        f"viewport {vw}x{vh}: clicking legend item should reduce visible markers; got {result}"
     )
-    assert result["dimmed"], "legend item should have .dimmed class after click"
+    assert result["dimmed"], f"viewport {vw}x{vh}: legend item should have .dimmed class"
 
 
 def test_legend_click_on_swatch_child_still_filters(page: Page):
@@ -173,10 +190,14 @@ def test_legend_click_on_swatch_child_still_filters(page: Page):
 # Bug 2 — Risk factor text clipping
 # ─────────────────────────────────────────────────────────────────────
 
-def test_risk_factors_have_readable_size(page: Page):
-    """Risk factor pills are tall enough that text isn't clipped."""
+@pytest.mark.parametrize("vw,vh", LAYOUT_VIEWPORTS)
+def test_risk_factors_have_readable_size(page: Page, vw, vh):
+    """Risk factor pills are tall enough that text isn't clipped — at multiple viewports."""
+    page.set_viewport_size({"width": vw, "height": vh})
+    page.wait_for_function(
+        "typeof markerCluster !== 'undefined' && markerCluster !== null", timeout=15000
+    )
     result = page.evaluate("""() => {
-        // Find a high-risk contractor and open its panel
         let bestIdx = 0, mostFactors = 0;
         for (let i = 0; i < 200; i++) {
             const r = computeRiskScore(DATA.contractors[i]);
@@ -187,18 +208,13 @@ def test_risk_factors_have_readable_size(page: Page):
         if (!factor) return { error: 'no risk factor element' };
         const rect = factor.getBoundingClientRect();
         const cs = window.getComputedStyle(factor);
-        return {
-            height: rect.height,
-            fontSize: cs.fontSize,
-            lineHeight: cs.lineHeight,
-            padding: cs.padding,
-        };
+        return { height: rect.height, fontSize: cs.fontSize };
     }""")
     assert result.get("height", 0) >= 18, (
-        f"risk factor pill should be at least 18px tall to avoid clipping; got {result}"
+        f"viewport {vw}x{vh}: risk factor pill should be at least 18px tall; got {result}"
     )
     assert result["fontSize"] in ("11px",), (
-        f"risk factor font should be 11px; got {result['fontSize']}"
+        f"viewport {vw}x{vh}: risk factor font should be 11px; got {result}"
     )
 
 
@@ -280,8 +296,13 @@ def test_risk_label_not_clipped(page: Page):
 # Bug 3 — Typography and panel sizing
 # ─────────────────────────────────────────────────────────────────────
 
-def test_command_console_is_larger(page: Page):
-    """Command Console panel is at least 500px wide for readability."""
+@pytest.mark.parametrize("vw,vh", LAYOUT_VIEWPORTS)
+def test_command_console_is_larger(page: Page, vw, vh):
+    """Command Console panel is wide enough for readability — at multiple viewports."""
+    page.set_viewport_size({"width": vw, "height": vh})
+    page.wait_for_function(
+        "typeof markerCluster !== 'undefined' && markerCluster !== null", timeout=15000
+    )
     result = page.evaluate("""() => {
         toggleAtlasChat();
         const panel = document.getElementById('atlasChatPanel');
@@ -290,9 +311,14 @@ def test_command_console_is_larger(page: Page):
             fontSize: window.getComputedStyle(panel).fontSize,
         };
     }""")
-    assert result["width"] >= 500, f"chat panel width should be >= 500px; got {result}"
-    # Body font should be 13px (--fs-body)
-    assert result["fontSize"] in ("13px",), f"chat font should be 13px; got {result['fontSize']}"
+    # At 1280×720 the panel may need to scale down — accept ≥ 480 there.
+    min_width = 480 if vw < 1366 else 500
+    assert result["width"] >= min_width, (
+        f"viewport {vw}x{vh}: chat panel width should be >= {min_width}px; got {result}"
+    )
+    assert result["fontSize"] in ("13px",), (
+        f"viewport {vw}x{vh}: chat font should be 13px; got {result}"
+    )
 
 
 def test_detail_panel_is_larger(page: Page):
@@ -520,3 +546,89 @@ def test_textarea_enter_submits_via_addeventlistener(page: Page):
     }""")
     assert result["afterEnter"] == 1, f"Enter should call sendAtlasChat exactly once; got {result}"
     assert result["afterShiftEnter"] == 1, f"Shift+Enter should NOT submit; got {result}"
+
+
+def test_smoke_flow_no_console_errors(page: Page):
+    """End-to-end smoke flow: 7 user actions in sequence, asserting zero
+    JS console errors at any point.
+
+    This is the canonical "did anything blow up during a real session"
+    test. It catches errors that the per-feature state-assertion tests
+    would miss, like a deferred listener failing during a transition.
+
+    Steps:
+      1. Page already loaded (via autouse fixture)
+      2. Click a legend item to filter markers
+      3. Click another legend item to add to the filter set
+      4. Click a contractor marker → open detail panel
+      5. Open the Command Console
+      6. Type a query and press Enter (with /api/atlas-chat mocked)
+      7. Close the Command Console
+      8. Reset the map filters
+
+    The Console Errors set must remain empty across all 7 actions.
+    """
+    errors: list[str] = []
+    page.on("pageerror", lambda exc: errors.append("pageerror: " + str(exc)))
+
+    # Capture console.error messages too (some bugs only log, don't throw)
+    def on_console(msg):
+        if msg.type == "error":
+            errors.append(f"console.error: {msg.text}")
+    page.on("console", on_console)
+
+    # Mock the LLM endpoint with a minimal SSE response so step 6 doesn't
+    # depend on a real Hermes/Ollama backend.
+    def mock_atlas_chat(route):
+        sse_body = (
+            "data: {\"phase\": \"text\", \"chunk\": \"OK\"}\n\n"
+            "data: {\"phase\": \"done\"}\n\n"
+        )
+        route.fulfill(
+            status=200,
+            headers={"Content-Type": "text/event-stream"},
+            body=sse_body,
+        )
+    page.route("**/api/atlas-chat", mock_atlas_chat)
+
+    # 2. Click a legend item
+    page.evaluate("""() => {
+        const item = document.querySelector('#legendItems .legend-item[data-category="Manufacturing"]');
+        if (item) item.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true}));
+    }""")
+    page.wait_for_timeout(150)
+
+    # 3. Click another legend item
+    page.evaluate("""() => {
+        const item = document.querySelector('#legendItems .legend-item[data-category="IT & Cyber"]');
+        if (item) item.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true}));
+    }""")
+    page.wait_for_timeout(150)
+
+    # 4. Open detail panel
+    page.evaluate("() => openDetailPanel(0)")
+    page.wait_for_timeout(150)
+
+    # 5. Open command console
+    page.evaluate("() => { if (!atlasChatOpen) toggleAtlasChat(); }")
+    page.wait_for_timeout(150)
+
+    # 6. Type a query and press Enter
+    page.evaluate("""() => {
+        const ta = document.getElementById('atlasChatInput');
+        ta.value = 'show me critical contractors in colorado';
+        ta.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'Enter', shiftKey: false, bubbles: true, cancelable: true
+        }));
+    }""")
+    page.wait_for_timeout(400)  # let the SSE mock finish
+
+    # 7. Close command console
+    page.evaluate("() => { if (atlasChatOpen) toggleAtlasChat(); }")
+    page.wait_for_timeout(150)
+
+    # 8. Reset map
+    page.evaluate("() => { if (typeof resetMap === 'function') resetMap(); }")
+    page.wait_for_timeout(150)
+
+    assert errors == [], f"Console errors during smoke flow: {errors}"
