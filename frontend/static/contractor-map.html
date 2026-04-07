@@ -1226,17 +1226,10 @@
     position: relative;
   }
 
-  .risk-score-banner::before {
-    content: '// THREAT ASSESSMENT';
-    position: absolute;
-    top: 4px;
-    right: 14px;
-    font-size: 9px;  /* was 6px — unreadably tiny */
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    color: rgba(255,23,68,0.4);
-    text-transform: uppercase;
-  }
+  /* Removed: the absolutely-positioned "// THREAT ASSESSMENT" decorator
+     was overlapping the .risk-label "ATTACK SURFACE RISK" text inside
+     the banner, clipping it. The .risk-label already serves as the
+     section header — the pseudo-element was redundant decoration. */
 
   .risk-score-banner.risk-critical {
     background: linear-gradient(90deg, rgba(255,23,68,0.1) 0%, rgba(255,23,68,0.02) 60%, transparent 100%);
@@ -1290,12 +1283,16 @@
   }
 
   .risk-label {
-    /* Was 7px — clipped on Windows/Firefox font rendering. */
-    font-size: var(--fs-micro);
+    /* Was 7px — clipped on Windows/Firefox font rendering. Now 11px
+       with explicit line-height so glyphs render with breathing room
+       and don't get clipped against the banner's top edge. */
+    font-size: var(--fs-tiny);
     font-weight: 700;
+    line-height: 1.5;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--text-secondary);
+    margin-bottom: 2px;
   }
 
   .risk-severity {
