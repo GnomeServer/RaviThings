@@ -128,8 +128,10 @@ Server side (in `test_atlas_server.py`):
 Regression test: A new Playwright test injects a thrown `Error`, then asserts the fetch was called. Mock the endpoint with `page.route()` and assert payload shape. (Does not need to hit a real backend during tests.)
 Cost: 45 min.
 
-**Move 7 — Extract inline `onkeydown` handler**
-`contractor-map.html:2313` has an inline `onkeydown="..."` on the textarea. Move the handler into the existing JS section as a proper `addEventListener`, preserving the `isComposing` guard.
+**Move 7 — Extract textarea inline `onkeydown` handler (NARROWED)**
+`contractor-map.html:2313` has an inline `onkeydown="..."` on the `#atlasChatInput` textarea. Move the handler into the existing JS section as a proper `addEventListener('keydown', ...)`, preserving the `isComposing` guard and shift-modifier handling.
+
+**Why narrowed:** The full file contains 28 inline event handlers (verified by grep). The other 27 are mechanical `onclick="fn()"` calls — many generated dynamically inside JS template literals — and removing them is pure structural cleanup with no robustness or cross-browser benefit, while carrying nontrivial regression risk. The textarea handler is the *only* one with subtle browser-quirky behavior worth preserving in a real listener (CJK IME composition guard, shift-modifier branching).
 Cost: 10 min.
 
 **Move 8 — Responsive viewport sweep**
@@ -149,16 +151,25 @@ New test `test_smoke_flow_no_console_errors`:
 This turns the test suite from "state assertions" into actual user-flow coverage.
 Cost: 30 min.
 
-**Move 10 — CI lint guard: no inline handlers**
-Add a grep-based step in the CI workflow:
-  ```yaml
-  - name: Guard against inline event handlers
-    run: |
-      if grep -nE 'on[a-z]+="' frontend/static/contractor-map.html; then
-        echo "Inline event handlers found — move to addEventListener"; exit 1
-      fi
-  ```
-Structural prevention of the inline-handler class returning.
+**Move 10 — CI inline-handler counter (warn-only baseline + ratchet)**
+Add a CI step that counts inline event handlers in `contractor-map.html` and **fails the build only if the count INCREASES** above a recorded baseline. This is a "ratchet" guard — it doesn't force the existing 28 handlers to be removed today, but prevents any new ones from being added.
+
+```yaml
+- name: Inline event handler ratchet (no new inline handlers)
+  run: |
+    BASELINE=28  # current count as of 2026-04-07
+    COUNT=$(grep -cE 'on(click|keydown|keyup|keypress|change|submit|input|focus|blur|load|mouseover|mouseout)="' frontend/static/contractor-map.html || true)
+    echo "Inline handler count: $COUNT (baseline: $BASELINE)"
+    if [ "$COUNT" -gt "$BASELINE" ]; then
+      echo "::error::Inline event handler count increased from $BASELINE to $COUNT. Use addEventListener instead."
+      grep -nE 'on(click|keydown|keyup|keypress|change|submit|input|focus|blur|load|mouseover|mouseout)="' frontend/static/contractor-map.html
+      exit 1
+    fi
+```
+
+**Why ratchet vs hard ban:** The full file currently contains 28 inline handlers. Removing them all is hours of careful refactoring (especially the 6+ generated dynamically inside template literals via `${idx}`) with regression risk and zero robustness benefit. The ratchet prevents the class from *growing*, gives us a leading defense against new ones, and lets us pay down the existing ones in future passes if we ever want to.
+
+**Note on baseline coordination with Move 7:** Move 7 extracts the textarea `onkeydown`, dropping the count from 28 to 27. The Move 10 commit lands AFTER Move 7, so the baseline written into the workflow is **27**, not 28.
 Cost: 15 min.
 
 ## Implementation order and commit grouping
