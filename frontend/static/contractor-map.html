@@ -2636,7 +2636,6 @@ function resetMap() {
   // Reset dimmed markers
   allMarkers.forEach(m => { if (m._icon) m._icon.style.opacity = '1'; });
   map.flyTo([39.5, -98.5], 5, { duration: 1 });
-  updateStats();
 }
 
 function toggleHeatmap() {
