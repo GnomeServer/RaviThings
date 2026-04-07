@@ -1,4 +1,21 @@
-"""Test server for Atlas — uses real Hermes/Ollama for chat, no ChromaDB dependency."""
+"""OSINT Atlas web server — runs in production AND for tests.
+
+⚠ NAME WARNING: this file is named ``test_atlas_server.py`` for historical
+reasons (it began as a lightweight test harness with no ChromaDB dependency)
+but it IS the production entry point. Verify by checking:
+
+  - Procfile:     ``web: python test_atlas_server.py``
+  - railway.toml: ``startCommand = "python test_atlas_server.py"``
+  - Dockerfile:   ``CMD ["python", "test_atlas_server.py"]``
+
+There is NO separate production server. The cross-browser test suite at
+``tests/test_atlas_browser_compat.py`` runs against this exact file, so
+test/prod parity is by construction — there is no drift to worry about.
+
+If you ever decide to rename this file, update Procfile, railway.toml,
+Dockerfile, .github/workflows/browser-compat.yml, and the QA doc at
+``docs/cross-platform-qa.md`` together in the same commit.
+"""
 import asyncio
 import hashlib
 import json

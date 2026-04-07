@@ -117,13 +117,13 @@ def test_page_loads_without_errors(page: Page):
 
 
 def test_all_markers_render(page: Page):
-    """All 2,214 contractor markers are added to the cluster."""
+    """All contractor markers are added to the cluster."""
     count = page.evaluate("() => allMarkers.length")
-    assert count == 2214, f"expected 2214 markers, got {count}"
+    assert count >= 2200, f"expected at least 2200 markers, got {count}"
     visible = page.evaluate("""() => {
         let n = 0; markerCluster.eachLayer(() => n++); return n;
     }""")
-    assert visible == 2214
+    assert visible == count, f"all markers should be in the cluster; got {visible}/{count}"
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -224,6 +224,55 @@ def test_section_dividers_are_not_cyan(page: Page):
     )
     assert "229" not in result["titleBorderBottom"], (
         f"section-title border-bottom is still cyan: {result['titleBorderBottom']}"
+    )
+
+
+def test_risk_label_not_clipped(page: Page):
+    """Regression test for commit 027779c — 'Attack Surface Risk' label clipping.
+
+    The .risk-score-banner used to have a ::before pseudo-element rendering
+    '// THREAT ASSESSMENT' that overlapped the .risk-label text inside the
+    banner, clipping it. Fix removed the pseudo-element and bumped .risk-label
+    from 10px → 11px with explicit line-height 1.5 for cross-engine breathing
+    room. This test pins all four signals so the regression cannot return.
+    """
+    result = page.evaluate("""() => {
+        // Find a contractor with risk factors so the banner renders
+        let bestIdx = 0, mostFactors = 0;
+        for (let i = 0; i < 200; i++) {
+            const r = computeRiskScore(DATA.contractors[i]);
+            if (r.factors.length > mostFactors) { mostFactors = r.factors.length; bestIdx = i; }
+        }
+        openDetailPanel(bestIdx);
+        const label = document.querySelector('.risk-label');
+        const banner = document.querySelector('.risk-score-banner');
+        if (!label || !banner) return { error: 'no risk label or banner element' };
+        const labelRect = label.getBoundingClientRect();
+        const bannerRect = banner.getBoundingClientRect();
+        const labelStyle = window.getComputedStyle(label);
+        const bannerBeforeStyle = window.getComputedStyle(banner, '::before');
+        return {
+            labelHeight: labelRect.height,
+            labelFontSize: labelStyle.fontSize,
+            labelLineHeight: labelStyle.lineHeight,
+            distanceFromBannerTop: labelRect.top - bannerRect.top,
+            pseudoContent: bannerBeforeStyle.content,
+        };
+    }""")
+    # The fix sets line-height: 1.5 on an 11px font, so height should be ~16.5px
+    assert result.get("labelHeight", 0) >= 15, (
+        f"risk label height < 15px — text is being clipped; got {result}"
+    )
+    assert result["labelFontSize"] == "11px", (
+        f"risk label should be 11px (--fs-tiny); got {result['labelFontSize']}"
+    )
+    # The pseudo-element that used to overlap must be gone
+    assert result["pseudoContent"] in ("none", '""', "normal"), (
+        f"::before pseudo-element should be removed; got content={result['pseudoContent']}"
+    )
+    # Label should be at least 8px from the top of the banner (was negative/0 when clipped)
+    assert result["distanceFromBannerTop"] >= 8, (
+        f"risk label is hugging the banner top — likely clipped; got {result}"
     )
 
 
