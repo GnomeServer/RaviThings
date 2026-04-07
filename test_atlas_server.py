@@ -165,6 +165,13 @@ def get_retriever():
         print(f"[atlas-chat] retriever init failed, falling back to legacy substring: {e}")
         return None
 
+# ── Conversation state (Task 6) ──
+# In-memory, session-keyed server-side conversation store. Replaces the
+# stateless "frontend sends full history every turn" pattern. Foundation for
+# rolling summaries + entity tracking in Task 7.
+from backend.conversation_state import ConversationStore
+_conversation_store = ConversationStore(max_sessions=200, ttl_seconds=3600.0)
+
 _ATLAS_SYSTEM_PROMPT = """\
 You are the OSINT Atlas Intelligence Analyst for DOE contractor security. You have access to \
 intelligence data on 2,214 DOE contractors including their network exposure, vulnerabilities, and infrastructure.
@@ -1214,9 +1221,21 @@ async def atlas_chat(req: AtlasChatRequest):
     # appended to the frontend's local history until the response completes),
     # but we defensively exclude any trailing user message that matches
     # req.query to stay robust to old frontends during rollout.
-    # ── Token-budgeted history (Task 5, replaces the 6-turn / 500-char cap) ──
+    # ── Token-budgeted history (Task 5) sourced from ConversationStore (Task 6) ──
     from backend.history_budget import budget_history
-    history_msgs = budget_history(req.messages, target_tokens=8000)
+
+    # Prefer server-side state when session_id is provided; fall back to client-supplied
+    # messages on first request after a server restart (state would be empty).
+    if req.session_id:
+        state = _conversation_store.get_or_create(req.session_id)
+        if state.verbatim_turns:
+            source_messages = state.verbatim_turns
+        else:
+            source_messages = req.messages
+    else:
+        source_messages = req.messages
+
+    history_msgs = budget_history(source_messages, target_tokens=8000)
     if history_msgs and history_msgs[-1].get("role") == "user" and history_msgs[-1].get("content") == req.query:
         history_msgs = history_msgs[:-1]
 
@@ -1269,6 +1288,11 @@ async def atlas_chat(req: AtlasChatRequest):
                 if diff.strip():
                     yield f"data: {json.dumps({'type': 'token', 'content': diff})}\n\n"
             accumulated_response.append(final_text)
+
+            # Persist to ConversationStore (Task 6) so the next turn has full state
+            if req.session_id:
+                _conversation_store.append_turn(req.session_id, "user", req.query)
+                _conversation_store.append_turn(req.session_id, "assistant", final_text)
 
         except Exception as e:
             error_message = str(e)

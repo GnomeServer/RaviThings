@@ -2318,6 +2318,16 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════════
+// MODULE-SCOPED SESSION ID
+// Generated once per page load. Shared between telemetry (Task 5 of
+// robustness plan) and chat (Task 6 of RAG plan) so the server can
+// correlate error reports with conversation state.
+// ═══════════════════════════════════════════════════════════════
+const ATLAS_SESSION_ID = (typeof crypto !== 'undefined' && crypto.randomUUID)
+  ? crypto.randomUUID()
+  : 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+
+// ═══════════════════════════════════════════════════════════════
 // CLIENT ERROR TELEMETRY
 // Captures window.onerror, unhandledrejection, and posts to
 // /api/client-error so we have a feedback loop on real-user bugs.
@@ -2326,7 +2336,6 @@
 // failure must never break the app.
 // ═══════════════════════════════════════════════════════════════
 (function setupErrorTelemetry() {
-  var SESSION_ID = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('s_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10));
   var rateCount = 0;
   var RATE_LIMIT_PER_MIN = 10;
   setInterval(function () { rateCount = 0; }, 60000);
@@ -2336,7 +2345,7 @@
     rateCount++;
     try {
       var body = {
-        session: SESSION_ID,
+        session: ATLAS_SESSION_ID,
         kind: kind,
         url: location.href,
         userAgent: navigator.userAgent,
@@ -2379,7 +2388,7 @@
   });
 
   // Expose for testing — Playwright tests can call window.__telemetry.report(...)
-  window.__telemetry = { sessionId: SESSION_ID, report: report };
+  window.__telemetry = { sessionId: ATLAS_SESSION_ID, report: report };
 })();
 
 // ═══════════════════════════════════════════════════════════════
@@ -6078,6 +6087,7 @@ async function sendAtlasChat() {
     messages: atlasChatMessages.slice(-10),
     contractor_count: DATA ? DATA.contractors.length : 0,
     data_context: dataContext + sessionContext,
+    session_id: ATLAS_SESSION_ID,
   };
 
   // NOW that the payload is built, record the current query in local
