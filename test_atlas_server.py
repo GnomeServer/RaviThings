@@ -1143,13 +1143,49 @@ async def atlas_chat(req: AtlasChatRequest):
     # ── Intent classification (Task 3) ──
     intent = await classify_intent(req.query, hermes, recent_history=req.messages)
 
-    # ── Retrieval (Task 2, gated by intent in Task 3) ──
+    # ── Retrieval (Task 2, gated by intent in Task 3, aggregated in Task 4) ──
     retriever = get_retriever()
     retrieval_path = "legacy_substring"
     retrieval_results_count = 0
     retrieval_results_preview: list[str] = []
 
-    if retriever is not None and intent.intent in ("entity_narrative", "aggregate"):
+    if intent.intent == "aggregate" and intent.search_terms:
+        try:
+            import backend.sql_aggregator as _sql_agg
+            rollups = await asyncio.to_thread(
+                _sql_agg.aggregate_contracts,
+                str(BASE / "doe_contracts.db"),
+                intent.search_terms,
+                intent.filters or {},
+                20,
+            )
+            if rollups:
+                rollup_lines = []
+                for r in rollups:
+                    years_str = ",".join(str(y) for y in r.fiscal_years[:5])
+                    rollup_lines.append(
+                        f"- {r.recipient_name}: {r.contract_count} contracts, "
+                        f"${r.total_obligation:,.0f} total (FY {years_str}) | "
+                        f"PSC: {'; '.join(r.top_psc[:2])}"
+                    )
+                system_content += (
+                    "\n\nCONTRACTOR ROLLUPS (matching your aggregate query — "
+                    "sorted by total obligation):\n"
+                    + "\n".join(rollup_lines)
+                    + "\n\nWhen presenting these to the user, list them as a "
+                      "ranked table or bullet list. Cite the dollar amounts and "
+                      "contract counts directly from this data."
+                )
+                retrieval_path = "sql_aggregate"
+                retrieval_results_count = len(rollups)
+                retrieval_results_preview = [
+                    f"{r.recipient_name}: {r.contract_count} contracts, ${r.total_obligation:,.0f}"
+                    for r in rollups[:3]
+                ]
+        except Exception as e:
+            print(f"[atlas-chat] SQL aggregation failed: {e}")
+
+    elif retriever is not None and intent.intent in ("entity_narrative",):
         try:
             # Use the LLM-extracted search terms if available, else the raw query
             search_query = " ".join(intent.search_terms) if intent.search_terms else req.query
