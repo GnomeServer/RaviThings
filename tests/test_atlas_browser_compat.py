@@ -483,3 +483,40 @@ def test_client_error_telemetry_posts_on_thrown_error(page: Page):
     assert body.get("session"), "session id should be set"
     assert body.get("userAgent"), "userAgent should be set"
     assert isinstance(body.get("viewport"), list) and len(body["viewport"]) == 2
+
+
+def test_textarea_enter_submits_via_addeventlistener(page: Page):
+    """Pressing Enter (no shift, no IME composition) in the chat textarea
+    must trigger sendAtlasChat. Pressing Shift+Enter must NOT.
+
+    Regression test for the inline-onkeydown → addEventListener migration.
+    The behavior must be preserved when the inline handler is extracted.
+    """
+    result = page.evaluate("""async () => {
+        if (!atlasChatOpen) toggleAtlasChat();
+        await new Promise(r => setTimeout(r, 100));
+        const ta = document.getElementById('atlasChatInput');
+        ta.value = 'test query';
+
+        // Stub sendAtlasChat to count calls without actually firing the API
+        let calls = 0;
+        const original = window.sendAtlasChat;
+        window.sendAtlasChat = function () { calls++; };
+
+        // Simulate Enter without shift and without composition
+        ta.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'Enter', shiftKey: false, bubbles: true, cancelable: true
+        }));
+        const afterEnter = calls;
+
+        // Simulate Shift+Enter — should NOT submit
+        ta.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'Enter', shiftKey: true, bubbles: true, cancelable: true
+        }));
+        const afterShiftEnter = calls;
+
+        window.sendAtlasChat = original;
+        return { afterEnter, afterShiftEnter };
+    }""")
+    assert result["afterEnter"] == 1, f"Enter should call sendAtlasChat exactly once; got {result}"
+    assert result["afterShiftEnter"] == 1, f"Shift+Enter should NOT submit; got {result}"

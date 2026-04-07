@@ -2310,7 +2310,7 @@
     <div class="atlas-msg system">ATLAS READY — Query contractor attack surface. I can filter, locate, and analyze.</div>
   </div>
   <div class="atlas-chat-input-area">
-    <textarea id="atlasChatInput" rows="1" placeholder="query> contractors with exposed RDP…" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();sendAtlasChat()}"></textarea>
+    <textarea id="atlasChatInput" rows="1" placeholder="query> contractors with exposed RDP…" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
     <button class="atlas-chat-send" id="atlasChatSend" onclick="sendAtlasChat()">↵</button>
     <button class="atlas-chat-stop" id="atlasChatStop" onclick="cancelAtlasChat()" title="Stop response">■</button>
   </div>
@@ -6204,6 +6204,25 @@ async function sendAtlasChat() {
     atlasChatAbort = null;
   }
 }
+
+// Wire up the textarea Enter-to-send behavior. Was previously an inline
+// onkeydown attribute on the <textarea>; moved to a real listener so:
+//   1. The handler is testable from Playwright via dispatchEvent
+//   2. CSP can eventually disallow inline scripts
+//   3. The isComposing/shiftKey logic lives next to sendAtlasChat
+// Guards:
+//   - !event.shiftKey: shift+enter inserts a newline instead of submitting
+//   - !event.isComposing: CJK IMEs fire Enter mid-composition; ignore those
+(function attachAtlasChatInputListener() {
+  var input = document.getElementById('atlasChatInput');
+  if (!input) return;
+  input.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      sendAtlasChat();
+    }
+  });
+})();
 
 function formatAtlasMarkdown(text) {
   // Minimal markdown: bold, code, newlines

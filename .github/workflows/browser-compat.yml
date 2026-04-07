@@ -67,6 +67,20 @@ jobs:
           cat /tmp/atlas-server.log
           exit 1
 
+      - name: Inline event handler ratchet (no new inline handlers)
+        run: |
+          BASELINE=27  # set 2026-04-07 — see docs/plans/2026-04-07-robustness-cross-browser.md Task 5
+          COUNT=$(grep -cE 'on(click|keydown|keyup|keypress|change|submit|input|focus|blur|load|mouseover|mouseout)="' frontend/static/contractor-map.html || echo 0)
+          echo "Inline handler count: $COUNT (baseline: $BASELINE)"
+          if [ "$COUNT" -gt "$BASELINE" ]; then
+            echo "::error::Inline event handler count increased from $BASELINE to $COUNT. Use addEventListener instead of inline on*= attributes."
+            grep -nE 'on(click|keydown|keyup|keypress|change|submit|input|focus|blur|load|mouseover|mouseout)="' frontend/static/contractor-map.html
+            exit 1
+          fi
+          if [ "$COUNT" -lt "$BASELINE" ]; then
+            echo "::notice::Inline handler count decreased to $COUNT — consider lowering the baseline to ratchet down."
+          fi
+
       - name: Run browser-compat suite (${{ matrix.browser }})
         env:
           ATLAS_URL: 'http://localhost:8765/atlas'
