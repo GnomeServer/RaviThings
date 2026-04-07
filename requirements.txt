@@ -26,5 +26,8 @@ sse-starlette>=1.6.0
 # Starlette (FastAPI dependency)
 starlette>=0.27.0
 
-# Vector store for RAG (4-lane HybridRetriever in backend/hybrid_retriever.py)
-chromadb>=0.4.22,<1.0.0
+# Vector store for RAG (4-lane HybridRetriever in backend/hybrid_retriever.py).
+# The on-disk chroma_db/ collection (247,819 embeddings) was written by
+# chromadb 1.5.x — pinning <1.0.0 would force pip to install 0.6.3 in
+# production and the persistent collection format would fail to open.
+chromadb>=1.5.0,<2.0.0
