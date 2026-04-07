@@ -231,6 +231,7 @@ class AtlasChatRequest(BaseModel):
     messages: list[dict] = []
     contractor_count: int = 0
     data_context: str = ""
+    session_id: str = ""  # client-generated UUID; reused from telemetry IIFE
 
 
 class ClientErrorReport(BaseModel):
@@ -1107,10 +1108,14 @@ async def atlas_chat(req: AtlasChatRequest):
             messages.append({"role": msg["role"], "content": (msg.get("content") or "")[:500]})
     messages.append({"role": "user", "content": req.query})
 
+    start_time = time.time()
+    accumulated_response: list[str] = []
+
     async def stream():
         use_hermes = hermes.is_available()
         response_parts = []
         last_emitted = ""
+        error_message: str | None = None
 
         try:
             gen = hermes.chat_stream(messages) if use_hermes else ollama.chat_stream(messages)
@@ -1118,14 +1123,12 @@ async def atlas_chat(req: AtlasChatRequest):
                 response_parts.append(token)
                 text_so_far = "".join(response_parts)
 
-                # Extract any complete map actions (MAP_CMD: or ```json``` blocks)
                 text_so_far, cmds = extract_map_actions(text_so_far, final=False)
                 response_parts = [text_so_far]
 
                 for cmd in cmds:
                     yield f"data: {json.dumps({'type': 'map_command', 'command': cmd})}\n\n"
 
-                # Hold back emission if the text might still contain a partial command
                 if (
                     "MAP_CMD:" in text_so_far
                     or _ends_with_partial_map_prefix(text_so_far)
@@ -1139,7 +1142,6 @@ async def atlas_chat(req: AtlasChatRequest):
                     yield f"data: {json.dumps({'type': 'token', 'content': diff})}\n\n"
                     last_emitted = text_so_far
 
-            # Final flush — force extraction of any residual commands
             final_text = "".join(response_parts)
             final_text, cmds = extract_map_actions(final_text, final=True)
             for cmd in cmds:
@@ -1148,11 +1150,31 @@ async def atlas_chat(req: AtlasChatRequest):
                 diff = final_text[len(last_emitted):]
                 if diff.strip():
                     yield f"data: {json.dumps({'type': 'token', 'content': diff})}\n\n"
+            accumulated_response.append(final_text)
 
         except Exception as e:
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            error_message = str(e)
+            yield f"data: {json.dumps({'type': 'error', 'message': error_message})}\n\n"
 
         yield "data: [DONE]\n\n"
+
+        # Log the turn (after the stream is fully drained)
+        _log_chat_turn({
+            "session_id": req.session_id,
+            "query": req.query,
+            "intent_classification": None,  # filled by Task 3
+            "retrieval_path": "legacy_substring",  # updated in Task 2
+            "retrieval_results_count": 0,
+            "retrieval_results_preview": [],
+            "prompt_tokens_estimate": sum(len(m.get("content", "")) for m in messages) // 4,
+            "history_tokens_estimate": sum(
+                len(m.get("content", "")) for m in messages if m.get("role") != "system"
+            ) // 4,
+            "full_messages": messages,
+            "response_text": "".join(accumulated_response),
+            "response_time_ms": int((time.time() - start_time) * 1000),
+            "error": error_message,
+        })
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 
@@ -1165,6 +1187,38 @@ async def atlas_chat(req: AtlasChatRequest):
 
 _CLIENT_ERROR_LOG = BASE / "logs" / "client_errors.jsonl"
 _CLIENT_ERROR_LOG.parent.mkdir(parents=True, exist_ok=True)
+
+# ── Chat conversation logging ──
+# Captures every chat turn with the full prompt + response so we can diagnose
+# retrieval / memory failures from real usage. Append-only JSONL.
+# Behind AuthMiddleware (same as /api/client-error).
+_ATLAS_CHAT_LOG = BASE / "logs" / "atlas_chat.jsonl"
+_ATLAS_CHAT_LOG.parent.mkdir(parents=True, exist_ok=True)
+
+_CHAT_LOG_MAX_RESPONSE_CHARS = 16384
+_CHAT_LOG_MAX_FIELD_CHARS = 4096
+
+
+def _log_chat_turn(record: dict) -> None:
+    """Append one chat turn to logs/atlas_chat.jsonl with size caps."""
+    safe = dict(record)
+    if "response_text" in safe and isinstance(safe["response_text"], str):
+        safe["response_text"] = safe["response_text"][:_CHAT_LOG_MAX_RESPONSE_CHARS]
+    if "full_messages" in safe and isinstance(safe["full_messages"], list):
+        safe["full_messages"] = [
+            {
+                "role": m.get("role", ""),
+                "content": (m.get("content", "") or "")[:_CHAT_LOG_MAX_FIELD_CHARS],
+            }
+            for m in safe["full_messages"]
+        ]
+    safe["server_timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    try:
+        with open(_ATLAS_CHAT_LOG, "a") as f:
+            f.write(json.dumps(safe) + "\n")
+    except Exception:
+        pass  # logging must never break chat
+
 
 # In-process rate limit per session: 60 requests / 60 seconds.
 # Backed by a tiny in-memory deque per session — fine for a single-process
