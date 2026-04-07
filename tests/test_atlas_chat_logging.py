@@ -28,6 +28,17 @@ async def test_chat_turn_is_logged(clean_log, monkeypatch):
     monkeypatch.setattr(srv.hermes, "is_available", lambda: True)
     monkeypatch.setattr(srv.hermes, "chat_stream", _fake_stream)
 
+    # Mock the intent router (added in Task 3) so this test doesn't hit
+    # the real Hermes API for classification — keeps the test fast and
+    # CI-runnable without NOUS_API_KEY.
+    from backend.intent_router import IntentClassification
+    async def fake_classify(query, hermes, recent_history=None):
+        return IntentClassification(
+            intent="smalltalk", confidence=1.0,
+            search_terms=[], filters={}, target_contractor=None,
+        )
+    monkeypatch.setattr("backend.intent_router.classify_intent", fake_classify)
+
     payload = {
         "query": "what's up",
         "messages": [],
