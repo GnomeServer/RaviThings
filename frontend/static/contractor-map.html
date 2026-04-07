@@ -44,7 +44,11 @@
     background: var(--bg-primary);
     color: var(--text-primary);
     overflow: hidden;
+    /* M3: 100vh includes the iOS Safari URL bar, causing layout breaks
+       when the soft keyboard opens. 100dvh is the dynamic viewport height
+       that excludes browser chrome. Fallback to 100vh for older browsers. */
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
   }
 
@@ -62,6 +66,7 @@
     background: rgba(6,10,18,0.9) !important;
     color: var(--accent-cyan) !important;
     border-color: rgba(0,229,255,0.1) !important;
+    -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     font-family: 'JetBrains Mono', monospace !important;
     border-radius: var(--hud-radius) !important;
@@ -114,6 +119,7 @@
     align-items: center;
     height: 40px;
     background: rgba(6, 10, 18, 0.96);
+    -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
     border-bottom: 1px solid var(--border-dim);
     box-shadow: 0 1px 0 rgba(0, 229, 255, 0.03);
@@ -261,6 +267,7 @@
     left: 16px;
     z-index: 1000;
     background: rgba(4, 8, 16, 0.92);
+    -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     border: 1px solid var(--border-dim);
     border-radius: var(--hud-radius);
@@ -337,6 +344,7 @@
     width: 460px;
     z-index: 1000;
     background: rgba(4, 8, 16, 0.97);
+    -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
     border-left: 1px solid rgba(0,229,255,0.06);
     overflow-y: auto;
@@ -357,6 +365,7 @@
     position: sticky;
     top: 0;
     background: rgba(6, 10, 18, 0.97);
+    -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
     padding: 16px 20px 14px;
     border-bottom: 1px solid var(--border-dim);
@@ -734,6 +743,7 @@
     inset: 0;
     z-index: 2000;
     background: rgba(4, 6, 12, 0.98);
+    -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
   }
 
@@ -792,6 +802,7 @@
   .ng-tooltip {
     position: absolute;
     background: rgba(4,8,16,0.95);
+    -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     border: 1px solid rgba(0,229,255,0.12);
     border-radius: var(--hud-radius);
@@ -914,6 +925,7 @@
     display: none;
     z-index: 1001;
     box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 15px rgba(0,229,255,0.03);
+    -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
   }
 
@@ -1004,6 +1016,7 @@
     align-items: stretch;
     height: 36px;
     background: rgba(6, 10, 18, 0.92);
+    -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-hot);
     overflow: hidden;
@@ -1371,6 +1384,7 @@
     border-radius: var(--hud-radius);
     border: 1px solid rgba(0,229,255,0.2);
     background: rgba(6,10,18,0.9);
+    -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     color: var(--accent-cyan);
     font-size: 18px;
@@ -1695,6 +1709,7 @@
     width: 380px;
     max-height: 280px;
     background: rgba(4, 8, 16, 0.98);
+    -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255,23,68,0.2);
     border-left: 3px solid #ff1744;
@@ -1923,6 +1938,7 @@
     inset: 0;
     z-index: 3000;
     background: rgba(4, 8, 16, 0.95);
+    -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     overflow-y: auto;
     padding: 30px;
@@ -2241,7 +2257,7 @@
     <div class="atlas-msg system">ATLAS READY — Query contractor attack surface. I can filter, locate, and analyze.</div>
   </div>
   <div class="atlas-chat-input-area">
-    <textarea id="atlasChatInput" rows="1" placeholder="query> contractors with exposed RDP…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAtlasChat()}"></textarea>
+    <textarea id="atlasChatInput" rows="1" placeholder="query> contractors with exposed RDP…" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();sendAtlasChat()}"></textarea>
     <button class="atlas-chat-send" id="atlasChatSend" onclick="sendAtlasChat()">↵</button>
     <button class="atlas-chat-stop" id="atlasChatStop" onclick="cancelAtlasChat()" title="Stop response">■</button>
   </div>
@@ -2539,11 +2555,24 @@ async function init() {
   addRelationshipLines();
   addColocationOverlay();
   setupSearch();
+  setupAtlasChatInput();
 
   // Hide loading
   setTimeout(() => {
     document.getElementById('loadingOverlay').classList.add('hidden');
   }, 600);
+}
+
+// Bug M2: Textarea didn't auto-grow as the user typed multi-line queries.
+// This listener expands the height up to a max so users can see what
+// they're typing instead of scrolling inside a single row.
+function setupAtlasChatInput() {
+  const ta = document.getElementById('atlasChatInput');
+  if (!ta) return;
+  ta.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3999,7 +4028,7 @@ async function generateBriefing() {
   // Build briefing HTML in full-screen overlay
   const overlay = document.createElement('div');
   overlay.id = 'briefingOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(4,8,16,0.98);overflow-y:auto;padding:40px;backdrop-filter:blur(20px)';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(4,8,16,0.98);overflow-y:auto;padding:40px;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)';
 
   const riskLevel = risk >= 70 ? 'CRITICAL' : risk >= 50 ? 'HIGH' : risk >= 25 ? 'MEDIUM' : 'LOW';
   const riskColor = risk >= 70 ? '#ff1744' : risk >= 50 ? '#ff9100' : risk >= 25 ? '#ffd740' : '#00e676';
@@ -4257,7 +4286,7 @@ async function generateFullAssessment() {
   // Create full-screen overlay
   const overlay = document.createElement('div');
   overlay.id = 'fullAssessOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(4,8,16,0.98);overflow-y:auto;padding:40px;backdrop-filter:blur(20px)';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(4,8,16,0.98);overflow-y:auto;padding:40px;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)';
 
   overlay.innerHTML = `<div style="max-width:800px;margin:0 auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
@@ -5656,6 +5685,7 @@ const tooltipStyle = document.createElement('style');
 tooltipStyle.textContent = `
   .rel-tooltip {
     background: rgba(4,8,16,0.95) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
     backdrop-filter: blur(16px) !important;
     border: 1px solid rgba(0,229,255,0.12) !important;
     border-radius: 2px !important;
@@ -5725,6 +5755,12 @@ function toggleAtlasChat() {
   if (atlasChatOpen) {
     setTimeout(() => document.getElementById('atlasChatInput').focus(), 300);
   } else if (wasOpen) {
+    // Bug H2: if a response is still streaming when the user closes the
+    // console, cancel the in-flight request so it doesn't keep firing
+    // map_command events against a hidden panel.
+    if (atlasChatStreaming) {
+      cancelAtlasChat();
+    }
     // Console closing — reset map filters back to all contractors.
     // resetMap() no longer touches the detail panel, so any open kill chain /
     // research panel is preserved for the user to keep reading.
@@ -5780,9 +5816,11 @@ async function sendAtlasChat() {
   input.value = '';
   input.style.height = 'auto';
 
-  // Add user message
+  // Display the user's message immediately. We intentionally do NOT push
+  // it to atlasChatMessages yet — that's the conversation history sent to
+  // the backend, and we want it to contain only PRIOR turns. It gets
+  // pushed after the payload is built (bug C1 — fixes duplicated query).
   addAtlasMessage('user', escapeHtml(query));
-  atlasChatMessages.push({ role: 'user', content: query });
 
   // Show typing indicator + flip UI to streaming state
   setChatStreamingUI(true);
@@ -5894,12 +5932,31 @@ async function sendAtlasChat() {
     sessionContext += `\n- active_radius: ${radiusMiles} miles around [${center.lat.toFixed(2)}, ${center.lng.toFixed(2)}]`;
   }
 
-  // Prepare request
+  // Prepare request — messages is PRIOR history only (current query is
+  // in `query`). See C1 fix above: atlasChatMessages hasn't been updated
+  // with the current query yet.
   const payload = {
     query: query,
     messages: atlasChatMessages.slice(-10),
     contractor_count: DATA ? DATA.contractors.length : 0,
     data_context: dataContext + sessionContext,
+  };
+
+  // NOW that the payload is built, record the current query in local
+  // history so it shows up as context for the NEXT turn.
+  atlasChatMessages.push({ role: 'user', content: query });
+
+  // Helper: creates a stable two-child structure inside the assistant
+  // message so appending map-action badges doesn't get wiped when
+  // subsequent tokens replace the text content (bug C2).
+  const ensureAssistantStructure = (div) => {
+    if (!div.querySelector('.assistant-text')) {
+      div.innerHTML = '<span class="assistant-text"></span><span class="assistant-badges"></span>';
+    }
+    return {
+      text: div.querySelector('.assistant-text'),
+      badges: div.querySelector('.assistant-badges'),
+    };
   };
 
   try {
@@ -5922,9 +5979,17 @@ async function sendAtlasChat() {
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
+    // Bug C3: response.body can be null in some proxy/CDN configurations
+    // that buffer responses. Fail with a clear message instead of crashing
+    // with "Cannot read property 'getReader' of null".
+    if (!response.body) {
+      throw new Error('Streaming is not supported by this browser or a proxy is buffering the response.');
+    }
+
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let assistantDiv = null;
+    let assistantParts = null;  // { text, badges } stable references
     let fullText = '';
     let buffer = '';
 
@@ -5933,34 +5998,49 @@ async function sendAtlasChat() {
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
+      // Bug M4: SSE events are separated by blank lines (\n\n), not single
+      // newlines. Split on \n\n so multi-line data: payloads parse correctly.
+      const events = buffer.split('\n\n');
+      buffer = events.pop() || '';
 
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const payload = line.slice(6);
-        if (payload === '[DONE]') continue;
+      for (const eventBlock of events) {
+        // An SSE event block may contain multiple lines (data:, event:, id:).
+        for (const line of eventBlock.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          const dataPayload = line.slice(6);
+          if (dataPayload === '[DONE]') continue;
 
-        let event;
-        try { event = JSON.parse(payload); } catch { continue; }
+          let event;
+          try { event = JSON.parse(dataPayload); } catch { continue; }
 
-        if (event.type === 'token') {
-          if (!assistantDiv) {
-            assistantDiv = addAtlasMessage('assistant', '');
+          if (event.type === 'token') {
+            if (!assistantDiv) {
+              assistantDiv = addAtlasMessage('assistant', '');
+              assistantParts = ensureAssistantStructure(assistantDiv);
+            }
+            fullText += event.content;
+            // Only the text span is replaced on each token; the badges
+            // span persists with any map-action indicators already added.
+            assistantParts.text.innerHTML = formatAtlasMarkdown(fullText);
+            document.getElementById('atlasChatMessages').scrollTop =
+              document.getElementById('atlasChatMessages').scrollHeight;
+          } else if (event.type === 'map_command') {
+            executeMapCommand(event.command);
+            // Show command indicator in chat — append to a stable badges
+            // container so subsequent token updates don't erase it (C2).
+            if (assistantDiv) {
+              if (!assistantParts) {
+                assistantParts = ensureAssistantStructure(assistantDiv);
+              }
+              const cmdLabel = event.command && event.command.action || 'map update';
+              const badge = document.createElement('span');
+              badge.className = 'map-action';
+              badge.innerHTML = '&#x1F5FA; ' + escapeHtml(cmdLabel);
+              assistantParts.badges.appendChild(badge);
+            }
+          } else if (event.type === 'error') {
+            addAtlasMessage('system', `Error: ${escapeHtml(event.message)}`);
           }
-          fullText += event.content;
-          assistantDiv.innerHTML = formatAtlasMarkdown(fullText);
-          document.getElementById('atlasChatMessages').scrollTop =
-            document.getElementById('atlasChatMessages').scrollHeight;
-        } else if (event.type === 'map_command') {
-          executeMapCommand(event.command);
-          // Show command indicator in chat
-          if (assistantDiv) {
-            const cmdLabel = event.command.action || 'map update';
-            assistantDiv.innerHTML += `<span class="map-action">&#x1F5FA; ${escapeHtml(cmdLabel)}</span>`;
-          }
-        } else if (event.type === 'error') {
-          addAtlasMessage('system', `Error: ${escapeHtml(event.message)}`);
         }
       }
     }
@@ -6039,14 +6119,25 @@ function executeMapCommand(cmd) {
     }
 
     case 'highlight': {
-      // Highlight specific contractor IDs/indices
+      // Highlight specific contractor IDs/indices by dimming the rest.
+      // Bug H1: the previous implementation computed highlighted/dimmed
+      // arrays but never applied opacity — the command was dead code.
       const ids = cmd.contractor_indices || [];
+      const highlightSet = new Set(ids);
       markerCluster.clearLayers();
-      const highlighted = allMarkers.filter(m => ids.includes(m._contractorIdx));
-      const dimmed = allMarkers.filter(m => !ids.includes(m._contractorIdx));
-      // Re-add all but dim non-highlighted
       markerCluster.addLayers(allMarkers);
-      // Open first highlighted contractor's panel
+      // Marker icons are created lazily by the cluster plugin, so the
+      // initial pass catches visible markers and a short delay catches
+      // any that MarkerCluster lays out after our call.
+      const applyOpacity = () => {
+        allMarkers.forEach(m => {
+          if (m._icon) {
+            m._icon.style.opacity = highlightSet.has(m._contractorIdx) ? '1' : '0.2';
+          }
+        });
+      };
+      applyOpacity();
+      setTimeout(applyOpacity, 100);
       if (ids.length > 0) {
         openDetailPanel(ids[0]);
         moveChatLeftIfOpen();

@@ -819,6 +819,225 @@ async def kill_chain_endpoint(req: KillChainRequest):
     return JSONResponse(result)
 
 
+# ────────────────────────────────────────────────────────────────────
+# Map action parser — extracts commands from LLM stream text
+# ────────────────────────────────────────────────────────────────────
+# The LLM is instructed to emit map commands as `MAP_CMD:{...}` on a line
+# by itself. In practice, it sometimes deviates:
+#   - Pretty-prints JSON across multiple lines
+#   - Wraps commands in markdown ```json ... ``` code fences
+# This parser handles all three shapes and returns a cleaned text with
+# the commands extracted as dicts.
+#
+# `final=False` during streaming holds back text that may contain a
+# partial command (an unclosed fence, or an incomplete MAP_CMD: line).
+# `final=True` at stream-end forces extraction of anything remaining.
+
+_MAP_PREFIX = "MAP_CMD:"
+_PARTIAL_MAP_PREFIXES = tuple(_MAP_PREFIX[:i] for i in range(1, len(_MAP_PREFIX) + 1))
+
+
+def _find_balanced_json_end(text: str, start: int) -> int:
+    """Given text and the index of an opening '{', find the index of the
+    matching '}' using brace depth counting. Returns -1 if unbalanced."""
+    if start >= len(text) or text[start] != "{":
+        return -1
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(start, len(text)):
+        c = text[i]
+        if escape:
+            escape = False
+            continue
+        if in_string:
+            if c == "\\":
+                escape = True
+            elif c == '"':
+                in_string = False
+            continue
+        if c == '"':
+            in_string = True
+        elif c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                return i
+    return -1  # unbalanced
+
+
+def _ends_with_partial_map_prefix(text: str) -> bool:
+    """True if text ends with a partial 'MAP_CMD:' prefix (e.g. 'MAP_')."""
+    for p in _PARTIAL_MAP_PREFIXES:
+        if text.endswith(p) or text.endswith("\n" + p):
+            return True
+    return False
+
+
+def _has_unclosed_code_fence(text: str) -> bool:
+    """True if text contains an opening ``` without a matching close."""
+    return text.count("```") % 2 == 1
+
+
+def _ends_with_partial_fence(text: str) -> bool:
+    """True if text ends with 1 or 2 backticks (could be opening fence)."""
+    return text.endswith("`") or text.endswith("``")
+
+
+def _try_extract_map_cmd(text: str, idx: int, *, final: bool):
+    """Try to extract a MAP_CMD: command starting at `idx` in text.
+
+    Returns a tuple (cmd_or_None, consume_start, consume_end, incomplete).
+      cmd_or_None: the parsed command dict, or None if parse failed / incomplete
+      consume_start, consume_end: slice of text to remove (only used if not incomplete)
+      incomplete: True if more tokens needed (and not final)
+    """
+    # idx points at 'MAP_CMD:' (or '\nMAP_CMD:' — but we've already normalized)
+    prefix = "MAP_CMD:"
+    json_start = idx + len(prefix)
+
+    # First try: single-line JSON terminated by \n
+    line_end = text.find("\n", json_start)
+    if line_end != -1:
+        json_str = text[json_start:line_end].strip()
+        if json_str:
+            try:
+                cmd = json.loads(json_str)
+                return cmd, idx, line_end + 1, False
+            except json.JSONDecodeError:
+                pass  # fall through to multi-line
+
+    # Multi-line attempt: find opening '{' then matching '}'
+    brace_start = text.find("{", json_start)
+    if brace_start == -1:
+        # No JSON object in what we've seen yet
+        if not final:
+            return None, 0, 0, True
+        end = line_end if line_end != -1 else len(text)
+        return None, idx, end, False
+
+    brace_end = _find_balanced_json_end(text, brace_start)
+    if brace_end == -1:
+        if not final:
+            return None, 0, 0, True
+        end = line_end if line_end != -1 else len(text)
+        return None, idx, end, False
+
+    json_str = text[brace_start:brace_end + 1]
+    try:
+        cmd = json.loads(json_str)
+    except json.JSONDecodeError:
+        cmd = None
+
+    end = brace_end + 1
+    if end < len(text) and text[end] == "\n":
+        end += 1
+    return cmd, idx, end, False
+
+
+def _try_extract_code_block(text: str, idx: int, *, final: bool):
+    """Try to extract a ```json``` fenced code block at `idx`.
+
+    Returns (cmd_or_None, consume_start, consume_end, incomplete, is_non_action).
+      is_non_action: True if the block parsed but wasn't a map command —
+                     caller should leave it in text and advance past it.
+    """
+    content_start = idx + 3
+    # Skip optional language tag
+    while content_start < len(text) and text[content_start].isalpha():
+        content_start += 1
+    if content_start < len(text) and text[content_start] == "\n":
+        content_start += 1
+
+    close_idx = text.find("```", content_start)
+    if close_idx == -1:
+        # Unclosed fence
+        if not final:
+            return None, 0, 0, True, False
+        # At end: strip the dangling fence
+        return None, idx, len(text), False, False
+
+    block_content = text[content_start:close_idx].strip()
+
+    try:
+        parsed = json.loads(block_content)
+    except json.JSONDecodeError:
+        parsed = None
+
+    block_end = close_idx + 3
+
+    if isinstance(parsed, dict) and "action" in parsed:
+        # Consume the block, including optional trailing newline and leading newline
+        if block_end < len(text) and text[block_end] == "\n":
+            block_end += 1
+        start_strip = idx
+        if start_strip > 0 and text[start_strip - 1] == "\n":
+            start_strip -= 1
+        return parsed, start_strip, block_end, False, False
+
+    # Non-action block — leave in place, just advance past it
+    return None, idx, block_end, False, True
+
+
+def extract_map_actions(text: str, *, final: bool = False):
+    """Extract map commands from streamed LLM text in document order.
+
+    Recognizes:
+      1. `MAP_CMD:{...}` on a single line
+      2. `MAP_CMD:{multi-line pretty-printed JSON}` terminated by matching brace
+      3. ```json\n{"action": "..."}\n``` markdown fenced code blocks
+      4. ```\n{"action": "..."}\n``` markdown fenced code blocks without lang tag
+
+    Commands are returned in the order they appear in the source text so
+    the frontend executes them in the LLM's intended sequence.
+
+    Args:
+        text: the accumulated LLM response text so far
+        final: if True, force extraction of anything that looks partial (end of stream)
+
+    Returns:
+        (cleaned_text, commands)
+    """
+    cmds = []
+    cursor = 0  # position to start searching from (for skipping non-action blocks)
+
+    while True:
+        # Find the next MAP_CMD: and the next ``` starting from cursor
+        map_idx = text.find("MAP_CMD:", cursor)
+        fence_idx = text.find("```", cursor)
+
+        # Pick whichever comes first
+        candidates = [i for i in (map_idx, fence_idx) if i >= 0]
+        if not candidates:
+            break
+        next_idx = min(candidates)
+
+        if next_idx == map_idx:
+            cmd, start, end, incomplete = _try_extract_map_cmd(text, next_idx, final=final)
+            if incomplete:
+                break
+            if cmd is not None:
+                cmds.append(cmd)
+            # Remove the consumed region (whether parsed or dropped)
+            text = text[:start] + text[end:]
+            cursor = start  # re-scan from here (text shifted)
+        else:  # fence
+            cmd, start, end, incomplete, is_non_action = _try_extract_code_block(text, next_idx, final=final)
+            if incomplete:
+                break
+            if is_non_action:
+                # Leave the block alone and skip past it
+                cursor = end
+                continue
+            if cmd is not None:
+                cmds.append(cmd)
+            text = text[:start] + text[end:]
+            cursor = start  # re-scan from here
+
+    return text, cmds
+
+
 @app.post("/api/atlas-chat")
 async def atlas_chat(req: AtlasChatRequest):
     # Inject live data context into system prompt
@@ -826,29 +1045,26 @@ async def atlas_chat(req: AtlasChatRequest):
     if req.data_context:
         system_content += req.data_context
 
-    messages = [
-        {"role": "system", "content": system_content},
-        {"role": "user", "content": req.query},
-    ]
+    # Build the message list with history BEFORE the current query so the
+    # LLM has conversational context. The frontend sends `req.messages` as
+    # prior history only (the current query lives in `req.query` and is NOT
+    # appended to the frontend's local history until the response completes),
+    # but we defensively exclude any trailing user message that matches
+    # req.query to stay robust to old frontends during rollout.
+    history = list(req.messages[-6:])
+    if history and history[-1].get("role") == "user" and history[-1].get("content") == req.query:
+        history = history[:-1]
 
-    # Add conversation history
-    for msg in req.messages[-6:]:
+    messages = [{"role": "system", "content": system_content}]
+    for msg in history:
         if msg.get("role") in ("user", "assistant"):
-            messages.append({"role": msg["role"], "content": msg["content"][:500]})
+            messages.append({"role": msg["role"], "content": (msg.get("content") or "")[:500]})
+    messages.append({"role": "user", "content": req.query})
 
     async def stream():
         use_hermes = hermes.is_available()
         response_parts = []
         last_emitted = ""
-        _MAP_PREFIX = "MAP_CMD:"
-        _PARTIAL_PREFIXES = [_MAP_PREFIX[:i] for i in range(1, len(_MAP_PREFIX) + 1)]
-
-        def _ends_with_partial_prefix(text):
-            """Check if text ends with any partial prefix of MAP_CMD:"""
-            for p in _PARTIAL_PREFIXES:
-                if text.endswith(p) or text.endswith("\n" + p):
-                    return True
-            return False
 
         try:
             gen = hermes.chat_stream(messages) if use_hermes else ollama.chat_stream(messages)
@@ -856,51 +1072,32 @@ async def atlas_chat(req: AtlasChatRequest):
                 response_parts.append(token)
                 text_so_far = "".join(response_parts)
 
-                # Extract complete MAP_CMD lines
-                while True:
-                    for prefix in ("\nMAP_CMD:", "MAP_CMD:"):
-                        idx = text_so_far.find(prefix)
-                        if idx >= 0:
-                            break
-                    else:
-                        break
+                # Extract any complete map actions (MAP_CMD: or ```json``` blocks)
+                text_so_far, cmds = extract_map_actions(text_so_far, final=False)
+                response_parts = [text_so_far]
 
-                    json_start = idx + len(prefix)
-                    line_end = text_so_far.find("\n", json_start)
-                    if line_end == -1:
-                        break  # incomplete, wait
+                for cmd in cmds:
+                    yield f"data: {json.dumps({'type': 'map_command', 'command': cmd})}\n\n"
 
-                    json_str = text_so_far[json_start:line_end].strip()
-                    try:
-                        cmd = json.loads(json_str)
-                        yield f"data: {json.dumps({'type': 'map_command', 'command': cmd})}\n\n"
-                    except json.JSONDecodeError:
-                        pass
-
-                    # Remove the MAP_CMD line
-                    text_so_far = text_so_far[:idx] + text_so_far[line_end + 1:]
-                    response_parts = [text_so_far]
-
-                # Don't emit text if it contains a full or partial MAP_CMD
-                clean = text_so_far
-                if "MAP_CMD:" in clean or _ends_with_partial_prefix(clean):
+                # Hold back emission if the text might still contain a partial command
+                if (
+                    "MAP_CMD:" in text_so_far
+                    or _ends_with_partial_map_prefix(text_so_far)
+                    or _has_unclosed_code_fence(text_so_far)
+                    or _ends_with_partial_fence(text_so_far)
+                ):
                     continue
 
-                if len(clean) > len(last_emitted):
-                    diff = clean[len(last_emitted):]
+                if len(text_so_far) > len(last_emitted):
+                    diff = text_so_far[len(last_emitted):]
                     yield f"data: {json.dumps({'type': 'token', 'content': diff})}\n\n"
-                    last_emitted = clean
+                    last_emitted = text_so_far
 
-            # Flush any remaining text after stream ends
+            # Final flush — force extraction of any residual commands
             final_text = "".join(response_parts)
-            # Remove any remaining MAP_CMD lines
-            while "MAP_CMD:" in final_text:
-                idx = final_text.find("MAP_CMD:")
-                line_end = final_text.find("\n", idx)
-                if line_end == -1:
-                    final_text = final_text[:idx]
-                else:
-                    final_text = final_text[:idx] + final_text[line_end + 1:]
+            final_text, cmds = extract_map_actions(final_text, final=True)
+            for cmd in cmds:
+                yield f"data: {json.dumps({'type': 'map_command', 'command': cmd})}\n\n"
             if len(final_text) > len(last_emitted):
                 diff = final_text[len(last_emitted):]
                 if diff.strip():
