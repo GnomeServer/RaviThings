@@ -1131,29 +1131,36 @@ def extract_map_actions(text: str, *, final: bool = False):
 
 @app.post("/api/atlas-chat")
 async def atlas_chat(req: AtlasChatRequest):
+    # Import inside the function so tests can monkeypatch
+    # backend.intent_router.classify_intent on the source module without aliasing.
+    from backend.intent_router import classify_intent
+
     # Inject live data context into system prompt
     system_content = _ATLAS_SYSTEM_PROMPT
     if req.data_context:
         system_content += req.data_context
 
-    # ── Retrieval (Task 2) ──
-    # Try the 4-lane HybridRetriever first; fall back to the legacy substring path
-    # in dataContext (sent by the frontend) on any failure.
+    # ── Intent classification (Task 3) ──
+    intent = await classify_intent(req.query, hermes, recent_history=req.messages)
+
+    # ── Retrieval (Task 2, gated by intent in Task 3) ──
     retriever = get_retriever()
     retrieval_path = "legacy_substring"
     retrieval_results_count = 0
     retrieval_results_preview: list[str] = []
 
-    if retriever is not None:
+    if retriever is not None and intent.intent in ("entity_narrative", "aggregate"):
         try:
-            results = await asyncio.to_thread(retriever.search, req.query, 15, True)
+            # Use the LLM-extracted search terms if available, else the raw query
+            search_query = " ".join(intent.search_terms) if intent.search_terms else req.query
+            results = await asyncio.to_thread(retriever.search, search_query, 15, True)
             if results.contracts:
                 contract_context = "\n".join(
                     f"- {c.recipient}: {c.description[:200]} (${c.obligation:,.0f})"
                     for c in results.contracts[:15]
                 )
                 system_content += (
-                    "\n\nRELEVANT CONTRACT DATA (from 4-lane retrieval — vector + keyword + graph + relationship):\n"
+                    "\n\nRELEVANT CONTRACT DATA (from 4-lane retrieval):\n"
                     + contract_context
                 )
                 retrieval_path = "hybrid_4lane"
@@ -1235,7 +1242,7 @@ async def atlas_chat(req: AtlasChatRequest):
         _log_chat_turn({
             "session_id": req.session_id,
             "query": req.query,
-            "intent_classification": None,  # filled by Task 3
+            "intent_classification": intent.model_dump(),
             "retrieval_path": retrieval_path,
             "retrieval_results_count": retrieval_results_count,
             "retrieval_results_preview": retrieval_results_preview,

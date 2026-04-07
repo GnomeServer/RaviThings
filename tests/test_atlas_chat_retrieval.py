@@ -54,6 +54,22 @@ def fake_retriever_chat(tmp_path, monkeypatch):
 
     monkeypatch.setattr(srv.hermes, "is_available", lambda: True)
     monkeypatch.setattr(srv.hermes, "chat_stream", fake_stream)
+
+    # Mock the intent router to skip the LLM call. atlas_chat imports
+    # classify_intent inside the function from backend.intent_router, so
+    # monkeypatching the source module is sufficient (no aliasing).
+    from backend.intent_router import IntentClassification
+
+    async def fake_classify(query, hermes, recent_history=None):
+        return IntentClassification(
+            intent="entity_narrative",
+            confidence=0.95,
+            search_terms=["honeywell", "cybersecurity"],
+            filters={},
+            target_contractor="Honeywell",
+        )
+
+    monkeypatch.setattr("backend.intent_router.classify_intent", fake_classify)
     return tmp_path / "atlas_chat.jsonl"
 
 
