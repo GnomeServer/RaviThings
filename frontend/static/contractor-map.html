@@ -36,6 +36,21 @@
     --accent-cyan: #00e5ff;
     --accent-glow: rgba(0, 229, 255, 0.12);
     --hud-radius: 2px;
+    /* Neutral divider for sections — replaces previous cyan-tinted dividers
+       that read as "blue highlighting" on the detail panel. Used in
+       .panel-section, .section-title borders. */
+    --divider-neutral: rgba(255, 255, 255, 0.06);
+    /* Typography scale — larger sizes for cross-platform readability.
+       Previously many labels were 7-9px which clipped on Windows/Firefox
+       font rendering. These provide a consistent scale. */
+    --fs-micro: 10px;   /* tiniest labels (was 7-8px) */
+    --fs-tiny: 11px;    /* small labels and pills (was 8-9px) */
+    --fs-small: 12px;   /* secondary text */
+    --fs-body: 13px;    /* primary body text (was 11-12px) */
+    --fs-medium: 14px;  /* prominent body */
+    --fs-large: 16px;   /* sub-headings */
+    --fs-xlarge: 20px;  /* card values */
+    --fs-2xlarge: 24px; /* primary headings */
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -302,15 +317,21 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 2px 4px;
+    padding: 4px 6px;
     border-radius: var(--hud-radius);
     cursor: pointer;
     transition: background 0.15s;
     user-select: none;
+    /* Bug 1 (Firefox/Windows): without this, clicks landing on the
+       inner SVG/spans were absorbed by Firefox's SVG hit-testing and
+       never bubbled up to the parent .legend-item, so the filter
+       toggle silently dropped. Forcing children to ignore pointer
+       events makes the parent the only click target. */
   }
+  .legend-item > * { pointer-events: none; }
 
   .legend-item:hover { background: rgba(0,229,255,0.04); }
-  .legend-item.dimmed { opacity: 0.15; }
+  .legend-item.dimmed { opacity: 0.35; }
 
   .legend-swatch {
     width: 12px;
@@ -324,24 +345,26 @@
   .legend-swatch svg { width: 12px; height: 12px; }
 
   .legend-label {
-    font-size: 9px;
-    font-weight: 400;
+    font-size: var(--fs-tiny);  /* was 9px — now 11px */
+    font-weight: 500;
     color: var(--text-secondary);
     flex: 1;
   }
 
   .legend-count {
-    font-size: 9px;
+    font-size: var(--fs-tiny);  /* was 9px — now 11px */
     color: var(--text-muted);
+    font-weight: 600;
   }
 
   /* ─── DETAIL PANEL ─── */
   #detailPanel {
     position: fixed;
     top: 40px;
-    right: -480px;
+    right: -560px;
     bottom: 0;
-    width: 460px;
+    /* Bug 3: enlarged from 460px to 540px for readability + base font bump */
+    width: 540px;
     z-index: 1000;
     background: rgba(4, 8, 16, 0.97);
     -webkit-backdrop-filter: blur(24px);
@@ -352,6 +375,9 @@
     box-shadow: -4px 0 20px rgba(0,0,0,0.3), -1px 0 0 rgba(0,229,255,0.04);
     scrollbar-width: thin;
     scrollbar-color: var(--border-active) transparent;
+    /* Bug 3: bump base font size for the entire detail pane */
+    font-size: var(--fs-body);
+    line-height: 1.55;
   }
 
   #detailPanel.open { right: 0; }
@@ -448,28 +474,32 @@
   .panel-body { padding: 0 20px 20px; }
 
   .panel-section {
-    padding: 14px 0;
-    border-bottom: 1px solid var(--border-dim);
+    padding: 16px 0;
+    /* Bug 2: section divider was cyan (rgba(0,229,255,0.06)) — that's the
+       "slight blue highlighting" the user wants removed. Now neutral white
+       at the same opacity. */
+    border-bottom: 1px solid var(--divider-neutral);
   }
 
   .panel-section:last-child { border-bottom: none; }
 
   .section-title {
-    font-size: 8px;
+    font-size: var(--fs-tiny);  /* was 8px — now 11px for readability */
     font-weight: 700;
-    color: rgba(0,229,255,0.4);
-    letter-spacing: 2px;
+    color: var(--text-secondary);  /* was cyan — now neutral grey */
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     margin-bottom: 10px;
     padding-bottom: 6px;
-    border-bottom: 1px solid rgba(0,229,255,0.06);
+    /* Section title underline was cyan — now neutral. */
+    border-bottom: 1px solid var(--divider-neutral);
     position: relative;
   }
 
   .section-title::before {
     content: '//';
     margin-right: 6px;
-    color: rgba(0,229,255,0.2);
+    color: var(--text-muted);  /* was cyan tint — now neutral muted */
   }
 
   .data-grid {
@@ -481,8 +511,8 @@
   .data-cell {
     display: flex;
     flex-direction: column;
-    gap: 1px;
-    padding: 4px 6px;
+    gap: 3px;
+    padding: 8px 10px;  /* was 4px 6px — more breathing room */
     background: rgba(0,0,0,0.15);
     border: 1px solid rgba(0,229,255,0.03);
     border-radius: var(--hud-radius);
@@ -491,7 +521,8 @@
   .data-cell.wide { grid-column: 1 / -1; }
 
   .data-label {
-    font-size: 7px;
+    /* Was 7px — clipped on Windows/Firefox. Now 10px. */
+    font-size: var(--fs-micro);
     font-weight: 600;
     color: var(--text-muted);
     letter-spacing: 1px;
@@ -499,14 +530,15 @@
   }
 
   .data-value {
-    font-size: 12px;
+    font-size: var(--fs-body);  /* was 12px */
     font-weight: 500;
     color: var(--text-primary);
     word-break: break-word;
+    line-height: 1.45;
   }
 
   .data-value.mono {
-    font-size: 11px;
+    font-size: var(--fs-small);  /* was 11px */
   }
 
   .data-value.highlight {
@@ -1185,22 +1217,24 @@
   .risk-score-banner {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    margin: -14px -14px 10px -14px;
-    border-bottom: 1px solid var(--border-dim);
+    gap: 14px;
+    padding: 14px 16px;
+    margin: -16px -14px 12px -14px;
+    /* Bottom border was cyan-tinted (var(--border-dim)) — replaced with
+       severity-colored border via the .risk-* overrides below. */
+    border-bottom: 1px solid var(--divider-neutral);
     position: relative;
   }
 
   .risk-score-banner::before {
     content: '// THREAT ASSESSMENT';
     position: absolute;
-    top: 3px;
+    top: 4px;
     right: 14px;
-    font-size: 6px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    color: rgba(255,23,68,0.25);
+    font-size: 9px;  /* was 6px — unreadably tiny */
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: rgba(255,23,68,0.4);
     text-transform: uppercase;
   }
 
@@ -1256,16 +1290,17 @@
   }
 
   .risk-label {
-    font-size: 7px;
+    /* Was 7px — clipped on Windows/Firefox font rendering. */
+    font-size: var(--fs-micro);
     font-weight: 700;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     color: var(--text-muted);
   }
 
   .risk-severity {
     font-weight: 700;
-    font-size: 13px;
+    font-size: var(--fs-medium);  /* was 13px */
     letter-spacing: 1px;
     text-transform: uppercase;
   }
@@ -1278,17 +1313,22 @@
   .risk-factors {
     display: flex;
     flex-wrap: wrap;
-    gap: 3px;
-    margin-top: 3px;
+    gap: 5px;
+    margin-top: 6px;
   }
 
   .risk-factor {
-    font-size: 8px;
-    padding: 1px 5px;
+    /* Bug 2: was 8px font + 1px 5px padding, which clipped descenders
+       on Windows/Firefox font rendering. Bumped to 11px + generous
+       padding + explicit line-height so glyphs render with breathing room. */
+    font-size: var(--fs-tiny);
+    padding: 3px 8px;
+    line-height: 1.4;
     border-radius: var(--hud-radius);
-    background: rgba(255,23,68,0.06);
-    border: 1px solid rgba(255,23,68,0.12);
+    background: rgba(255,23,68,0.08);
+    border: 1px solid rgba(255,23,68,0.18);
     color: #ff8a80;
+    white-space: nowrap;
   }
 
   .risk-factor.warn {
@@ -1407,8 +1447,10 @@
     bottom: 20px;
     right: 20px;
     z-index: 1100;
-    width: 440px;
+    /* Bug 3: enlarged from 440px to 520px to give text room to breathe */
+    width: 520px;
     max-height: calc(100vh - 120px);
+    max-height: calc(100dvh - 120px);
     background: rgba(4, 8, 16, 0.97);
     border: 1px solid rgba(0,229,255,0.1);
     border-radius: var(--hud-radius);
@@ -1420,6 +1462,8 @@
     opacity: 0;
     pointer-events: none;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Bug 3: bump base font size for readability across platforms */
+    font-size: var(--fs-body);
   }
   #atlasChatPanel.open {
     transform: translateY(0) scale(1);
@@ -1433,19 +1477,23 @@
   }
   /* Stop button shown only while a chat response is streaming */
   .atlas-chat-stop {
-    width: 34px;
-    height: 34px;
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    min-height: 46px;
     border-radius: var(--hud-radius);
     border: 1px solid rgba(255,23,68,0.25);
     background: rgba(255,23,68,0.08);
     color: #ff1744;
-    font-size: 14px;
+    font-size: var(--fs-large);
     font-weight: 800;
     cursor: pointer;
     display: none;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+    box-sizing: border-box;
+    flex-shrink: 0;
   }
   .atlas-chat-stop:hover {
     background: rgba(255,23,68,0.18);
@@ -1473,22 +1521,22 @@
   .atlas-chat-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
+    gap: 10px;
+    padding: 12px 16px;
     background: rgba(0,229,255,0.03);
     border-bottom: 1px solid rgba(0,229,255,0.08);
     flex-shrink: 0;
   }
 
   .atlas-chat-header .chat-icon {
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     border-radius: var(--hud-radius);
     background: var(--accent-cyan);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: var(--fs-body);
     color: var(--bg-primary);
     font-weight: 800;
     box-shadow: 0 0 8px rgba(0,229,255,0.3);
@@ -1497,14 +1545,14 @@
   .atlas-chat-header .chat-title {
     flex: 1;
     font-weight: 700;
-    font-size: 11px;
+    font-size: var(--fs-medium);  /* was 11px */
     color: var(--accent-cyan);
     letter-spacing: 1px;
     text-transform: uppercase;
   }
 
   .atlas-chat-header .chat-subtitle {
-    font-size: 8px;
+    font-size: var(--fs-micro);  /* was 8px */
     color: var(--text-muted);
     letter-spacing: 1.5px;
     text-transform: uppercase;
@@ -1515,9 +1563,9 @@
     border: 1px solid transparent;
     border-radius: var(--hud-radius);
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: var(--fs-large);
     cursor: pointer;
-    padding: 3px 6px;
+    padding: 4px 8px;
     line-height: 1;
     transition: all 0.2s;
   }
@@ -1526,12 +1574,13 @@
   .atlas-chat-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 10px 14px;
+    padding: 14px 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-height: 200px;
-    max-height: 50vh;
+    gap: 10px;
+    min-height: 240px;
+    max-height: 55vh;
+    max-height: 55dvh;
     scrollbar-width: thin;
     scrollbar-color: rgba(0,229,255,0.08) transparent;
     position: relative;
@@ -1540,9 +1589,9 @@
 
   .atlas-msg {
     max-width: 92%;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border-radius: var(--hud-radius);
-    font-size: 12px;
+    font-size: var(--fs-body);  /* was 12px — now 13px for readability */
     line-height: 1.55;
     word-wrap: break-word;
   }
@@ -1570,23 +1619,23 @@
   .atlas-msg.assistant .map-action {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-    font-size: 9px;
-    padding: 1px 5px;
+    gap: 4px;
+    font-size: var(--fs-tiny);  /* was 9px — now 11px */
+    padding: 2px 7px;
     border-radius: var(--hud-radius);
-    background: rgba(0,229,255,0.06);
-    border: 1px solid rgba(0,229,255,0.15);
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.18);
     color: var(--accent-cyan);
-    margin: 3px 2px;
+    margin: 4px 2px;
   }
 
   .atlas-msg.system {
     align-self: center;
     background: none;
     border: none;
-    font-size: 9px;
+    font-size: var(--fs-small);  /* was 9px — now 12px */
     color: var(--text-muted);
-    padding: 4px 0;
+    padding: 5px 0;
     letter-spacing: 0.5px;
   }
 
@@ -1608,38 +1657,45 @@
 
   #atlasChatInput {
     flex: 1;
-    padding: 8px 12px;
+    padding: 10px 14px;
     background: rgba(0,0,0,0.3);
     border: 1px solid rgba(0,229,255,0.08);
     border-radius: var(--hud-radius);
     color: var(--accent-cyan);
-    font-size: 12px;
+    font-size: var(--fs-body);  /* was 12px */
     outline: none;
     resize: none;
-    min-height: 20px;
-    max-height: 80px;
+    min-height: 24px;
+    max-height: 120px;  /* matches the JS auto-grow cap */
+    line-height: 1.4;
     transition: border-color 0.2s;
   }
   #atlasChatInput:focus {
     border-color: rgba(0,229,255,0.25);
     box-shadow: 0 0 0 1px rgba(0,229,255,0.06), 0 0 12px rgba(0,229,255,0.05);
   }
-  #atlasChatInput::placeholder { color: var(--text-muted); font-size: 10px; }
+  #atlasChatInput::placeholder { color: var(--text-muted); font-size: var(--fs-small); }
 
   .atlas-chat-send {
-    width: 34px;
-    height: 34px;
+    /* iOS HIG minimum touch target is 44x44. Set min- so flexbox can't
+       shrink below it; the universal box-sizing: border-box makes the
+       border count INSIDE these dimensions. */
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    min-height: 46px;
     border-radius: var(--hud-radius);
     border: 1px solid rgba(0,229,255,0.15);
     background: rgba(0,229,255,0.06);
     color: var(--accent-cyan);
-    font-size: 14px;
+    font-size: var(--fs-large);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
     flex-shrink: 0;
+    box-sizing: border-box;
   }
   .atlas-chat-send:hover { background: rgba(0,229,255,0.12); box-shadow: 0 0 8px rgba(0,229,255,0.15); }
   .atlas-chat-send:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -2690,8 +2746,12 @@ function resetMap() {
   markerCluster.addLayers(allMarkers);
   activeFilters.clear();
   if (window._radiusCircle) { map.removeLayer(window._radiusCircle); window._radiusCircle = null; }
-  // Reset legend checkboxes
-  document.querySelectorAll('#legendItems .legend-item').forEach(el => el.style.opacity = '1');
+  // Reset legend dimming — use the class, not inline opacity, so the
+  // .dimmed CSS class can be re-applied cleanly on subsequent toggles.
+  document.querySelectorAll('#legendItems .legend-item').forEach(el => {
+    el.classList.remove('dimmed');
+    el.style.opacity = '';
+  });
   // Reset dimmed markers
   allMarkers.forEach(m => { if (m._icon) m._icon.style.opacity = '1'; });
   map.flyTo([39.5, -98.5], 5, { duration: 1 });
@@ -2748,9 +2808,20 @@ function buildLegend() {
       <span class="legend-label">${cat}</span>
       <span class="legend-count">${count}</span>
     `;
-    item.addEventListener('click', () => toggleCategoryFilter(cat, item));
     container.appendChild(item);
   }
+
+  // Bug 1 fix: use event delegation on the parent so even if the click
+  // hit-tests onto a child element (and even if pointer-events somehow
+  // doesn't apply), we still find the legend-item via closest() and
+  // toggle correctly. Safety net for browser quirks.
+  container.addEventListener('click', (e) => {
+    const item = e.target.closest('.legend-item');
+    if (item && container.contains(item)) {
+      const cat = item.dataset.category;
+      if (cat) toggleCategoryFilter(cat, item);
+    }
+  });
 }
 
 function toggleCategoryFilter(cat, itemEl) {
@@ -5753,6 +5824,11 @@ function toggleAtlasChat() {
   document.getElementById('atlasChatPanel').classList.toggle('open', atlasChatOpen);
   document.getElementById('atlasChatToggle').classList.toggle('open', atlasChatOpen);
   if (atlasChatOpen) {
+    // If a detail panel is already open when the user opens the chat,
+    // slide chat to the left side so they don't overlap.
+    if (document.getElementById('detailPanel').classList.contains('open')) {
+      document.getElementById('atlasChatPanel').classList.add('left-side');
+    }
     setTimeout(() => document.getElementById('atlasChatInput').focus(), 300);
   } else if (wasOpen) {
     // Bug H2: if a response is still streaming when the user closes the
