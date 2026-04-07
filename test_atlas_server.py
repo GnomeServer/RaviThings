@@ -121,6 +121,50 @@ from backend.ollama_client import OllamaClient
 hermes = HermesClient()
 ollama = OllamaClient()
 
+# ── Hybrid retriever (lazy singleton) ──
+# The 4-lane RAG (vector + FTS5 + graph + relationship + RRF) lives in
+# backend/hybrid_retriever.py. We initialize it lazily so import-time failures
+# (missing chroma_db/, missing graph pickle, etc.) don't take down the server.
+_retriever_singleton = None
+_retriever_init_attempted = False
+
+
+def get_retriever():
+    """Return the HybridRetriever singleton, or None if init failed.
+
+    Initialization is attempted ONCE per process. If it fails (chromadb
+    missing, chroma_db/ missing, graph pickle missing, etc.) we log and
+    return None — chat falls back to the legacy substring path.
+    """
+    global _retriever_singleton, _retriever_init_attempted
+    if _retriever_init_attempted:
+        return _retriever_singleton
+
+    _retriever_init_attempted = True
+    try:
+        from backend.hybrid_retriever import HybridRetriever
+        try:
+            from backend.graph_engine import GraphEngine
+            graph = GraphEngine()  # loads pickle from default location
+        except Exception as e:
+            print(f"[atlas-chat] graph engine unavailable, continuing without graph lane: {e}")
+            graph = None
+        retriever = HybridRetriever(
+            db_path=str(BASE / "doe_contracts.db"),
+            graph_engine=graph,
+            chroma_path=str(BASE / "chroma_db"),
+            ollama=ollama,
+        )
+        if retriever.chroma_collection is None and graph is None:
+            print("[atlas-chat] retriever has no chroma + no graph; falling back to legacy substring")
+            return None
+        _retriever_singleton = retriever
+        print(f"[atlas-chat] HybridRetriever initialized (chroma={retriever.chroma_collection is not None}, graph={graph is not None})")
+        return _retriever_singleton
+    except Exception as e:
+        print(f"[atlas-chat] retriever init failed, falling back to legacy substring: {e}")
+        return None
+
 _ATLAS_SYSTEM_PROMPT = """\
 You are the OSINT Atlas Intelligence Analyst for DOE contractor security. You have access to \
 intelligence data on 2,214 DOE contractors including their network exposure, vulnerabilities, and infrastructure.
@@ -1092,6 +1136,35 @@ async def atlas_chat(req: AtlasChatRequest):
     if req.data_context:
         system_content += req.data_context
 
+    # ── Retrieval (Task 2) ──
+    # Try the 4-lane HybridRetriever first; fall back to the legacy substring path
+    # in dataContext (sent by the frontend) on any failure.
+    retriever = get_retriever()
+    retrieval_path = "legacy_substring"
+    retrieval_results_count = 0
+    retrieval_results_preview: list[str] = []
+
+    if retriever is not None:
+        try:
+            results = await asyncio.to_thread(retriever.search, req.query, 15, True)
+            if results.contracts:
+                contract_context = "\n".join(
+                    f"- {c.recipient}: {c.description[:200]} (${c.obligation:,.0f})"
+                    for c in results.contracts[:15]
+                )
+                system_content += (
+                    "\n\nRELEVANT CONTRACT DATA (from 4-lane retrieval — vector + keyword + graph + relationship):\n"
+                    + contract_context
+                )
+                retrieval_path = "hybrid_4lane"
+                retrieval_results_count = len(results.contracts)
+                retrieval_results_preview = [
+                    f"{c.recipient}: {c.description[:80]}"
+                    for c in results.contracts[:3]
+                ]
+        except Exception as e:
+            print(f"[atlas-chat] retrieval failed mid-request, using legacy: {e}")
+
     # Build the message list with history BEFORE the current query so the
     # LLM has conversational context. The frontend sends `req.messages` as
     # prior history only (the current query lives in `req.query` and is NOT
@@ -1163,9 +1236,9 @@ async def atlas_chat(req: AtlasChatRequest):
             "session_id": req.session_id,
             "query": req.query,
             "intent_classification": None,  # filled by Task 3
-            "retrieval_path": "legacy_substring",  # updated in Task 2
-            "retrieval_results_count": 0,
-            "retrieval_results_preview": [],
+            "retrieval_path": retrieval_path,
+            "retrieval_results_count": retrieval_results_count,
+            "retrieval_results_preview": retrieval_results_preview,
             "prompt_tokens_estimate": sum(len(m.get("content", "")) for m in messages) // 4,
             "history_tokens_estimate": sum(
                 len(m.get("content", "")) for m in messages if m.get("role") != "system"
@@ -1196,7 +1269,10 @@ _ATLAS_CHAT_LOG = BASE / "logs" / "atlas_chat.jsonl"
 _ATLAS_CHAT_LOG.parent.mkdir(parents=True, exist_ok=True)
 
 _CHAT_LOG_MAX_RESPONSE_CHARS = 16384
-_CHAT_LOG_MAX_FIELD_CHARS = 4096
+# 16384 chars ≈ 4k tokens: big enough to hold the full system prompt + a
+# 4-lane retrieval context block (~15 contracts) without truncation, so the
+# log is actually useful for diagnosing retrieval/memory failures.
+_CHAT_LOG_MAX_FIELD_CHARS = 16384
 
 
 def _log_chat_turn(record: dict) -> None:
