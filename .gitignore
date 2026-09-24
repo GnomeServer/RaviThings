@@ -76,6 +76,9 @@ osint_analysis_full.txt
 *.png
 map-*.png
 
+# Local-only material: downloaders, contract docs, briefing decks, debug scripts.
+# Not application source. Do not commit.
+local/
 # Temporary files
 *.pyc
 *.pyo
