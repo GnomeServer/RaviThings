@@ -1,8 +1,7 @@
-"""Re-embed all contract descriptions into ChromaDB using Ollama embeddings.
+"""Re-embed contract descriptions into ChromaDB using Ollama nomic-embed-text.
 
-Replaces the old SentenceTransformer (all-MiniLM-L6-v2) embeddings with
-Ollama-native embeddings from the configured model (e.g., dolphin3).
-This makes the entire system use a single embedding model via Ollama.
+The stored index is 768-d. This script is the re-index step; it does not
+call a chat model.
 """
 import argparse
 import sqlite3
@@ -14,11 +13,10 @@ def reingest(
     db_path: str,
     chroma_path: str,
     ollama_host: str = "http://localhost:11434",
-    model: str = "dolphin3",
     batch_size: int = 50,
 ):
     """Re-embed all contracts into ChromaDB using Ollama."""
-    ollama = OllamaClient(base_url=ollama_host, model=model)
+    ollama = OllamaClient(base_url=ollama_host)
 
     # Read all contracts with descriptions
     conn = sqlite3.connect(db_path)
@@ -64,8 +62,7 @@ if __name__ == "__main__":
     parser.add_argument("--db", default="doe_contracts.db")
     parser.add_argument("--chroma", default="./chroma_db")
     parser.add_argument("--ollama-host", default="http://localhost:11434")
-    parser.add_argument("--model", default="dolphin3")
     parser.add_argument("--batch-size", type=int, default=50)
     args = parser.parse_args()
 
-    reingest(args.db, args.chroma, args.ollama_host, args.model, args.batch_size)
+    reingest(args.db, args.chroma, args.ollama_host, args.batch_size)

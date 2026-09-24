@@ -1,46 +1,13 @@
 # backend/ollama_client.py
-import json
-from typing import AsyncGenerator
+"""Local embedding client. Chat goes through GLMClient / OpenRouter."""
 import httpx
 
+
 class OllamaClient:
-    def __init__(self, base_url: str = "http://localhost:11434", model: str = "dolphin3", embed_model: str = "nomic-embed-text"):
+    def __init__(self, base_url: str = "http://localhost:11434", embed_model: str = "nomic-embed-text"):
         self.base_url = base_url.rstrip("/")
-        self.model = model
         self.embed_model = embed_model
 
-    async def chat_stream(self, messages: list[dict]) -> AsyncGenerator[str, None]:
-        """Stream chat tokens from Ollama. Yields content strings."""
-        async with httpx.AsyncClient(timeout=None) as client:
-            async with client.stream(
-                "POST",
-                f"{self.base_url}/api/chat",
-                json={"model": self.model, "messages": messages, "stream": True},
-            ) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
-                    if not line:
-                        continue
-                    data = json.loads(line)
-                    content = data.get("message", {}).get("content", "")
-                    if content:
-                        yield content
-                    if data.get("done"):
-                        break
-
-    async def generate(self, prompt: str) -> str:
-        """Single-shot generation. Returns full response text."""
-        async with httpx.AsyncClient(timeout=None) as client:
-            resp = await client.post(
-                f"{self.base_url}/api/chat",
-                json={
-                    "model": self.model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "stream": False,
-                },
-            )
-            resp.raise_for_status()
-            return resp.json()["message"]["content"]
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
         """Compute embeddings via Ollama /api/embed using the dedicated embed model."""
@@ -64,12 +31,12 @@ class OllamaClient:
         return resp.json()["embeddings"]
 
     async def is_available(self) -> bool:
-        """Check if Ollama is reachable and model is loaded."""
+        """Return True when Ollama is up and the embed model is loaded."""
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 resp = await client.get(f"{self.base_url}/api/tags")
                 resp.raise_for_status()
                 models = [m["name"] for m in resp.json().get("models", [])]
-                return any(self.model in m for m in models)
+                return any(self.embed_model in m for m in models)
         except Exception:
             return False

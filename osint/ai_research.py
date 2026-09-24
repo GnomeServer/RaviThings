@@ -1,7 +1,7 @@
 """
 AI-powered contractor research layer.
 
-Uses LLM (Hermes-4-405B) + Brave Search to intelligently research DOE
+Uses LLM (GLM-5.3) + Brave Search to intelligently research DOE
 contractors: verify domains, detect acquisitions/mergers, identify parent
 companies, and generate intelligence briefs.
 
@@ -41,7 +41,7 @@ def extract_research_json(raw: str) -> Optional[dict]:
 
     text = raw.strip()
 
-    # Strip <think>...</think> tags (Hermes reasoning traces)
+    # Strip <think>...</think> tags (reasoning traces)
     text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
 
     # Try 1: Direct parse (clean JSON)
@@ -192,18 +192,18 @@ def _build_result_template() -> dict:
     }
 
 
-async def research_contractor(contractor: dict, hermes, brave, on_status=None) -> dict:
+async def research_contractor(contractor: dict, llm, brave, on_status=None) -> dict:
     """Full AI research pipeline for a single contractor.
 
     Phases:
         1. Run 3-4 Brave Search queries targeting different aspects
-        2. Deduplicate results, format as context, call Hermes chat()
+        2. Deduplicate results, format as context, call GLM-5.3 chat()
         3. Extract JSON from response, populate result dict
         4. DNS-validate any suggested domain via probe_domain()
 
     Args:
         contractor: Contractor record dict.
-        hermes: HermesClient instance.
+        llm: GLMClient instance.
         brave: BraveSearchClient instance.
         on_status: Optional async callback(str) for progress updates.
 
@@ -219,8 +219,8 @@ async def research_contractor(contractor: dict, hermes, brave, on_status=None) -
         result['previous_domain'] = dd['domain']
 
     # ── Availability checks ──
-    if not hermes.is_available():
-        result['error'] = 'hermes_unavailable'
+    if not llm.is_available():
+        result['error'] = 'llm_unavailable'
         return result
 
     # Brave unavailable is not fatal — we proceed without search context
@@ -262,7 +262,7 @@ async def research_contractor(contractor: dict, hermes, brave, on_status=None) -
 
     result['raw_search_results'] = len(all_results)
 
-    # ── Phase 2: Format context and call Hermes ──
+    # ── Phase 2: Format context and call GLM-5.3 ──
     if on_status:
         await on_status('Analyzing search results with AI...')
 
@@ -281,9 +281,9 @@ async def research_contractor(contractor: dict, hermes, brave, on_status=None) -
     messages = build_research_prompt(contractor, search_context)
 
     try:
-        llm_response = await hermes.chat(messages, max_tokens=4096)
+        llm_response = await llm.chat(messages, max_tokens=4096)
     except Exception as e:
-        result['error'] = f'Hermes chat error: {str(e)}'
+        result['error'] = f'LLM chat error: {str(e)}'
         return result
 
     # ── Phase 3: Extract structured data ──

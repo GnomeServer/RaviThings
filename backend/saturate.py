@@ -13,8 +13,7 @@ import json
 import re
 from typing import AsyncGenerator
 
-from backend.ollama_client import OllamaClient
-from backend.mercury_client import HermesClient
+from backend.glm_client import GLMClient
 from backend.brave_search import BraveSearchClient
 from backend.hybrid_retriever import HybridRetriever
 
@@ -73,7 +72,7 @@ Return ONLY valid JSON.
 
 
 def _strip_think_traces(text: str) -> str:
-    """Remove <think>...</think> reasoning traces from Hermes-4 responses."""
+    """Remove <think>...</think> reasoning traces from GLM-5.3 responses."""
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
 
@@ -305,13 +304,11 @@ class SaturationPipeline:
     def __init__(
         self,
         retriever: HybridRetriever,
-        ollama: OllamaClient,
-        hermes: HermesClient | None = None,
+        llm: GLMClient,
         brave: BraveSearchClient | None = None,
     ):
         self.retriever = retriever
-        self.ollama = ollama
-        self.hermes = hermes
+        self.llm = llm
         self.brave = brave
 
     @staticmethod
@@ -598,7 +595,11 @@ class SaturationPipeline:
 
             # Stream response
             response_parts: list[str] = []
-            use_hermes = self.hermes and self.hermes.is_available()
+            if not (self.llm and self.llm.is_available()):
+                yield self._evt("token", {
+                    "content": "GLM-5.3 is not configured. Set OPENROUTER_API_KEY.",
+                })
+                return
 
             if pass_num == 1:
                 # First pass: stream tokens to user
@@ -611,24 +612,15 @@ class SaturationPipeline:
                     "content": f"\n\n---\n**Pass {pass_num} — New findings:**\n\n",
                 })
 
-            fell_back = False
-            if use_hermes:
-                try:
-                    async for token in self.hermes.chat_stream(messages):
-                        response_parts.append(token)
-                        yield self._evt("token", {"content": token})
-                except Exception:
-                    # Always fall back — partial output is worse than full retry
-                    response_parts.clear()
-                    fell_back = True
-            if not use_hermes or fell_back:
-                if fell_back:
-                    yield self._evt("token", {
-                        "content": "\n\n[Connection lost — retrying with local model...]\n\n",
-                    })
-                async for token in self.ollama.chat_stream(messages):
+            try:
+                async for token in self.llm.chat_stream(messages):
                     response_parts.append(token)
                     yield self._evt("token", {"content": token})
+            except Exception as e:
+                yield self._evt("token", {
+                    "content": f"\n\n[GLM-5.3 request failed: {e}]\n\n",
+                })
+                return
 
             response_text = "".join(response_parts)
             all_responses.append(response_text)
@@ -687,20 +679,17 @@ class SaturationPipeline:
                 })
                 prompt = _SATURATE_CREATE_PROMPT + new_info
 
-            # Use Hermes for extraction (large context)
             raw_schematic = None
-            if use_hermes and not fell_back:
-                try:
-                    raw_schematic = await self.hermes.chat(
-                        [{"role": "user", "content": prompt}]
-                    )
-                except Exception:
-                    pass
-
-            if raw_schematic is None:
-                if len(prompt) > 7000:
-                    prompt = prompt[:7000] + "\n\n[...truncated]"
-                raw_schematic = await self.ollama.generate(prompt)
+            try:
+                raw_schematic = await self.llm.chat(
+                    [{"role": "user", "content": prompt}]
+                )
+            except Exception as e:
+                yield self._evt("status", {
+                    "stage": "saturate_schematic",
+                    "message": f"Pass {pass_num} — schematic extraction failed: {e}",
+                })
+                continue
 
             parsed = _extract_json(raw_schematic)
 

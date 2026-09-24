@@ -52,15 +52,15 @@ def fake_retriever_chat(tmp_path, monkeypatch):
         for tok in ["Honeywell", " has", " contracts"]:
             yield tok
 
-    monkeypatch.setattr(srv.hermes, "is_available", lambda: True)
-    monkeypatch.setattr(srv.hermes, "chat_stream", fake_stream)
+    monkeypatch.setattr(srv.llm, "is_available", lambda: True)
+    monkeypatch.setattr(srv.llm, "chat_stream", fake_stream)
 
     # Mock the intent router to skip the LLM call. atlas_chat imports
     # classify_intent inside the function from backend.intent_router, so
     # monkeypatching the source module is sufficient (no aliasing).
     from backend.intent_router import IntentClassification
 
-    async def fake_classify(query, hermes, recent_history=None):
+    async def fake_classify(query, llm, recent_history=None):
         return IntentClassification(
             intent="entity_narrative",
             confidence=0.95,
@@ -108,7 +108,7 @@ def fake_aggregate_chat(tmp_path, monkeypatch):
     monkeypatch.setattr(srv, "_ATLAS_CHAT_LOG", tmp_path / "atlas_chat.jsonl")
     srv.SITE_PASSWORD = ""
 
-    async def fake_classify(query, hermes, recent_history=None):
+    async def fake_classify(query, llm, recent_history=None):
         return IntentClassification(
             intent="aggregate",
             confidence=0.95,
@@ -135,8 +135,8 @@ def fake_aggregate_chat(tmp_path, monkeypatch):
     async def fake_stream(messages, *args, **kwargs):
         for tok in ["Honeywell", " has", " 12 contracts"]:
             yield tok
-    monkeypatch.setattr(srv.hermes, "is_available", lambda: True)
-    monkeypatch.setattr(srv.hermes, "chat_stream", fake_stream)
+    monkeypatch.setattr(srv.llm, "is_available", lambda: True)
+    monkeypatch.setattr(srv.llm, "chat_stream", fake_stream)
     return tmp_path / "atlas_chat.jsonl"
 
 

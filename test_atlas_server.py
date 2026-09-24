@@ -115,10 +115,10 @@ async def authenticate(request: Request):
     return HTMLResponse(LOGIN_PAGE.replace("</form>", '<div class="error">Invalid access code</div></form>'), status_code=401)
 
 
-from backend.mercury_client import HermesClient
+from backend.glm_client import GLMClient
 from backend.ollama_client import OllamaClient
 
-hermes = HermesClient()
+llm = GLMClient()
 ollama = OllamaClient()
 
 # ── Hybrid retriever (lazy singleton) ──
@@ -434,14 +434,14 @@ async def summarize_role_endpoint(req: KillChainRequest):
             {"role": "user", "content": user_content},
         ]
 
-        if hermes.is_available():
+        if llm.is_available():
             try:
-                summary = await hermes.chat(messages, max_tokens=700)
+                summary = await llm.chat(messages, max_tokens=700)
                 yield f"data: {_json.dumps({'phase': 'complete', 'summary': summary.strip(), 'sources': len(unique)})}\n\n"
             except Exception as e:
                 yield f"data: {_json.dumps({'phase': 'complete', 'summary': f'Failed: {e}', 'sources': 0})}\n\n"
         else:
-            yield f"data: {_json.dumps({'phase': 'complete', 'summary': 'Hermes 405B not available.', 'sources': 0})}\n\n"
+            yield f"data: {_json.dumps({'phase': 'complete', 'summary': 'GLM-5.3 not available.', 'sources': 0})}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
@@ -477,7 +477,7 @@ async def ai_research_endpoint(req: KillChainRequest):
             progress_events.append(msg)
 
         # Run the core research function
-        result = await research_contractor(c, hermes, brave, on_status=on_status)
+        result = await research_contractor(c, llm, brave, on_status=on_status)
 
         # Emit collected progress events
         for msg in progress_events:
@@ -537,8 +537,8 @@ async def full_assessment_endpoint(req: KillChainRequest):
         # Phase 1: Generate kill chain
         yield f"data: {_json.dumps({'phase': 'kill_chain', 'status': 'generating'})}\n\n"
 
-        if hermes.is_available():
-            kill_chain = await generate_kill_chain(hermes, intel)
+        if llm.is_available():
+            kill_chain = await generate_kill_chain(llm, intel)
         else:
             steps = []
             for i, v in enumerate(intel["vectors"][:8], 1):
@@ -565,7 +565,7 @@ async def full_assessment_endpoint(req: KillChainRequest):
         for idx, step in enumerate(steps):
             yield f"data: {_json.dumps({'phase': 'step_detail', 'step': idx + 1, 'total': len(steps), 'status': 'generating', 'tactic': step.get('tactic', '')})}\n\n"
 
-            if hermes.is_available():
+            if llm.is_available():
                 # Build step detail prompt (same as /api/step-detail endpoint)
                 svc_lines = "\n".join(
                     f"  {s.get('ip','')}:{s['port']}/{s.get('transport','tcp')} "
@@ -615,7 +615,7 @@ Provide a complete defensive analysis of this specific step."""
                 ]
 
                 try:
-                    raw = await hermes.chat(messages, max_tokens=4096)
+                    raw = await llm.chat(messages, max_tokens=4096)
                     json_str = raw
                     if "```json" in raw:
                         json_str = raw.split("```json")[1].split("```")[0]
@@ -641,7 +641,7 @@ Provide a complete defensive analysis of this specific step."""
                 except Exception as e:
                     detail = {"vulnerability": {"description": f"Analysis failed: {e}"}, "detection": {}, "remediation": {}, "references": []}
             else:
-                detail = {"vulnerability": {"description": "Hermes not available"}, "detection": {}, "remediation": {}, "references": []}
+                detail = {"vulnerability": {"description": "GLM-5.3 not available"}, "detection": {}, "remediation": {}, "references": []}
 
             step_details.append(detail)
             yield f"data: {_json.dumps({'phase': 'step_detail', 'step': idx + 1, 'total': len(steps), 'status': 'complete', 'data': detail})}\n\n"
@@ -690,7 +690,7 @@ OUTPUT JSON:
 
 # === AUTHORIZED RED TEAM PROMPT EXTENSION ===
 # Loaded from RED_TEAM_PROMPT.json if present, or RED_TEAM_PROMPT env var as fallback.
-# The backend LLM (Hermes 405B) executes this in your controlled environment.
+# The backend LLM (GLM-5.3) executes this in your controlled environment.
 _RED_TEAM_EXTENSION = ""
 _rt_path = BASE / "RED_TEAM_PROMPT.json"
 if _rt_path.exists():
@@ -810,9 +810,9 @@ Provide a complete defensive analysis of this specific step."""
         {"role": "user", "content": user_content},
     ]
 
-    if hermes.is_available():
+    if llm.is_available():
         try:
-            raw = await hermes.chat(messages, max_tokens=4096)
+            raw = await llm.chat(messages, max_tokens=4096)
             # Parse JSON from response
             json_str = raw
             if "```json" in raw:
@@ -864,7 +864,7 @@ Provide a complete defensive analysis of this specific step."""
             }
     else:
         result = {
-            "vulnerability": {"description": "Hermes 405B not available for detailed analysis."},
+            "vulnerability": {"description": "GLM-5.3 not available for detailed analysis."},
             "detection": {"signatures": [], "log_indicators": [], "monitoring_advice": "Enable logging on this service."},
             "remediation": {"immediate": ["Block this port at the firewall"], "long_term": ["Patch to latest version"], "commands": []},
             "references": [{"title": "MITRE ATT&CK", "url": f"https://attack.mitre.org/techniques/{step.get('technique_id', 'T1190')}/"}],
@@ -891,8 +891,8 @@ async def kill_chain_endpoint(req: KillChainRequest):
     contractor = contractors[req.contractor_index]
     intel = assemble_contractor_intel(contractor)
 
-    if hermes.is_available():
-        result = await generate_kill_chain(hermes, intel)
+    if llm.is_available():
+        result = await generate_kill_chain(llm, intel)
     else:
         # Fallback: generate a basic kill chain from vectors alone (no LLM)
         steps = []
@@ -911,7 +911,7 @@ async def kill_chain_endpoint(req: KillChainRequest):
             "risk_level": "critical" if len(intel["vectors"]) > 5 else "high" if len(intel["vectors"]) > 2 else "medium",
             "steps": steps,
             "remediation": [{"priority": 1, "action": "Address critical exposures first", "impact": "Reduces attack surface"}],
-            "note": "Generated without AI reasoning — Hermes 405B not available",
+            "note": "Generated without AI reasoning — GLM-5.3 not available",
         }
 
     return JSONResponse(result)
@@ -1148,7 +1148,7 @@ async def atlas_chat(req: AtlasChatRequest):
         system_content += req.data_context
 
     # ── Intent classification (Task 3) ──
-    intent = await classify_intent(req.query, hermes, recent_history=req.messages)
+    intent = await classify_intent(req.query, llm, recent_history=req.messages)
 
     # ── Retrieval (Task 2, gated by intent in Task 3, aggregated in Task 4) ──
     retriever = get_retriever()
@@ -1239,7 +1239,7 @@ async def atlas_chat(req: AtlasChatRequest):
 
         # Maybe summarize older turns (only fires if budget exceeded)
         await _conversation_store.maybe_summarize(
-            req.session_id, hermes, target_tokens=8000
+            req.session_id, llm, target_tokens=8000
         )
 
         # Re-read state after potential summarization/trimming
@@ -1275,13 +1275,18 @@ async def atlas_chat(req: AtlasChatRequest):
     accumulated_response: list[str] = []
 
     async def stream():
-        use_hermes = hermes.is_available()
+        use_llm = llm.is_available()
         response_parts = []
         last_emitted = ""
         error_message: str | None = None
 
         try:
-            gen = hermes.chat_stream(messages) if use_hermes else ollama.chat_stream(messages)
+            if not use_llm:
+                error_message = "GLM-5.3 is not configured. Set OPENROUTER_API_KEY."
+                yield f"data: {json.dumps({'type': 'error', 'message': error_message})}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+            gen = llm.chat_stream(messages)
             async for token in gen:
                 response_parts.append(token)
                 text_so_far = "".join(response_parts)

@@ -93,11 +93,11 @@ async def test_maybe_summarize_triggers_above_budget():
     for i in range(30):
         store.append_turn("s1", "user" if i % 2 == 0 else "assistant", long_content)
 
-    fake_hermes = MagicMock()
-    fake_hermes.chat = AsyncMock(return_value="The user has been discussing X, Y, Z.")
-    fake_hermes.is_available = lambda: True
+    fake_llm = MagicMock()
+    fake_llm.chat = AsyncMock(return_value="The user has been discussing X, Y, Z.")
+    fake_llm.is_available = lambda: True
 
-    summarized = await store.maybe_summarize("s1", fake_hermes, target_tokens=8000)
+    summarized = await store.maybe_summarize("s1", fake_llm, target_tokens=8000)
     assert summarized is True
 
     state = store.get_or_create("s1")
@@ -111,9 +111,9 @@ async def test_maybe_summarize_skips_when_under_budget():
     store = ConversationStore()
     store.append_turn("s1", "user", "short")
     store.append_turn("s1", "assistant", "short")
-    fake_hermes = MagicMock()
-    fake_hermes.chat = AsyncMock()
-    fake_hermes.is_available = lambda: True
-    summarized = await store.maybe_summarize("s1", fake_hermes, target_tokens=8000)
+    fake_llm = MagicMock()
+    fake_llm.chat = AsyncMock()
+    fake_llm.is_available = lambda: True
+    summarized = await store.maybe_summarize("s1", fake_llm, target_tokens=8000)
     assert summarized is False
-    fake_hermes.chat.assert_not_called()
+    fake_llm.chat.assert_not_called()

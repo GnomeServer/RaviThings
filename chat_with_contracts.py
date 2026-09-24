@@ -1,11 +1,10 @@
-import sys
-import ollama
+import asyncio
 import pandas as pd
+from backend.glm_client import GLMClient
 from datastore_gateway import ContractDataStore
 
-# Configure these to match your local setup
-MODEL_NAME = "dolphin3" # or "llama3.1" or "doe-expert"
 STORE = ContractDataStore()
+LLM = GLMClient()
 
 def get_context(query, n_results=5):
     """Retrieve relevant contracts from both Chroma (semantic) and SQLite."""
@@ -30,9 +29,12 @@ def get_context(query, n_results=5):
         return f"Error building context: {str(e)}"
 
 def chat_loop():
-    print(f"--- DOE Contract Chat System (Model: {MODEL_NAME}) ---")
+    if not LLM.is_available():
+        print("OPENROUTER_API_KEY is not set.")
+        return
+    print("--- DOE Contract Chat System (Model: GLM-5.3) ---")
     print("Type 'exit' or 'quit' to end.")
-    
+
     messages = [
         {"role": "system", "content": "You are a DOE analyst. Use the provided context to answer questions accurately. If the context doesn't contain the answer, say you don't know based on the current records."}
     ]
@@ -58,21 +60,17 @@ def chat_loop():
         Please answer the question based on the records above.
         """
         
-        # 3. Stream Response
-        print(f"[ASSISTANT]: ", end="", flush=True)
+        print("[ASSISTANT]: ", end="", flush=True)
         try:
-            response = ollama.chat(
-                model=MODEL_NAME,
-                messages=[{"role": "user", "content": prompt}],
-                stream=True,
-            )
-            
-            for chunk in response:
-                print(chunk['message']['content'], end="", flush=True)
+            async def _stream():
+                async for token in LLM.chat_stream(
+                    messages + [{"role": "user", "content": prompt}]
+                ):
+                    print(token, end="", flush=True)
+            asyncio.run(_stream())
             print()
         except Exception as e:
-            print(f"\nError communicating with Ollama: {str(e)}")
-            print("Make sure 'ollama serve' is running and the model is pulled.")
+            print(f"\nError communicating with OpenRouter: {e}")
 
 if __name__ == "__main__":
     chat_loop()

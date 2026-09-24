@@ -2,13 +2,13 @@
 Kill Chain Generator — MITRE ATT&CK-mapped attack path analysis.
 
 Assembles all OSINT data for a contractor and generates a realistic
-attack path using the Hermes 405B reasoning model. Each step is tagged
+attack path using the GLM-5.3 reasoning model. Each step is tagged
 with MITRE ATT&CK tactics and techniques.
 
 Usage:
     from backend.kill_chain import generate_kill_chain, assemble_contractor_intel
     intel = assemble_contractor_intel(contractor)
-    kill_chain = await generate_kill_chain(hermes_client, intel)
+    kill_chain = await generate_kill_chain(llm_client, intel)
 """
 
 import json
@@ -315,11 +315,11 @@ Generate a detailed kill chain with 4-8 steps. ALWAYS reference specific IP addr
     ]
 
 
-async def generate_kill_chain(hermes_client, intel: dict) -> dict:
-    """Generate a kill chain using Hermes 405B.
+async def generate_kill_chain(llm_client, intel: dict) -> dict:
+    """Generate a kill chain using GLM-5.3.
 
     Args:
-        hermes_client: HermesClient instance
+        llm_client: GLMClient instance
         intel: Output from assemble_contractor_intel()
 
     Returns:
@@ -366,13 +366,13 @@ async def generate_kill_chain(hermes_client, intel: dict) -> dict:
             "required": ["summary", "risk_level", "steps", "remediation"],
         }
 
-        result = await hermes_client.chat_structured(messages, schema, max_tokens=4096)
+        result = await llm_client.chat_structured(messages, schema, max_tokens=4096)
         return result
 
     except Exception:
         # Fallback to regular chat + JSON parsing
         try:
-            raw = await hermes_client.chat(messages, max_tokens=4096)
+            raw = await llm_client.chat(messages, max_tokens=4096)
             # Extract JSON from response (may be wrapped in markdown)
             json_str = raw
             if "```json" in raw:

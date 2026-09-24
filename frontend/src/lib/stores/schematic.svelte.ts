@@ -54,7 +54,7 @@ export interface ProcessSchematic {
 
 /**
  * Normalize raw LLM-generated schematic data by adding safe defaults
- * for any missing fields. Dolphin3 often omits array fields.
+ * for any missing fields. The model often omits array fields.
  */
 function normalize(raw: Record<string, unknown>): ProcessSchematic {
 	const inputs = (Array.isArray(raw.inputs) ? raw.inputs : []).map(

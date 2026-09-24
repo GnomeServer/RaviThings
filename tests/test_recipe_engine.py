@@ -42,7 +42,7 @@ def mock_ollama():
 
 @pytest.mark.asyncio
 async def test_decompose_generates_sub_queries(mock_ollama, mock_retriever):
-    engine = RecipeEngine(ollama=mock_ollama, retriever=mock_retriever)
+    engine = RecipeEngine(llm=mock_ollama, retriever=mock_retriever)
     events = []
     async for event in engine.synthesize("How do you make batteries?"):
         events.append(event)
@@ -53,7 +53,7 @@ async def test_decompose_generates_sub_queries(mock_ollama, mock_retriever):
 
 @pytest.mark.asyncio
 async def test_synthesize_emits_done(mock_ollama, mock_retriever):
-    engine = RecipeEngine(ollama=mock_ollama, retriever=mock_retriever)
+    engine = RecipeEngine(llm=mock_ollama, retriever=mock_retriever)
     events = []
     async for event in engine.synthesize("How do you make batteries?"):
         events.append(event)
@@ -63,7 +63,7 @@ async def test_synthesize_emits_done(mock_ollama, mock_retriever):
 
 @pytest.mark.asyncio
 async def test_synthesize_emits_round_events(mock_ollama, mock_retriever):
-    engine = RecipeEngine(ollama=mock_ollama, retriever=mock_retriever)
+    engine = RecipeEngine(llm=mock_ollama, retriever=mock_retriever)
     events = []
     async for event in engine.synthesize("How do you make batteries?"):
         events.append(event)
@@ -74,7 +74,7 @@ async def test_synthesize_emits_round_events(mock_ollama, mock_retriever):
 
 @pytest.mark.asyncio
 async def test_synthesize_emits_token_events(mock_ollama, mock_retriever):
-    engine = RecipeEngine(ollama=mock_ollama, retriever=mock_retriever)
+    engine = RecipeEngine(llm=mock_ollama, retriever=mock_retriever)
     events = []
     async for event in engine.synthesize("How do you make batteries?"):
         events.append(event)
@@ -87,7 +87,7 @@ async def test_synthesize_emits_token_events(mock_ollama, mock_retriever):
 
 @pytest.mark.asyncio
 async def test_synthesize_emits_recipe_steps(mock_ollama, mock_retriever):
-    engine = RecipeEngine(ollama=mock_ollama, retriever=mock_retriever)
+    engine = RecipeEngine(llm=mock_ollama, retriever=mock_retriever)
     events = []
     async for event in engine.synthesize("How do you make batteries?"):
         events.append(event)
@@ -102,7 +102,7 @@ async def test_synthesize_emits_recipe_steps(mock_ollama, mock_retriever):
 
 @pytest.mark.asyncio
 async def test_done_event_has_steps_and_confidence(mock_ollama, mock_retriever):
-    engine = RecipeEngine(ollama=mock_ollama, retriever=mock_retriever)
+    engine = RecipeEngine(llm=mock_ollama, retriever=mock_retriever)
     events = []
     async for event in engine.synthesize("How do you make batteries?"):
         events.append(event)
@@ -118,7 +118,7 @@ async def test_done_event_has_steps_and_confidence(mock_ollama, mock_retriever):
 
 @pytest.mark.asyncio
 async def test_converged_event_emitted(mock_ollama, mock_retriever):
-    engine = RecipeEngine(ollama=mock_ollama, retriever=mock_retriever)
+    engine = RecipeEngine(llm=mock_ollama, retriever=mock_retriever)
     events = []
     async for event in engine.synthesize("How do you make batteries?"):
         events.append(event)
@@ -133,7 +133,7 @@ async def test_fallback_when_llm_returns_invalid_json(mock_retriever):
     mock_ollama = AsyncMock()
     mock_ollama.generate.return_value = "I cannot generate a JSON array."
     mock_ollama.chat_stream = _fake_chat_stream
-    engine = RecipeEngine(ollama=mock_ollama, retriever=mock_retriever)
+    engine = RecipeEngine(llm=mock_ollama, retriever=mock_retriever)
     events = []
     async for event in engine.synthesize("How do you make batteries?"):
         events.append(event)

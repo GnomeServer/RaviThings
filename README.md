@@ -21,7 +21,7 @@ OSINT Atlas runs a 14-layer automated OSINT pipeline against the entire DOE cont
 - Named entity extraction into a knowledge graph (24,706 nodes, 72,064 relationships)
 
 **The platform provides:**
-- Natural language query interface (Hermes-4-405B reasoning model)
+- Natural language query interface (GLM-5.3 reasoning model)
 - MAP_CMD protocol for AI-driven map manipulation
 - MITRE ATT&CK mapped kill chain generation per contractor
 - Cross-contractor correlation (shared infrastructure, supply chain risk)
@@ -42,7 +42,7 @@ OSINT Atlas runs a 14-layer automated OSINT pipeline against the entire DOE cont
 ```
 Frontend: Vanilla JS + Leaflet.js (contractor-map.html)
 Backend:  Python/FastAPI (test_atlas_server.py)
-LLM:      Hermes-4-405B via OpenAI-compatible API
+LLM:      GLM-5.3 via OpenRouter API
 Search:   Brave Search API
 Data:     Shodan, NVD, crt.sh, DNS
 Graph:    igraph knowledge graph with hybrid retrieval

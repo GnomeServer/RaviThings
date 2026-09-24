@@ -25,14 +25,14 @@ async def _fake_stream(messages, *args, **kwargs):
 @pytest.mark.asyncio
 async def test_chat_turn_is_logged(clean_log, monkeypatch):
     import test_atlas_server as srv
-    monkeypatch.setattr(srv.hermes, "is_available", lambda: True)
-    monkeypatch.setattr(srv.hermes, "chat_stream", _fake_stream)
+    monkeypatch.setattr(srv.llm, "is_available", lambda: True)
+    monkeypatch.setattr(srv.llm, "chat_stream", _fake_stream)
 
     # Mock the intent router (added in Task 3) so this test doesn't hit
-    # the real Hermes API for classification — keeps the test fast and
-    # CI-runnable without NOUS_API_KEY.
+    # the real LLM API for classification — keeps the test fast and
+    # CI-runnable without OPENROUTER_API_KEY.
     from backend.intent_router import IntentClassification
-    async def fake_classify(query, hermes, recent_history=None):
+    async def fake_classify(query, llm, recent_history=None):
         return IntentClassification(
             intent="smalltalk", confidence=1.0,
             search_terms=[], filters={}, target_contractor=None,

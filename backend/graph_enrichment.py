@@ -53,7 +53,7 @@ async def extract_entities_from_text(text: str, llm_client) -> dict:
 
     Args:
         text: Contract description text.
-        llm_client: HermesClient or OllamaClient with async chat() method.
+        llm_client: GLMClient with an async chat() method.
 
     Returns:
         dict with keys:

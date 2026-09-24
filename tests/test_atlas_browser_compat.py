@@ -651,7 +651,7 @@ def test_smoke_flow_no_console_errors(page: Page):
     page.on("console", on_console)
 
     # Mock the LLM endpoint with a minimal SSE response so step 6 doesn't
-    # depend on a real Hermes/Ollama backend.
+    # depend on a real GLM/Ollama backend.
     def mock_atlas_chat(route):
         sse_body = (
             "data: {\"phase\": \"text\", \"chunk\": \"OK\"}\n\n"

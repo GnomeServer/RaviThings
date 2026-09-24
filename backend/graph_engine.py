@@ -24,7 +24,11 @@ class GraphEngine:
             self._build_label_index()
 
     def _build_label_index(self):
-        """Encode all node labels into embeddings for semantic search."""
+        """Encode all node labels into embeddings for semantic search.
+
+        Embedding is optional. If the embedder is unreachable the graph
+        still loads and search falls back to substring match.
+        """
         labels = []
         indices = []
         for v in self.graph.vs:
@@ -32,7 +36,9 @@ class GraphEngine:
             if label:
                 labels.append(f"{v['type']}: {label}")
                 indices.append(v.index)
-        if labels and self._embed_fn:
+        if not labels or not self._embed_fn:
+            return
+        try:
             # Batch in chunks of 100 to avoid overloading Ollama
             all_embeddings = []
             for i in range(0, len(labels), 100):
@@ -45,6 +51,10 @@ class GraphEngine:
             norms[norms == 0] = 1
             self._label_embeddings = self._label_embeddings / norms
             self._label_to_idx = indices
+        except Exception as e:
+            print(f"[graph] label embeddings unavailable, using substring search: {e}")
+            self._label_embeddings = None
+            self._label_to_idx = []
 
     @property
     def node_count(self) -> int:

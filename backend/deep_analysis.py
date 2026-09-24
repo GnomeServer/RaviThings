@@ -3,11 +3,11 @@
 Deep Analysis Pipeline — 5-step evidence distillation for DOE contract research.
 
 Steps:
-  1. SCOPE   — Dolphin3 identifies search keywords and technical terms.
+  1. SCOPE   — GLM-5.3 identifies search keywords and technical terms.
   2. FILTER  — SQLite narrows the candidate contract set.
-  3. SCORE   — Dolphin3 rates each candidate for relevance (batches of 30).
-  4. DISTILL — Dolphin3 extracts dense evidence from top-scored contracts.
-  5. SYNTHESIZE — Hermes-4-405B (or Dolphin3 fallback) produces the final answer.
+  3. SCORE   — GLM-5.3 rates each candidate for relevance (batches of 30).
+  4. DISTILL — GLM-5.3 extracts dense evidence from top-scored contracts.
+  5. SYNTHESIZE — GLM-5.3 produces the final answer.
 
 This module is standalone: it does NOT depend on hybrid_retriever or recipe_engine.
 """
@@ -18,8 +18,7 @@ import re
 import sqlite3
 from typing import AsyncGenerator
 
-from backend.ollama_client import OllamaClient
-from backend.mercury_client import HermesClient
+from backend.glm_client import GLMClient
 from backend.brave_search import BraveSearchClient
 
 # ---------------------------------------------------------------------------
@@ -44,13 +43,11 @@ class DeepAnalysisPipeline:
     def __init__(
         self,
         db_path: str,
-        ollama: OllamaClient,
-        mercury: HermesClient | None = None,
+        llm: GLMClient,
         brave: BraveSearchClient | None = None,
     ):
         self.db_path = db_path
-        self.ollama = ollama
-        self.mercury = mercury
+        self.llm = llm
         self.brave = brave
 
     # ------------------------------------------------------------------
@@ -274,18 +271,20 @@ class DeepAnalysisPipeline:
             "data": {"stage": "synthesize", "message": "Synthesizing final answer..."},
         }
 
-        # Decide which model to use and log it
-        using_mercury = self.mercury and self.mercury.is_available()
-        if using_mercury:
-            yield self._log_event(
-                "info",
-                "Synthesizing answer using Hermes-4-405B (131K context)...",
-            )
-        else:
+        if not self.llm.is_available():
             yield self._log_event(
                 "warn",
-                "Hermes-4 not available, using Dolphin3 for synthesis",
+                "GLM-5.3 not available. Set OPENROUTER_API_KEY.",
             )
+            yield {
+                "event": "token",
+                "data": {"content": "GLM-5.3 is not configured. Set OPENROUTER_API_KEY."},
+            }
+            return
+        yield self._log_event(
+            "info",
+            "Synthesizing answer using GLM-5.3 (1M context)...",
+        )
 
         # Optional web context
         web_context = ""
@@ -327,7 +326,7 @@ class DeepAnalysisPipeline:
     # ======================================================================
 
     async def _step_scope(self, query: str) -> dict:
-        """Ask Dolphin3 to identify search keywords for the query."""
+        """Ask GLM-5.3 to identify search keywords for the query."""
         prompt = (
             "Given this research question, identify:\n"
             "(a) relevant PSC code keywords (product or service code descriptions),\n"
@@ -339,7 +338,7 @@ class DeepAnalysisPipeline:
             f"Research question: {query}"
         )
 
-        raw = await self.ollama.generate(prompt)
+        raw = await self.llm.generate(prompt)
 
         # Parse JSON from the response
         try:
@@ -448,7 +447,7 @@ class DeepAnalysisPipeline:
             f"Contracts:\n{batch_json}"
         )
 
-        raw = await self.ollama.generate(prompt)
+        raw = await self.llm.generate(prompt)
 
         # Parse the JSON array from the response
         try:
@@ -497,7 +496,7 @@ class DeepAnalysisPipeline:
             "Contracts:\n" + "\n".join(contract_lines)
         )
 
-        return await self.ollama.generate(prompt)
+        return await self.llm.generate(prompt)
 
     # ======================================================================
     # Step 5 — SYNTHESIZE
@@ -513,8 +512,7 @@ class DeepAnalysisPipeline:
         """Stream the final synthesized answer.
 
         Yields SSE event dicts — either token events or log events.
-        Uses Hermes-4-405B when available, with automatic refusal detection
-        and Dolphin3 fallback.
+        Uses GLM-5.3. Refusal is retried once with a reformulated question.
         """
         system_msg = {
             "role": "system",
@@ -545,102 +543,52 @@ class DeepAnalysisPipeline:
 
         messages = [system_msg] + list(conversation_history) + [user_msg]
 
-        # Try Hermes-4 first if available
-        if self.mercury and self.mercury.is_available():
-            response_text = ""
-            try:
-                async for token in self.mercury.chat_stream(messages):
-                    response_text += token
-                    yield {"event": "token", "data": {"content": token}}
+        if not self.llm.is_available():
+            yield self._log_event("warn", "GLM-5.3 not available. Set OPENROUTER_API_KEY.")
+            yield {"event": "token", "data": {"content": "GLM-5.3 is not configured. Set OPENROUTER_API_KEY."}}
+            return
 
-                # Check for refusal
-                if _is_refusal(response_text):
-                    yield self._log_event(
-                        "warn",
-                        "Hermes-4 declined query, reformulating via Dolphin3...",
-                    )
-                    # Attempt reformulation via Dolphin3
-                    reformulated = await self._reformulate_query(query)
-                    if reformulated and reformulated != query:
-                        yield self._log_event(
-                            "detail",
-                            f"Reformulated: '{reformulated[:120]}{'...' if len(reformulated) > 120 else ''}'",
-                        )
-                        # Rebuild user message with reformulated query
-                        retry_user_msg = {
-                            "role": "user",
-                            "content": (
-                                f"{evidence_section}{web_section}\n"
-                                f"### RESEARCH QUESTION:\n{reformulated}"
-                            ),
-                        }
-                        retry_messages = [system_msg] + list(conversation_history) + [retry_user_msg]
+        response_text = ""
+        try:
+            async for token in self.llm.chat_stream(messages):
+                response_text += token
+                yield {"event": "token", "data": {"content": token}}
+        except Exception as e:
+            yield self._log_event("warn", f"GLM-5.3 request failed: {e}")
+            yield {"event": "token", "data": {"content": f"\n\nGLM-5.3 request failed: {e}"}}
+            return
 
-                        retry_text = ""
-                        try:
-                            async for token in self.mercury.chat_stream(retry_messages):
-                                retry_text += token
-                                yield {"event": "token", "data": {"content": token}}
+        if not _is_refusal(response_text):
+            return
 
-                            if not _is_refusal(retry_text):
-                                return  # Success on retry
-                        except Exception:
-                            pass
-
-                    # Retry also refused or failed — fall through to Dolphin3
-                    yield self._log_event(
-                        "warn",
-                        "Hermes-4 retry failed, falling back to Dolphin3...",
-                    )
-                    yield {"event": "token", "data": {"content": "\n\n---\n*Switching to local model for synthesis...*\n\n"}}
-                    # Truncate for Dolphin3's context window
-                    trunc_ev = evidence[:8000] if len(evidence) > 8000 else evidence
-                    fallback_user = {
-                        "role": "user",
-                        "content": f"### EVIDENCE:\n{trunc_ev}\n\n### QUESTION:\n{query}",
-                    }
-                    fallback_msgs = [system_msg] + list(conversation_history[-4:]) + [fallback_user]
-                    async for token in self.ollama.chat_stream(fallback_msgs):
-                        yield {"event": "token", "data": {"content": token}}
-                    return
-
-                # Hermes-4 succeeded without refusal
-                return
-            except Exception:
-                # Hermes-4 failed entirely — fall through to Dolphin3
-                yield self._log_event(
-                    "warn",
-                    "Hermes-4 connection failed, falling back to Dolphin3...",
-                )
-
-        # Dolphin3 fallback (or primary when Hermes-4 is unavailable)
-        # Dolphin3 has a much smaller context window — truncate evidence
-        truncated_evidence = evidence
-        max_chars = 8000  # ~2000 words, safe for dolphin3's context
-        if len(evidence) > max_chars:
-            truncated_evidence = evidence[:max_chars] + f"\n\n[...truncated from {len(evidence)} chars to fit local model context]"
-            yield self._log_event("detail", f"Truncating evidence from {len(evidence)} to {max_chars} chars for Dolphin3 context window")
-
-        truncated_user_msg = {
+        yield self._log_event("warn", "GLM-5.3 declined query, reformulating...")
+        reformulated = await self._reformulate_query(query)
+        if not reformulated or reformulated == query:
+            return
+        yield self._log_event(
+            "detail",
+            f"Reformulated: '{reformulated[:120]}{'...' if len(reformulated) > 120 else ''}'",
+        )
+        retry_messages = [system_msg] + list(conversation_history) + [{
             "role": "user",
             "content": (
-                f"### DISTILLED EVIDENCE FROM DOE CONTRACTS:\n{truncated_evidence}\n"
-                + (f"\n### TECHNICAL RESEARCH FROM THE WEB:\n{web_context}\n" if web_context else "")
-                + f"\n### RESEARCH QUESTION:\n{query}"
+                f"{evidence_section}{web_section}\n"
+                f"### RESEARCH QUESTION:\n{reformulated}"
             ),
-        }
-        dolphin_messages = [system_msg] + list(conversation_history[-4:]) + [truncated_user_msg]  # Limit history too
-
-        yield self._log_event("info", "Generating response with Dolphin3...")
-        async for token in self.ollama.chat_stream(dolphin_messages):
-            yield {"event": "token", "data": {"content": token}}
+        }]
+        try:
+            async for token in self.llm.chat_stream(retry_messages):
+                yield {"event": "token", "data": {"content": token}}
+        except Exception as e:
+            yield self._log_event("warn", f"GLM-5.3 retry failed: {e}")
+            yield {"event": "token", "data": {"content": f"\n\nGLM-5.3 retry failed: {e}"}}
 
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
 
     async def _reformulate_query(self, query: str) -> str:
-        """Ask Dolphin3 to reformulate a query that was refused by Hermes-4."""
+        """Ask GLM-5.3 to reformulate a query it refused."""
         prompt = (
             f"The synthesis model refused this question: '{query}'. "
             "Reformulate as an academic/research question that asks for the same "
@@ -648,6 +596,6 @@ class DeepAnalysisPipeline:
             "Return ONLY the reformulated question."
         )
         try:
-            return (await self.ollama.generate(prompt)).strip()
+            return (await self.llm.generate(prompt)).strip()
         except Exception:
             return query

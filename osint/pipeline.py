@@ -659,18 +659,18 @@ def run_layer_nvd(contractors, force=False, limit=0):
 def run_layer_ai_research(contractors, force=False, limit=0):
     """Layer: AI Research — web search + LLM reasoning for domain/status/brief."""
     import asyncio
-    from backend.mercury_client import HermesClient
+    from backend.glm_client import GLMClient
     from backend.brave_search import BraveSearchClient
 
     print('\n' + '=' * 60)
-    print('LAYER: AI Research (Hermes + Brave Search)')
+    print('LAYER: AI Research (GLM-5.3 + Brave Search)')
     print('=' * 60)
 
-    hermes = HermesClient()
+    llm = GLMClient()
     brave = BraveSearchClient()
 
-    if not hermes.is_available():
-        print('  NOUS_API_KEY not set. Skipping.')
+    if not llm.is_available():
+        print('  OPENROUTER_API_KEY not set. Skipping.')
         return 0
 
     # Smart targeting
@@ -701,7 +701,7 @@ def run_layer_ai_research(contractors, force=False, limit=0):
             name = c['name'][:45]
             print(f'  [{idx+1}/{len(to_process)}] {name:45s}', end=' ', flush=True)
 
-            result = await research_contractor(c, hermes, brave)
+            result = await research_contractor(c, llm, brave)
             c.setdefault('osint', {})['ai_research'] = result
 
             if result.get('error'):

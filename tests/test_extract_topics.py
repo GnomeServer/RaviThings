@@ -37,7 +37,7 @@ async def test_extract_topics_batch(sample_db):
         stats = await extract_topics_batch(
             db_path=sample_db,
             topics_db_path=topics_path,
-            ollama=mock_ollama,
+            llm=mock_ollama,
             batch_size=5,
             limit=5,
         )

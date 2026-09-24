@@ -196,9 +196,9 @@ class TestResearchContractor(unittest.TestCase):
     @patch('osint.ai_research.probe_domain', return_value=True)
     def test_successful_research(self, mock_probe):
         """Full pipeline: search -> LLM -> extract -> validate."""
-        hermes = MagicMock()
-        hermes.is_available.return_value = True
-        hermes.chat = AsyncMock(return_value=self._llm_json_response())
+        llm = MagicMock()
+        llm.is_available.return_value = True
+        llm.chat = AsyncMock(return_value=self._llm_json_response())
 
         brave = MagicMock()
         brave.is_available.return_value = True
@@ -208,7 +208,7 @@ class TestResearchContractor(unittest.TestCase):
 
         async def run():
             from osint.ai_research import research_contractor
-            return await research_contractor(contractor, hermes, brave)
+            return await research_contractor(contractor, llm, brave)
 
         result = asyncio.run(run())
 
@@ -225,9 +225,9 @@ class TestResearchContractor(unittest.TestCase):
     @patch('osint.ai_research.probe_domain', return_value=False)
     def test_domain_validation_failure(self, mock_probe):
         """Domain from LLM doesn't resolve -> domain_validated=False."""
-        hermes = MagicMock()
-        hermes.is_available.return_value = True
-        hermes.chat = AsyncMock(return_value=self._llm_json_response())
+        llm = MagicMock()
+        llm.is_available.return_value = True
+        llm.chat = AsyncMock(return_value=self._llm_json_response())
 
         brave = MagicMock()
         brave.is_available.return_value = True
@@ -237,7 +237,7 @@ class TestResearchContractor(unittest.TestCase):
 
         async def run():
             from osint.ai_research import research_contractor
-            return await research_contractor(contractor, hermes, brave)
+            return await research_contractor(contractor, llm, brave)
 
         result = asyncio.run(run())
 
@@ -246,10 +246,10 @@ class TestResearchContractor(unittest.TestCase):
         # Domain should still be present but flagged as unvalidated
         self.assertEqual(result['current_domain'], 'westinghousenuclear.com')
 
-    def test_hermes_unavailable(self):
-        """When Hermes is unavailable, return error result."""
-        hermes = MagicMock()
-        hermes.is_available.return_value = False
+    def test_llm_unavailable(self):
+        """When the LLM is unavailable, return error result."""
+        llm = MagicMock()
+        llm.is_available.return_value = False
 
         brave = MagicMock()
         brave.is_available.return_value = True
@@ -259,19 +259,19 @@ class TestResearchContractor(unittest.TestCase):
 
         async def run():
             from osint.ai_research import research_contractor
-            return await research_contractor(contractor, hermes, brave)
+            return await research_contractor(contractor, llm, brave)
 
         result = asyncio.run(run())
 
         self.assertTrue(result['queried'])
-        self.assertIn('hermes', result['error'].lower())
+        self.assertIn('llm', result['error'].lower())
 
     @patch('osint.ai_research.probe_domain', return_value=True)
     def test_brave_unavailable_still_synthesizes(self, mock_probe):
         """When Brave is unavailable, LLM still runs with contractor record only."""
-        hermes = MagicMock()
-        hermes.is_available.return_value = True
-        hermes.chat = AsyncMock(return_value=self._llm_json_response(
+        llm = MagicMock()
+        llm.is_available.return_value = True
+        llm.chat = AsyncMock(return_value=self._llm_json_response(
             domain_confidence=30,
             brief='Based on contractor record only.',
         ))
@@ -283,22 +283,22 @@ class TestResearchContractor(unittest.TestCase):
 
         async def run():
             from osint.ai_research import research_contractor
-            return await research_contractor(contractor, hermes, brave)
+            return await research_contractor(contractor, llm, brave)
 
         result = asyncio.run(run())
 
         self.assertTrue(result['queried'])
         self.assertIsNone(result['error'])
         self.assertEqual(result['search_queries_used'], 0)
-        # Hermes should still have been called
-        hermes.chat.assert_called_once()
+        # LLM should still have been called
+        llm.chat.assert_called_once()
 
     @patch('osint.ai_research.probe_domain', return_value=True)
     def test_malformed_llm_json(self, mock_probe):
         """When LLM returns unparseable output, error is set but result still returned."""
-        hermes = MagicMock()
-        hermes.is_available.return_value = True
-        hermes.chat = AsyncMock(return_value="I can't find any information about this company.")
+        llm = MagicMock()
+        llm.is_available.return_value = True
+        llm.chat = AsyncMock(return_value="I can't find any information about this company.")
 
         brave = MagicMock()
         brave.is_available.return_value = True
@@ -308,7 +308,7 @@ class TestResearchContractor(unittest.TestCase):
 
         async def run():
             from osint.ai_research import research_contractor
-            return await research_contractor(contractor, hermes, brave)
+            return await research_contractor(contractor, llm, brave)
 
         result = asyncio.run(run())
 
@@ -318,9 +318,9 @@ class TestResearchContractor(unittest.TestCase):
 
     def test_search_queries_include_acquisition(self):
         """Brave search queries should include name+acquisition/merger query."""
-        hermes = MagicMock()
-        hermes.is_available.return_value = True
-        hermes.chat = AsyncMock(return_value=self._llm_json_response())
+        llm = MagicMock()
+        llm.is_available.return_value = True
+        llm.chat = AsyncMock(return_value=self._llm_json_response())
 
         brave = MagicMock()
         brave.is_available.return_value = True
@@ -331,7 +331,7 @@ class TestResearchContractor(unittest.TestCase):
         async def run():
             from osint.ai_research import research_contractor
             with patch('osint.ai_research.probe_domain', return_value=True):
-                return await research_contractor(contractor, hermes, brave)
+                return await research_contractor(contractor, llm, brave)
 
         asyncio.run(run())
 

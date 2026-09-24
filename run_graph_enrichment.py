@@ -3,7 +3,7 @@
 Run LLM entity extraction to enrich the knowledge graph.
 
 Reads contract descriptions from SQLite, groups by recipient,
-sends to Hermes/Ollama for entity/relationship extraction,
+sends to GLM-5.3/Ollama for entity/relationship extraction,
 and enriches the igraph with new typed nodes and edges.
 
 Usage:
@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from backend.mercury_client import HermesClient
+from backend.glm_client import GLMClient
 from backend.ollama_client import OllamaClient
 from backend.graph_enrichment import (
     extract_entities_from_text,
@@ -82,18 +82,13 @@ async def main():
     print(f'Loaded graph: {graph.vcount()} nodes, {graph.ecount()} edges')
 
     # Initialize LLM client
-    hermes = HermesClient()
+    llm = GLMClient()
     ollama = OllamaClient()
 
-    if hermes.is_available():
-        llm = hermes
-        print('Using Hermes-4-405B for entity extraction')
-    elif ollama:
-        llm = ollama
-        print('Using local Ollama for entity extraction')
-    else:
-        print('ERROR: No LLM available (set NOUS_API_KEY or run Ollama)')
+    if not llm.is_available():
+        print('ERROR: No LLM available (set OPENROUTER_API_KEY)')
         sys.exit(1)
+    print('Using GLM-5.3 for entity extraction')
 
     # Get descriptions
     descriptions = get_recipient_descriptions(limit=args.limit)

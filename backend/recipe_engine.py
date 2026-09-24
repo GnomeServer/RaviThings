@@ -3,7 +3,7 @@
 import asyncio
 import json
 from typing import AsyncGenerator
-from backend.ollama_client import OllamaClient
+from backend.glm_client import GLMClient
 from backend.hybrid_retriever import HybridRetriever, ContractResult
 
 DECOMPOSE_PROMPT = """You are a process engineer researching how something is made.
@@ -54,12 +54,12 @@ Format as numbered steps."""
 class RecipeEngine:
     def __init__(
         self,
-        ollama: OllamaClient,
+        llm: GLMClient,
         retriever: HybridRetriever,
         brave_search=None,  # Optional BraveSearchClient
         max_rounds: int = 3,
     ):
-        self.ollama = ollama
+        self.llm = llm
         self.retriever = retriever
         self.brave_search = brave_search
         self.max_rounds = max_rounds
@@ -69,7 +69,7 @@ class RecipeEngine:
 
         # Phase 1: DECOMPOSE
         decompose_prompt = DECOMPOSE_PROMPT.format(query=query)
-        raw_response = await self.ollama.generate(decompose_prompt)
+        raw_response = await self.llm.generate(decompose_prompt)
 
         try:
             # Try to parse JSON array from response
@@ -173,7 +173,7 @@ class RecipeEngine:
 
         # Stream the synthesis narrative
         full_response = ""
-        async for token in self.ollama.chat_stream(
+        async for token in self.llm.chat_stream(
             [{"role": "user", "content": synth_prompt}]
         ):
             full_response += token

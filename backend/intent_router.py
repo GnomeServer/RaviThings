@@ -11,7 +11,7 @@ so the chat handler can dispatch to the right tool:
 from typing import Literal
 from pydantic import BaseModel, Field
 
-from backend.mercury_client import HermesClient
+from backend.glm_client import GLMClient
 
 
 class IntentClassification(BaseModel):
@@ -100,10 +100,10 @@ Return JSON matching the strict schema. Do not add fields. Use null for missing 
 
 async def classify_intent(
     query: str,
-    hermes: HermesClient,
+    llm: GLMClient,
     recent_history: list[dict] | None = None,
 ) -> IntentClassification:
-    """Classify a query into one of 4 intents using Hermes-4-405B structured output.
+    """Classify a query into one of 4 intents using GLM-5.3 structured output.
 
     On any failure (network, malformed JSON, etc.), returns a safe default of
     intent='entity_narrative' with confidence 0.0 — this routes the query through
@@ -120,7 +120,7 @@ async def classify_intent(
     messages.append({"role": "user", "content": query})
 
     try:
-        raw = await hermes.chat_structured(messages, INTENT_SCHEMA, max_tokens=500)
+        raw = await llm.chat_structured(messages, INTENT_SCHEMA, max_tokens=500)
         return IntentClassification(**raw)
     except Exception as e:
         print(f"[intent_router] classification failed, defaulting to entity_narrative: {e}")

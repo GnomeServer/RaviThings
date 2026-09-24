@@ -17,7 +17,7 @@ from backend.ollama_client import OllamaClient
 from backend.recipe_engine import RecipeEngine
 from backend.setup_fts import ensure_fts5
 from backend.brave_search import BraveSearchClient
-from backend.mercury_client import HermesClient
+from backend.glm_client import GLMClient
 from backend.deep_analysis import DeepAnalysisPipeline
 from backend.saturate import SaturationPipeline, _merge_schematic, _SATURATE_DELTA_PROMPT
 
@@ -77,7 +77,7 @@ def _is_schematic_query(text: str) -> bool:
 
 
 def _strip_think_traces(text: str) -> str:
-    """Remove <think>...</think> reasoning traces from Hermes-4 responses."""
+    """Remove <think>...</think> reasoning traces from GLM-5.3 responses."""
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
 
@@ -94,7 +94,6 @@ def create_app() -> FastAPI:
     graph_path = os.environ.get("GRAPH_PATH", "graph.pkl")
     chroma_path = os.environ.get("CHROMA_PATH", "./chroma_db")
     ollama_host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-    ollama_model = os.environ.get("OLLAMA_MODEL", "dolphin3")
     static_dir = os.environ.get("STATIC_DIR", "frontend/build")
 
     # Per-app state (not shared across create_app() calls)
@@ -106,8 +105,8 @@ def create_app() -> FastAPI:
         if db_path and os.path.exists(db_path):
             ensure_fts5(db_path)
 
-        # Create Ollama client first — used for chat, embeddings, and graph search
-        state["ollama"] = OllamaClient(base_url=ollama_host, model=ollama_model)
+        # Ollama is embeddings only. Chat goes through GLM-5.3.
+        state["ollama"] = OllamaClient(base_url=ollama_host)
 
         if graph_path and os.path.exists(graph_path):
             # Use Ollama for graph node embeddings (no SentenceTransformer/HuggingFace needed)
@@ -116,7 +115,7 @@ def create_app() -> FastAPI:
             state["graph"] = None
 
         state["brave"] = BraveSearchClient()  # reads BRAVE_SEARCH_API_KEY from env
-        state["mercury"] = HermesClient()  # reads NOUS_API_KEY from env
+        state["llm"] = GLMClient()  # reads OPENROUTER_API_KEY from env
 
         chroma = chroma_path if chroma_path and os.path.exists(chroma_path) else None
         state["retriever"] = HybridRetriever(
@@ -127,7 +126,7 @@ def create_app() -> FastAPI:
         )
 
         state["recipe"] = RecipeEngine(
-            ollama=state["ollama"],
+            llm=state["llm"],
             retriever=state["retriever"],
             brave_search=state["brave"],
         )
@@ -217,8 +216,7 @@ def create_app() -> FastAPI:
     @app.post("/api/chat")
     async def chat(req: ChatRequest):
         retriever = state["retriever"]
-        ollama = state["ollama"]
-        hermes = state.get("mercury")
+        llm = state.get("llm")
 
         # Extract last user message for retrieval
         user_msg = next(
@@ -322,24 +320,17 @@ def create_app() -> FastAPI:
             augmented = [system_msg] + prior_messages + [evidence_msg]
 
             # 3. Stream LLM response (collect full text for potential schematic extraction)
-            #    Use Hermes-4 when available, fall back to local Dolphin3
             full_response_parts: list[str] = []
-            use_hermes = hermes and hermes.is_available()
-            fell_back = False
-            if use_hermes:
-                try:
-                    async for token in hermes.chat_stream(augmented):
-                        full_response_parts.append(token)
-                        yield {"event": "token", "data": json.dumps({"content": token})}
-                except Exception:
-                    if not full_response_parts:
-                        fell_back = True  # will use Dolphin3 below
-            if not use_hermes or fell_back:
-                # Dolphin3: primary (no Hermes key) or fallback (Hermes failed)
-                async for token in ollama.chat_stream(augmented):
+            if not (llm and llm.is_available()):
+                yield {"event": "token", "data": json.dumps({"content": "GLM-5.3 is not configured. Set OPENROUTER_API_KEY."})}
+                return
+            try:
+                async for token in llm.chat_stream(augmented):
                     full_response_parts.append(token)
                     yield {"event": "token", "data": json.dumps({"content": token})}
-
+            except Exception as e:
+                yield {"event": "token", "data": json.dumps({"content": f"GLM-5.3 request failed: {e}"})}
+                return
             # 4. Process schematic extraction
             # Create new schematic for "how to make" queries, OR update existing schematic on any follow-up
             has_existing = req.schematic and req.schematic.get("title")
@@ -374,26 +365,18 @@ def create_app() -> FastAPI:
                         # CREATE new schematic from scratch
                         prompt = _SCHEMATIC_CREATE_PROMPT + new_info
 
-                    # Use Hermes-4 for all schematic work (better JSON, 131K context)
-                    hermes_available = hermes and hermes.is_available()
-                    if hermes_available:
-                        action = "Extracting additions for" if is_update else "Generating"
-                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": f"{action} schematic with Hermes-4..."})}
-                        schematic_msgs = [{"role": "user", "content": prompt}]
-                        try:
-                            raw_schematic = await hermes.chat(schematic_msgs)
-                        except Exception:
-                            yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "Hermes-4 unavailable, using Dolphin3..."})}
-                            if len(prompt) > 7000:
-                                prompt = prompt[:7000] + "\n\n[...truncated for context window]"
-                            raw_schematic = await ollama.generate(prompt)
-                    else:
-                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "Generating schematic with Dolphin3..."})}
-                        if len(prompt) > 7000:
-                            prompt = prompt[:7000] + "\n\n[...truncated for context window]"
-                        raw_schematic = await ollama.generate(prompt)
+                    if not (llm and llm.is_available()):
+                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "GLM-5.3 is not configured. Set OPENROUTER_API_KEY."})}
+                        return
+                    action = "Extracting additions for" if is_update else "Generating"
+                    yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": f"{action} schematic with GLM-5.3..."})}
+                    try:
+                        raw_schematic = await llm.chat([{"role": "user", "content": prompt}])
+                    except Exception as e:
+                        yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": f"Schematic extraction failed: {e}"})}
+                        return
 
-                    # Strip <think> reasoning traces (Hermes-4) before JSON extraction
+                    # Strip <think> reasoning traces (GLM-5.3) before JSON extraction
                     raw_schematic = _strip_think_traces(raw_schematic)
 
                     yield {"event": "status", "data": json.dumps({"stage": "schematic", "message": "Parsing schematic JSON..."})}
@@ -475,11 +458,11 @@ def create_app() -> FastAPI:
     async def extract_topics(req: TopicExtractRequest):
         from backend.extract_topics import extract_topics_stream
         topics_db = os.environ.get("TOPICS_DB_PATH", "/data/topics.db")
-        ollama = state["ollama"]
+        llm = state["llm"]
 
         async def event_stream():
             async for event in extract_topics_stream(
-                db_path, topics_db, ollama, req.batch_size, req.limit
+                db_path, topics_db, llm, req.batch_size, req.limit
             ):
                 yield {"event": event["event"], "data": json.dumps(event["data"])}
 
@@ -491,14 +474,12 @@ def create_app() -> FastAPI:
 
     @app.post("/api/deep-chat")
     async def deep_chat(req: DeepChatRequest):
-        ollama = state["ollama"]
-        mercury = state.get("mercury")
+        llm = state.get("llm")
         brave = state.get("brave")
 
         pipeline = DeepAnalysisPipeline(
             db_path=db_path,
-            ollama=ollama,
-            mercury=mercury if mercury and mercury.is_available() else None,
+            llm=llm,
             brave=brave,
         )
 
@@ -531,15 +512,13 @@ def create_app() -> FastAPI:
 
     @app.post("/api/saturate-chat")
     async def saturate_chat(req: SaturateChatRequest):
-        ollama = state["ollama"]
-        mercury = state.get("mercury")
+        llm = state.get("llm")
         brave = state.get("brave")
         retriever = state["retriever"]
 
         pipeline = SaturationPipeline(
             retriever=retriever,
-            ollama=ollama,
-            hermes=mercury if mercury and mercury.is_available() else None,
+            llm=llm,
             brave=brave,
         )
 
@@ -612,8 +591,7 @@ RULES:
 
     @app.post("/api/atlas-chat")
     async def atlas_chat(req: AtlasChatRequest):
-        ollama = state["ollama"]
-        mercury = state.get("mercury")
+        llm = state.get("llm")
 
         # Build context with data summary for the LLM
         retriever = state["retriever"]
@@ -674,19 +652,16 @@ RULES:
             return text_so_far, cmds
 
         async def event_stream():
-            use_hermes = mercury and mercury.is_available()
+            use_llm = llm and llm.is_available()
             response_parts = []
             last_emitted = ""
 
             try:
-                gen = None
-                if use_hermes:
-                    try:
-                        gen = mercury.chat_stream(messages)
-                    except Exception:
-                        gen = None
-                if gen is None:
-                    gen = ollama.chat_stream(messages)
+                if not (llm and llm.is_available()):
+                    yield f"data: {json.dumps({'type': 'error', 'message': 'GLM-5.3 is not configured. Set OPENROUTER_API_KEY.'})}\n\n"
+                    yield "data: [DONE]\n\n"
+                    return
+                gen = llm.chat_stream(messages)
 
                 async for token in gen:
                     response_parts.append(token)

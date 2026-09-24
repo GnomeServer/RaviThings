@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 from backend.history_budget import _est_tokens
 
 if TYPE_CHECKING:
-    from backend.mercury_client import HermesClient
+    from backend.glm_client import GLMClient
 
 
 @dataclass
@@ -76,7 +76,7 @@ class ConversationStore:
     async def maybe_summarize(
         self,
         session_id: str,
-        hermes: "HermesClient",
+        llm: "GLMClient",
         target_tokens: int = 8000,
     ) -> bool:
         """If verbatim history exceeds target_tokens, regenerate the rolling
@@ -88,7 +88,7 @@ class ConversationStore:
         total = sum(_est_tokens(m) for m in state.verbatim_turns)
         if total <= target_tokens:
             return False
-        if hasattr(hermes, "is_available") and not hermes.is_available():
+        if hasattr(llm, "is_available") and not llm.is_available():
             return False
 
         # Summarize the OLDEST 70% of turns; keep the newest 30% verbatim
@@ -110,7 +110,7 @@ class ConversationStore:
                 {"role": "system", "content": _SUMMARIZE_PROMPT},
                 {"role": "user", "content": transcript},
             ]
-            summary = await hermes.chat(messages, max_tokens=300)
+            summary = await llm.chat(messages, max_tokens=300)
             state.rolling_summary = summary.strip()
             state.verbatim_turns = to_keep
             return True

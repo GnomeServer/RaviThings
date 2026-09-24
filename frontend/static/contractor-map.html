@@ -3880,7 +3880,7 @@ async function generateKillChain() {
       <div class="spinner"></div>
       <div>
         <div>Assembling OSINT intelligence for ${escapeHtml(kcName.substring(0, 40))}...</div>
-        <div style="font-size:9px;color:var(--text-muted);margin-top:2px">Mapping attack vectors → Hermes 405B → MITRE ATT&CK kill chain</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px">Mapping attack vectors → GLM-5.3 → MITRE ATT&CK kill chain</div>
       </div>
     </div>
   `;
@@ -3894,7 +3894,7 @@ async function generateKillChain() {
     'Collecting exposed services, ports, and CVEs...',
     'Mapping DMARC, SSL, and email security posture...',
     'Identifying on-premises network topology...',
-    'Sending intelligence brief to Hermes 405B...',
+    'Sending intelligence brief to GLM-5.3...',
     'Generating MITRE ATT&CK attack path...',
   ];
   let kcStatusIdx = 0;
@@ -4314,7 +4314,7 @@ async function summarizeContractorRole() {
         if (event.phase === 'search') target.innerHTML = statusLine(`Searching: "${escapeHtml(event.query)}"...`);
         if (event.phase === 'search_complete') target.innerHTML = statusLine(`Found ${event.results} web sources. Searching contract IDs...`);
         if (event.phase === 'contract_search') target.innerHTML = statusLine(`Searching contract ${escapeHtml(event.contract_id)}...`);
-        if (event.phase === 'synthesizing') target.innerHTML = statusLine(`Synthesizing from ${event.sources} sources via Hermes 405B...`);
+        if (event.phase === 'synthesizing') target.innerHTML = statusLine(`Synthesizing from ${event.sources} sources via GLM-5.3...`);
         if (event.phase === 'complete') {
           finalSummary = event.summary || '';
           sourceCount = event.sources || 0;
@@ -4338,7 +4338,7 @@ async function summarizeContractorRole() {
 
 
 // ═══════════════════════════════════════════════════════════════
-// AI RESEARCH (Brave Search + Hermes LLM)
+// AI RESEARCH (Brave Search + GLM LLM)
 // ═══════════════════════════════════════════════════════════════
 
 async function generateAIResearch() {

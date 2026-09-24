@@ -1,11 +1,11 @@
 # backend/extract_topics.py
-"""Extract topics from contract descriptions using Dolphin3 via Ollama."""
+"""Extract topics from contract descriptions using GLM-5.3 via OpenRouter."""
 import argparse
 import asyncio
 import json
 import sqlite3
 from typing import AsyncGenerator
-from backend.ollama_client import OllamaClient
+from backend.glm_client import GLMClient
 
 EXTRACT_PROMPT = """Extract 1-3 specific technical topics from this DOE contract description.
 Return ONLY a JSON array of objects with "topic" (short name) and "description" (one sentence).
@@ -45,7 +45,7 @@ def create_topics_db(path: str):
 async def extract_topics_batch(
     db_path: str,
     topics_db_path: str,
-    ollama: OllamaClient,
+    llm: GLMClient,
     batch_size: int = 100,
     limit: int | None = None,
 ) -> dict:
@@ -79,7 +79,7 @@ async def extract_topics_batch(
         for key, description in batch:
             try:
                 prompt = EXTRACT_PROMPT.format(description=description[:500])
-                response = await ollama.generate(prompt)
+                response = await llm.generate(prompt)
                 topics = json.loads(response)
                 if not isinstance(topics, list):
                     topics = []
@@ -121,12 +121,12 @@ async def extract_topics_batch(
 
 
 async def extract_topics_stream(
-    db_path: str, topics_db_path: str, ollama: OllamaClient,
+    db_path: str, topics_db_path: str, llm: GLMClient,
     batch_size: int = 100, limit: int | None = None,
 ) -> AsyncGenerator[dict, None]:
     """Streaming version for SSE endpoint."""
     yield {"event": "phase", "data": {"phase": "extracting"}}
-    stats = await extract_topics_batch(db_path, topics_db_path, ollama, batch_size, limit)
+    stats = await extract_topics_batch(db_path, topics_db_path, llm, batch_size, limit)
     yield {"event": "done", "data": stats}
 
 
@@ -136,12 +136,12 @@ if __name__ == "__main__":
     parser.add_argument("--topics-db", default="topics.db")
     parser.add_argument("--batch-size", type=int, default=100)
     parser.add_argument("--limit", type=int, default=None)
-    parser.add_argument("--ollama-host", default="http://localhost:11434")
-    parser.add_argument("--model", default="dolphin3")
     args = parser.parse_args()
 
-    ollama = OllamaClient(base_url=args.ollama_host, model=args.model)
+    llm = GLMClient()
+    if not llm.is_available():
+        raise SystemExit("OPENROUTER_API_KEY is not set")
     stats = asyncio.run(extract_topics_batch(
-        args.db, args.topics_db, ollama, args.batch_size, args.limit
+        args.db, args.topics_db, llm, args.batch_size, args.limit
     ))
     print(f"Extraction complete: {stats}")
