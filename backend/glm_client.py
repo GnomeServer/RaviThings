@@ -7,6 +7,24 @@ from typing import AsyncGenerator
 import httpx
 
 
+def parse_structured_message(message: dict) -> dict:
+    """Return the JSON object in a completion message.
+
+    GLM-5.3 spends output tokens on reasoning before ``content``. If that
+    budget is exhausted, ``content`` is null and ``json.loads`` raises
+    TypeError. Treat that as a failed structured call.
+    """
+    raw = message.get("content") if isinstance(message, dict) else None
+    if isinstance(raw, (bytes, bytearray)):
+        raw = raw.decode()
+    if not isinstance(raw, str) or not raw.strip():
+        raise ValueError(
+            "structured output content empty "
+            f"(got {type(raw).__name__}); reasoning likely consumed max_tokens"
+        )
+    return json.loads(raw)
+
+
 class GLMClient:
     """Async client for the GLM-5.3 reasoning model.
 
@@ -33,6 +51,30 @@ class GLMClient:
             "Content-Type": "application/json",
             "X-Title": "OSINT Atlas",
         }
+
+    def _completion_body(
+        self,
+        messages: list[dict],
+        max_tokens: int,
+        *,
+        stream: bool,
+        reasoning_effort: str | None = None,
+        response_format: dict | None = None,
+    ) -> dict:
+        body: dict = {
+            "model": self.model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "stream": stream,
+        }
+        # Reasoning tokens count against max_tokens. Default effort on
+        # GLM-5.3 is "max", which can consume the whole budget and leave
+        # content null. Callers that need a visible answer pass a lower effort.
+        if reasoning_effort:
+            body["reasoning"] = {"effort": reasoning_effort}
+        if response_format is not None:
+            body["response_format"] = response_format
+        return body
 
     # ------------------------------------------------------------------
     # Non-streaming chat completion
@@ -68,7 +110,10 @@ class GLMClient:
     # ------------------------------------------------------------------
 
     async def chat_stream(
-        self, messages: list[dict], max_tokens: int = 4096
+        self,
+        messages: list[dict],
+        max_tokens: int = 4096,
+        reasoning_effort: str | None = None,
     ) -> AsyncGenerator[str, None]:
         """Streaming chat completion. Yields content strings.
 
@@ -84,12 +129,12 @@ class GLMClient:
                 "POST",
                 f"{self.base_url}/chat/completions",
                 headers=self._headers(),
-                json={
-                    "model": self.model,
-                    "messages": messages,
-                    "max_tokens": max_tokens,
-                    "stream": True,
-                },
+                json=self._completion_body(
+                    messages,
+                    max_tokens,
+                    stream=True,
+                    reasoning_effort=reasoning_effort,
+                ),
             ) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
@@ -124,19 +169,28 @@ class GLMClient:
     # ------------------------------------------------------------------
 
     async def chat_structured(
-        self, messages: list[dict], schema: dict, max_tokens: int = 4096
+        self,
+        messages: list[dict],
+        schema: dict,
+        max_tokens: int = 4096,
+        reasoning_effort: str = "low",
     ) -> dict:
-        """Chat with structured JSON output. Returns parsed dict."""
+        """Chat with structured JSON output. Returns parsed dict.
+
+        Defaults to low reasoning effort. Structured calls only need a
+        short JSON object; max effort spends the token cap on reasoning
+        and returns ``content: null``.
+        """
         async with httpx.AsyncClient(timeout=300.0) as client:
             resp = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers=self._headers(),
-                json={
-                    "model": self.model,
-                    "messages": messages,
-                    "max_tokens": max_tokens,
-                    "stream": False,
-                    "response_format": {
+                json=self._completion_body(
+                    messages,
+                    max_tokens,
+                    stream=False,
+                    reasoning_effort=reasoning_effort,
+                    response_format={
                         "type": "json_schema",
                         "json_schema": {
                             "name": "structured_output",
@@ -144,12 +198,16 @@ class GLMClient:
                             "schema": schema,
                         },
                     },
-                },
+                ),
             )
             resp.raise_for_status()
             data = resp.json()
-            raw = data["choices"][0]["message"]["content"]
-            return json.loads(raw)
+            choice = (data.get("choices") or [{}])[0]
+            try:
+                return parse_structured_message(choice.get("message") or {})
+            except ValueError as e:
+                finish = choice.get("finish_reason")
+                raise ValueError(f"{e} (finish_reason={finish})") from e
 
     # ------------------------------------------------------------------
     # Availability check

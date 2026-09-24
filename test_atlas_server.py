@@ -143,12 +143,19 @@ def get_retriever():
     _retriever_init_attempted = True
     try:
         from backend.hybrid_retriever import HybridRetriever
-        try:
-            from backend.graph_engine import GraphEngine
-            graph = GraphEngine()  # loads pickle from default location
-        except Exception as e:
-            print(f"[atlas-chat] graph engine unavailable, continuing without graph lane: {e}")
-            graph = None
+        graph = None
+        graph_path = os.environ.get("GRAPH_PATH", str(BASE / "graph.pkl"))
+        if graph_path and os.path.exists(graph_path):
+            try:
+                from backend.graph_engine import GraphEngine
+                # No embed_fn: encoding every node label runs on the request
+                # path and can blow the 90s frontend timeout. search_nodes
+                # falls back to substring match without embeddings.
+                graph = GraphEngine(graph_path)
+            except Exception as e:
+                print(f"[atlas-chat] graph engine unavailable, continuing without graph lane: {e}")
+        else:
+            print(f"[atlas-chat] graph pickle not found at {graph_path}, continuing without graph lane")
         retriever = HybridRetriever(
             db_path=str(BASE / "doe_contracts.db"),
             graph_engine=graph,
@@ -1286,7 +1293,7 @@ async def atlas_chat(req: AtlasChatRequest):
                 yield f"data: {json.dumps({'type': 'error', 'message': error_message})}\n\n"
                 yield "data: [DONE]\n\n"
                 return
-            gen = llm.chat_stream(messages)
+            gen = llm.chat_stream(messages, max_tokens=8192, reasoning_effort="low")
             async for token in gen:
                 response_parts.append(token)
                 text_so_far = "".join(response_parts)

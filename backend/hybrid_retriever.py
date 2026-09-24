@@ -75,7 +75,11 @@ class HybridRetriever:
         """Semantic search via ChromaDB using Ollama embeddings. Returns ranked contract keys."""
         if not self.chroma_collection or not self.ollama:
             return []
-        embedding = self.ollama.embed_sync([query])[0]
+        try:
+            embedding = self.ollama.embed_sync([query])[0]
+        except Exception as e:
+            print(f"[hybrid] vector lane unavailable, continuing without it: {e}")
+            return []
         results = self.chroma_collection.query(
             query_embeddings=[embedding], n_results=limit
         )
@@ -138,6 +142,12 @@ class HybridRetriever:
         graph = self.graph_engine.graph
         if graph.ecount() == 0:
             return []
+        # Embedding every edge is a per-request scan. The production graph
+        # is ~72k edges; doing that here crashed chat (Edge has no .get)
+        # and would stall the console even after the attribute fix.
+        # Keyword + graph traversal cover this query until an edge index exists.
+        if graph.ecount() > 2000:
+            return []
 
         # Collect edge descriptions (edge_type + source/target labels)
         edge_texts = []
@@ -146,7 +156,8 @@ class HybridRetriever:
             e = graph.es[idx]
             src = graph.vs[e.source]
             tgt = graph.vs[e.target]
-            desc = f"{src['label']} -- {e.get('edge_type', 'related')} -- {tgt['label']}"
+            edge_type = e.attributes().get("edge_type") or "related"
+            desc = f"{src['label']} -- {edge_type} -- {tgt['label']}"
             edge_texts.append(desc)
             edge_indices.append(idx)
 
@@ -186,7 +197,7 @@ class HybridRetriever:
             e = graph.es[edge_indices[idx]]
             for vid in [e.source, e.target]:
                 v = graph.vs[vid]
-                if v.get("type") == "recipient":
+                if v["type"] == "recipient":
                     recipient_names.add(v["label"])
 
         if not recipient_names:
@@ -205,13 +216,25 @@ class HybridRetriever:
 
     def search(self, query: str, n_results: int = 15, use_reranker: bool = True) -> HybridResults:
         """Full hybrid search with 4-lane RRF fusion and optional reranking."""
-        # 1. Four-lane retrieval
+        # 1. Four-lane retrieval. One dead lane must not drop the others.
         vector_keys = self.search_vector(query, limit=20)
-        keyword_results = self.search_keyword(query, limit=20)
+        try:
+            keyword_results = self.search_keyword(query, limit=20)
+        except Exception as e:
+            print(f"[hybrid] keyword lane unavailable, continuing without it: {e}")
+            keyword_results = []
         keyword_keys = [r["contract_transaction_unique_key"] for r in keyword_results]
-        graph_result = self.search_graph(query, hops=1)
+        try:
+            graph_result = self.search_graph(query, hops=1)
+        except Exception as e:
+            print(f"[hybrid] graph lane unavailable, continuing without it: {e}")
+            graph_result = {"contracts": [], "paths": {"nodes": [], "edges": []}}
         graph_keys = graph_result["contracts"]
-        relationship_keys = self.search_relationships(query, limit=20)
+        try:
+            relationship_keys = self.search_relationships(query, limit=20)
+        except Exception as e:
+            print(f"[hybrid] relationship lane unavailable, continuing without it: {e}")
+            relationship_keys = []
 
         # 2. Build ranked lists for RRF (4 lanes)
         rankings = {}  # key -> {source: rank}

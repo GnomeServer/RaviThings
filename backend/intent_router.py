@@ -108,6 +108,9 @@ async def classify_intent(
     On any failure (network, malformed JSON, etc.), returns a safe default of
     intent='entity_narrative' with confidence 0.0 — this routes the query through
     the retrieval path, which is the most generally-useful fallback.
+
+    max_tokens must cover reasoning plus the JSON object. GLM-5.3 counts
+    reasoning against the same cap; 500 left ``content`` null in production.
     """
     messages = [
         {"role": "system", "content": _INTENT_SYSTEM_PROMPT},
@@ -120,7 +123,7 @@ async def classify_intent(
     messages.append({"role": "user", "content": query})
 
     try:
-        raw = await llm.chat_structured(messages, INTENT_SCHEMA, max_tokens=500)
+        raw = await llm.chat_structured(messages, INTENT_SCHEMA, max_tokens=2048)
         return IntentClassification(**raw)
     except Exception as e:
         print(f"[intent_router] classification failed, defaulting to entity_narrative: {e}")
