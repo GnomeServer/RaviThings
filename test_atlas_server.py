@@ -622,7 +622,7 @@ Provide a complete defensive analysis of this specific step."""
                 ]
 
                 try:
-                    raw = await llm.chat(messages, max_tokens=4096)
+                    raw = await llm.chat(messages, max_tokens=None, reasoning_effort="low")
                     json_str = raw
                     if "```json" in raw:
                         json_str = raw.split("```json")[1].split("```")[0]
@@ -819,7 +819,7 @@ Provide a complete defensive analysis of this specific step."""
 
     if llm.is_available():
         try:
-            raw = await llm.chat(messages, max_tokens=4096)
+            raw = await llm.chat(messages, max_tokens=None, reasoning_effort="low")
             # Parse JSON from response
             json_str = raw
             if "```json" in raw:

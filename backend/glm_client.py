@@ -24,6 +24,24 @@ def parse_structured_message(message: dict) -> dict:
         )
     return json.loads(raw)
 
+def message_text(message: dict, *, finish_reason: str | None = None) -> str:
+    """Return visible completion text.
+
+    GLM-5.3 can spend the whole output budget on reasoning and return
+    ``content: null``. Callers must not treat that as a string.
+    """
+    raw = message.get("content") if isinstance(message, dict) else None
+    if isinstance(raw, (bytes, bytearray)):
+        raw = raw.decode()
+    if not isinstance(raw, str) or not raw.strip():
+        raise ValueError(
+            "model returned empty content "
+            f"(got {type(raw).__name__}, finish_reason={finish_reason}); "
+            "reasoning likely consumed max_tokens"
+        )
+    return raw
+
+
 
 class GLMClient:
     """Async client for the GLM-5.3 reasoning model.
@@ -55,7 +73,7 @@ class GLMClient:
     def _completion_body(
         self,
         messages: list[dict],
-        max_tokens: int,
+        max_tokens: int | None,
         *,
         stream: bool,
         reasoning_effort: str | None = None,
@@ -64,12 +82,13 @@ class GLMClient:
         body: dict = {
             "model": self.model,
             "messages": messages,
-            "max_tokens": max_tokens,
             "stream": stream,
         }
-        # Reasoning tokens count against max_tokens. Default effort on
-        # GLM-5.3 is "max", which can consume the whole budget and leave
-        # content null. Callers that need a visible answer pass a lower effort.
+        # None means no output cap. Reasoning tokens still count against
+        # whatever cap the provider applies, so uncapped callers should
+        # pass a low reasoning effort or content can still come back null.
+        if max_tokens is not None:
+            body["max_tokens"] = max_tokens
         if reasoning_effort:
             body["reasoning"] = {"effort": reasoning_effort}
         if response_format is not None:
@@ -80,24 +99,41 @@ class GLMClient:
     # Non-streaming chat completion
     # ------------------------------------------------------------------
 
-    async def chat(self, messages: list[dict], max_tokens: int = 4096) -> str:
-        """Non-streaming chat completion. Returns full response text."""
-        # 300s: GLM-5.3 reasons before answering; long synthesis calls
-        # can exceed a 2-minute budget.
-        async with httpx.AsyncClient(timeout=300.0) as client:
+    async def chat(
+        self,
+        messages: list[dict],
+        max_tokens: int | None = 4096,
+        reasoning_effort: str | None = None,
+    ) -> str:
+        """Non-streaming chat completion. Returns full response text.
+
+        ``max_tokens=None`` omits the cap. Uncapped calls default to low
+        reasoning effort so the provider's own ceiling is not spent on
+        reasoning before the answer.
+        """
+        effort = reasoning_effort
+        if max_tokens is None and effort is None:
+            effort = "low"
+        # Uncapped analysis can run longer than a normal completion.
+        timeout = 600.0 if max_tokens is None else 300.0
+        async with httpx.AsyncClient(timeout=timeout) as client:
             resp = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers=self._headers(),
-                json={
-                    "model": self.model,
-                    "messages": messages,
-                    "max_tokens": max_tokens,
-                    "stream": False,
-                },
+                json=self._completion_body(
+                    messages,
+                    max_tokens,
+                    stream=False,
+                    reasoning_effort=effort,
+                ),
             )
             resp.raise_for_status()
             data = resp.json()
-            return data["choices"][0]["message"]["content"]
+            choice = (data.get("choices") or [{}])[0]
+            return message_text(
+                choice.get("message") or {},
+                finish_reason=choice.get("finish_reason"),
+            )
 
     async def generate(self, prompt: str, max_tokens: int = 4096) -> str:
         """Single-prompt completion. Returns full response text."""
