@@ -1,0 +1,66 @@
+{
+  "name": "@starzl/sirocco",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sirocco, the Starzl Enterprises interface system: design tokens, bundled fonts, base styles, components, telemetry instruments, icons and markup snippets in plain CSS.",
+  "keywords": [
+    "starzl",
+    "sirocco",
+    "design-system",
+    "css",
+    "design-tokens"
+  ],
+  "style": "sirocco.css",
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "sirocco.css",
+    "tokens.json",
+    "css/",
+    "fonts/",
+    "icons/",
+    "snippets/",
+    "assets/",
+    "examples/",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./sirocco.css",
+    "./sirocco.css": "./sirocco.css",
+    "./tokens.json": "./tokens.json",
+    "./css/*": "./css/*",
+    "./fonts/*": "./fonts/*",
+    "./icons/*": "./icons/*",
+    "./snippets/*": "./snippets/*",
+    "./assets/*": "./assets/*",
+    "./package.json": "./package.json"
+  },
+  "license": "UNLICENSED",
+  "bundledFonts": [
+    {
+      "family": "Space Grotesk",
+      "weights": "300-700",
+      "license": "OFL-1.1",
+      "licenseFile": "fonts/OFL-SpaceGrotesk.txt"
+    },
+    {
+      "family": "Space Mono",
+      "weights": "400, 700",
+      "license": "OFL-1.1",
+      "licenseFile": "fonts/OFL-SpaceMono.txt"
+    },
+    {
+      "family": "Inter",
+      "weights": "100-900",
+      "license": "OFL-1.1",
+      "licenseFile": "fonts/OFL-Inter.txt"
+    },
+    {
+      "family": "Newsreader",
+      "weights": "200-800, roman and italic",
+      "license": "OFL-1.1",
+      "licenseFile": "fonts/OFL-Newsreader.txt"
+    }
+  ]
+}
