@@ -23,7 +23,7 @@ npm run tauri dev
 
 Selecting an entity looks up its street address with Google Geocoding. An unambiguous building outline is highlighted in gold with a translucent fill over the 3D map. Hide keeps it; changing or clearing the selection removes it. Nearby previews keep the origin's outline.
 
-The **Building footprint** chip opens **Google source and match** in the dossier. Use **Frame building** to center the camera on the matched building at its 3D surface height. This does not change the catalog location or the origin of Nearby results.
+The **Building footprint** chip opens **Google source and match** in the dossier. Use **Frame building** to focus the matched building at its 3D surface height and begin one 40-second orbit. This does not change the catalog location or the origin of Nearby results.
 
 A building footprint is **not a parcel or ownership boundary**. If the catalog has no street address, a returned building must contain the mapped point. Ambiguous destinations, campus grounds, nearby landmarks, missing outlines, and lookup failures are not replaced with guessed rectangles or proximity circles.
 
@@ -31,20 +31,30 @@ The existing Google key must have **Geocoding API** enabled and allowed by its A
 
 The workspace docks beside the map on wide windows and becomes a bottom sheet below 1100 px. **Expand** reserves a 72 px map-and-credits strip; **Collapse** restores the map area. The native minimum window size is 480×560.
 
+### Inspect and orbit
+
+Use **Inspect** or **Frame building** for a close-up followed by one gentle, 40-second aerial revolution. **Orbit** explicitly starts another revolution after either close-up action. These views use the interactive Google Photorealistic **3D Tiles**, not the prerecorded Google Aerial View video API.
+
+Inspect and Orbit target the selected building footprint when a match is already available; otherwise they use the selected coordinates. Close-up and Site views use the actual Google tile surface height. If that height is unavailable, camera motion stops and a message explains the failure. Site, Region, and Nearby endpoint framing use the requested coordinates; a Nearby endpoint does not inherit the origin's building outline.
+
+While the camera is preparing or orbiting, **Stop** is directly available beside the map. In an expanded workspace, it moves to the workspace header so the map attribution stays clear. You can also stop by pressing **Escape**, pressing or touching the map, or scrolling over it. Your first map gesture still works normally. Stopping keeps your dossier, connections, and selection open; another Escape follows the dismissal order below.
+
+Another camera command, changing or clearing the selection, opening the command palette, enabling reduced motion, or unloading the map also cancels current and pending camera movement. The orbit ends after one revolution and never resumes automatically after interruption. Selecting an entity, using Site or Region, zooming closer, loading tiles, or receiving a footprint match does not start an orbit. With reduced motion enabled, close-up actions focus the subject without orbiting.
+
 ### Keyboard
 
 | Key | Action |
 | --- | --- |
 | Cmd/Ctrl+K | Open the command palette. |
 | Up/Down, Home/End, Enter | Choose a palette option while keeping input focus. |
-| Escape | Dismiss the palette, visible step detail, proximity preview/connections, workspace, selection, or orbit, in that order. |
+| Escape | Stop current or pending camera motion first. Otherwise dismiss the palette, visible step detail, proximity preview/connections, workspace, or selection, in that order. |
 | 1 / 2 / 3 | Select Exposure / Nearby / Kill chain in a visible dossier. |
 | Left/Right, Home/End | Move between dossier tabs when a tab has focus. |
 | p / f | Pin the selected entity / frame its site. |
 | [ / ] | Cycle the nearby radius. |
 | j / k | Move between generated steps in the visible Kill chain tab. |
 
-Dossier shortcuts do not run while typing in a field. Orbit requires Inspect first; reduced motion disables Orbit and stops one already running. Search, result lists, and Nearby rows provide alternatives to selecting map symbols.
+Dossier shortcuts do not run while typing in a field. Search, result lists, and Nearby rows provide alternatives to selecting map symbols.
 
 ## Services and unavailable states
 

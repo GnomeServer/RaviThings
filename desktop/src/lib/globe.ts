@@ -102,6 +102,7 @@ export async function mountGlobe(
     onHover: (hit: { name: string; x: number; y: number; severity: string } | null) => void;
     onThread: (hit: { id: string; kind: string; name: string; lat: number; lon: number; distanceKm: number }) => void;
     onOrbitChange: (active: boolean) => void;
+    onUserInteraction: () => void;
   },
   palette: AtlasPalette,
 ) {
@@ -123,11 +124,59 @@ export async function mountGlobe(
     creditContainer: credits,
   });
   viewer.targetFrameRate = 60;
+  viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
   viewer.scene.requestRenderMode = false;
   viewer.camera.setView({
     destination: Cesium.Cartesian3.fromDegrees(-98.5, 39.5, 8_000_000),
   });
 
+  // Input can arrive while the real tileset factory is still pending. Initialize
+  // everything stopOrbit reads before installing the capture listeners.
+  type Motion = {
+    generation: number;
+    geometry: CesiumNS.BoundingSphere | null;
+    cancelled: Promise<void>;
+    cancel: () => void;
+  };
+  let disposed = false;
+  let motionGeneration = 0;
+  let motion: Motion | null = null;
+  let orbitFrame = 0;
+  let orbiting = false;
+  let orbitAnnounced = false;
+  function stopOrbit() {
+    motionGeneration += 1;
+    const previous = motion;
+    motion = null;
+    previous?.cancel();
+    if (orbitFrame) cancelAnimationFrame(orbitFrame);
+    orbitFrame = 0;
+    // Cancel before Cesium receives the initiating gesture: flight cancellation
+    // restores screenSpaceCameraController.enableInputs synchronously.
+    if (!viewer.isDestroyed()) {
+      viewer.camera.cancelFlight();
+      // No offset means _setTransform preserves position/direction/up in world space.
+      viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+    }
+    orbiting = false;
+    if (orbitAnnounced) {
+      orbitAnnounced = false;
+      hooks.onOrbitChange(false);
+    }
+  }
+  const onUserInteraction = () => {
+    if (disposed) return;
+    stopOrbit();
+    hooks.onUserInteraction();
+  };
+  const removeInteractionListeners = () => {
+    container.removeEventListener("pointerdown", onUserInteraction, true);
+    container.removeEventListener("wheel", onUserInteraction, true);
+  };
+  container.addEventListener("pointerdown", onUserInteraction, { capture: true, passive: true });
+  container.addEventListener("wheel", onUserInteraction, { capture: true, passive: true });
+
+  try {
   let tilesetError = "";
   let photoreal: CesiumNS.Cesium3DTileset | undefined;
   try {
@@ -238,9 +287,7 @@ export async function mountGlobe(
   let threadEntities: CesiumNS.Entity[] = [];
   const buildingPrimitives: (CesiumNS.GroundPrimitive | CesiumNS.GroundPolylinePrimitive)[] = [];
   let buildingSphere: CesiumNS.BoundingSphere | null = null;
-  let buildingGeneration = 0;
-  let orbitFrame = 0;
-  let orbiting = false;
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let contractors: ContractorRec[] = [];
   let cameraMoving = false;
   let clampGen = 0;
@@ -398,7 +445,6 @@ export async function mountGlobe(
   }
 
   let overlayDirty = true;
-  let disposed = false;
   let lastW = 0;
   let lastH = 0;
   let lastDpr = 0;
@@ -654,41 +700,140 @@ export async function mountGlobe(
     invalidateOverlay();
   }
 
-  function stopOrbit() {
-    // A newer camera command supersedes a pending building-height lookup.
-    buildingGeneration += 1;
-    if (orbitFrame) cancelAnimationFrame(orbitFrame);
-    orbitFrame = 0;
-    if (orbiting) {
-      orbiting = false;
-      hooks.onOrbitChange(false);
-    }
-    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-  }
-
   function flyDuration() {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1.2;
+    return reducedMotion.matches ? 0 : 1.2;
   }
 
-  function frame(mode: "region" | "site" | "inspect", lon: number, lat: number) {
-    stopOrbit();
-    const range = mode === "region" ? 80_000 : mode === "site" ? 2_500 : 450;
-    const pitch = mode === "region" ? -90 : mode === "site" ? -45 : -35;
-    const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ? 0
-      : mode === "region" ? 0.7 : mode === "site" ? 0.45 : 0.35;
-    const heading = mode === "inspect" ? viewer.camera.heading : 0;
-    viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(Cesium.Cartesian3.fromDegrees(lon, lat, 0), 1), {
-      offset: new Cesium.HeadingPitchRange(heading, Cesium.Math.toRadians(pitch), range),
-      duration,
-    });
+  function currentMotion(request: Motion) {
+    return !disposed && request.generation === motionGeneration && motion === request;
   }
+
+  function beginMotion(geometry: CesiumNS.BoundingSphere | null, autoOrbit: boolean): Motion | null {
+    stopOrbit();
+    if (disposed) return null;
+    let cancel!: () => void;
+    const cancelled = new Promise<void>((resolve) => { cancel = resolve; });
+    const request = { generation: motionGeneration, geometry, cancelled, cancel };
+    motion = request;
+    if (autoOrbit && !reducedMotion.matches) {
+      orbitAnnounced = true;
+      hooks.onOrbitChange(true);
+    }
+    return request;
+  }
+
+  async function surfaceCenter(request: Motion, point: Cartesian3): Promise<Cartesian3 | null> {
+    if (!currentMotion(request)) return null;
+    if (!photoreal || !viewer.scene.clampToHeightSupported) {
+      throw new Error("Surface height is unavailable. Try again after the 3D tiles load.");
+    }
+    // Snapshot exclusions and clone the input: clamp mutates its positions array.
+    // Cancellation settles immediately even if the tile query is still pending.
+    const clamped = await Promise.race([
+      viewer.scene.clampToHeightMostDetailed([Cesium.Cartesian3.clone(point)], [...buildingPrimitives], 10),
+      request.cancelled.then(() => null),
+    ]);
+    if (!currentMotion(request)) return null;
+    const center = clamped?.[0];
+    if (!center || !Number.isFinite(center.x) || !Number.isFinite(center.y) || !Number.isFinite(center.z)) {
+      throw new Error("Surface height is unavailable. Try again after the 3D tiles load.");
+    }
+    return center;
+  }
+
+  async function focusFlight(
+    request: Motion,
+    sphere: CesiumNS.BoundingSphere,
+    offset: CesiumNS.HeadingPitchRange,
+    duration: number,
+  ): Promise<boolean> {
+    if (!currentMotion(request)) return false;
+    const completed = await Promise.race([
+      new Promise<boolean>((resolve) => {
+        viewer.camera.flyToBoundingSphere(sphere, {
+          offset,
+          duration,
+          complete: () => resolve(currentMotion(request)),
+          cancel: () => resolve(false),
+        });
+      }),
+      request.cancelled.then(() => false),
+    ]);
+    return completed && currentMotion(request);
+  }
+
+  function startOrbit(request: Motion, center: Cartesian3, offset: CesiumNS.HeadingPitchRange) {
+    if (!currentMotion(request)) return;
+    if (reducedMotion.matches) {
+      stopOrbit();
+      return;
+    }
+    orbiting = true;
+    const heading0 = viewer.camera.heading;
+    const started = performance.now();
+    const step = (now: number) => {
+      if (!currentMotion(request)) return;
+      const u = Math.min(1, (now - started) / 40_000);
+      offset.heading = heading0 + u * Math.PI * 2;
+      viewer.camera.lookAt(center, offset);
+      if (u < 1) orbitFrame = requestAnimationFrame(step);
+      else stopOrbit();
+    };
+    orbitFrame = requestAnimationFrame(step);
+  }
+
+  async function focus(
+    mode: "region" | "site" | "inspect",
+    lon: number,
+    lat: number,
+    geometry: CesiumNS.BoundingSphere | null,
+  ): Promise<void> {
+    const closeUp = mode === "inspect";
+    const request = beginMotion(geometry, closeUp);
+    if (!request) return;
+    try {
+      const target = geometry?.center ?? Cesium.Cartesian3.fromDegrees(lon, lat);
+      const center = mode === "region" ? target : await surfaceCenter(request, target);
+      if (!currentMotion(request) || !center) return;
+      const radius = geometry?.radius ?? 1;
+      const range = geometry ? Math.max(radius * 4, 140) : mode === "region" ? 80_000 : mode === "site" ? 2_500 : 450;
+      const pitch = geometry ? -45 : mode === "region" ? -90 : mode === "site" ? -45 : -35;
+      const offset = new Cesium.HeadingPitchRange(closeUp ? viewer.camera.heading : 0, Cesium.Math.toRadians(pitch), range);
+      const duration = reducedMotion.matches ? 0 : geometry ? flyDuration() : mode === "region" ? 0.7 : mode === "site" ? 0.45 : 0.35;
+      const completed = await focusFlight(request, new Cesium.BoundingSphere(center, radius), offset, duration);
+      if (!currentMotion(request)) return;
+      if (completed && closeUp && !reducedMotion.matches) startOrbit(request, center, offset);
+      else stopOrbit();
+    } catch (error) {
+      if (!currentMotion(request)) return;
+      stopOrbit();
+      throw error;
+    }
+  }
+
+  function frame(mode: "region" | "site" | "inspect", lon: number, lat: number): Promise<void> {
+    // Capture geometry now. A later footprint must not retarget a coordinate focus.
+    return focus(mode, lon, lat, mode === "inspect" ? buildingSphere : null);
+  }
+
+  const onReducedMotion = () => {
+    if (reducedMotion.matches) stopOrbit();
+  };
+  reducedMotion.addEventListener("change", onReducedMotion);
 
   viewer.screenSpaceEventHandler.setInputAction((click: { position: Cartesian2 }) => {
     const hit = overlayHit(click.position) ?? asHit((viewer.scene.pick(click.position) as { id?: unknown } | undefined)?.id);
     if (!hit) return;
     if (hit.atlasKind === "cluster") {
-      frame("site", hit.lon, hit.lat);
+      const pending = frame("site", hit.lon, hit.lat);
+      const generation = motionGeneration;
+      const { x, y } = click.position;
+      void pending.catch(() => {
+        // A current failure stops its own generation; newer input must not show stale feedback.
+        if (!disposed && motionGeneration === generation + 1) {
+          hooks.onHover({ name: "Surface height unavailable. Try again after the 3D tiles load.", x, y, severity: "" });
+        }
+      });
       return;
     }
     if (hit.atlasKind === "thread") {
@@ -752,7 +897,7 @@ export async function mountGlobe(
   }
 
   function clearBuildingFootprint() {
-    buildingGeneration += 1;
+    if (buildingSphere && motion?.geometry === buildingSphere) stopOrbit();
     buildingSphere = null;
     if (buildingPrimitives.length === 0) return;
     for (const primitive of buildingPrimitives) viewer.scene.groundPrimitives.remove(primitive);
@@ -804,19 +949,13 @@ export async function mountGlobe(
     invalidateOverlay();
   }
 
-  async function frameBuildingFootprint() {
-    if (disposed || !buildingSphere) return;
-    stopOrbit();
-    const generation = buildingGeneration;
-    const radius = buildingSphere.radius;
-    const clamped = await viewer.scene.clampToHeightMostDetailed([buildingSphere.center], buildingPrimitives, 10);
-    if (disposed || generation !== buildingGeneration) return;
-    const center = clamped[0];
-    if (!center) throw new Error("Building surface height is unavailable. Try framing again after the tiles load.");
-    viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(center, radius), {
-      offset: new Cesium.HeadingPitchRange(viewer.camera.heading, Cesium.Math.toRadians(-45), Math.max(radius * 4, 140)),
-      duration: flyDuration(),
-    });
+  async function frameBuildingFootprint(): Promise<void> {
+    if (disposed) return;
+    if (!buildingSphere) {
+      stopOrbit();
+      throw new Error("No matched building footprint is available.");
+    }
+    return focus("inspect", 0, 0, buildingSphere);
   }
 
   return {
@@ -836,6 +975,7 @@ export async function mountGlobe(
       applyVisibility();
     },
     clearSelect() {
+      stopOrbit();
       clearBuildingFootprint();
       selectedId = "";
       applyVisibility();
@@ -879,7 +1019,10 @@ export async function mountGlobe(
     },
     select(kind: string, id: string) {
       const nextId = `${kind}:${id}`;
-      if (selectedId !== nextId) clearBuildingFootprint();
+      if (selectedId !== nextId) {
+        stopOrbit();
+        clearBuildingFootprint();
+      }
       selectedId = nextId;
       applyVisibility();
     },
@@ -1034,6 +1177,7 @@ export async function mountGlobe(
     },
     flyToIds(ids: number[]) {
       stopOrbit();
+      if (disposed) return;
       const want = new Set(ids);
       const positions = contractors.filter((rec) => want.has(rec.id)).map((rec) => rec.position);
       if (positions.length === 0) return;
@@ -1041,29 +1185,13 @@ export async function mountGlobe(
     },
     flyToPositions(points: { lon: number; lat: number }[]) {
       stopOrbit();
+      if (disposed) return;
       if (points.length === 0) return;
       const positions = points.map((point) => Cesium.Cartesian3.fromDegrees(point.lon, point.lat));
       viewer.camera.flyToBoundingSphere(Cesium.BoundingSphere.fromPoints(positions), { duration: flyDuration() });
     },
-    orbit(lon: number, lat: number) {
-      stopOrbit();
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        hooks.onOrbitChange(false);
-        return;
-      }
-      orbiting = true;
-      hooks.onOrbitChange(true);
-      const center = Cesium.Cartesian3.fromDegrees(lon, lat);
-      const heading0 = viewer.camera.heading;
-      const started = performance.now();
-      const step = (now: number) => {
-        if (disposed || !orbiting) return;
-        const u = Math.min(1, (now - started) / 40_000);
-        viewer.camera.lookAt(center, new Cesium.HeadingPitchRange(heading0 + u * Math.PI * 2, Cesium.Math.toRadians(-28), 700));
-        if (u < 1) orbitFrame = requestAnimationFrame(step);
-        else stopOrbit();
-      };
-      orbitFrame = requestAnimationFrame(step);
+    orbit(lon: number, lat: number): Promise<void> {
+      return frame("inspect", lon, lat);
     },
     setFlights(rows: Flight[]) {
       syncLive("flight", rows.map((row) => ({
@@ -1143,9 +1271,10 @@ export async function mountGlobe(
       stopOrbit();
       if (hoverRaf) cancelAnimationFrame(hoverRaf);
       if (clusterRaf) cancelAnimationFrame(clusterRaf);
-      if (orbitFrame) cancelAnimationFrame(orbitFrame);
       window.clearTimeout(clampTimer);
       container.removeEventListener("pointerleave", onLeave);
+      removeInteractionListeners();
+      reducedMotion.removeEventListener("change", onReducedMotion);
       viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
       viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.MOUSE_MOVE);
       for (const r of removers) {
@@ -1158,4 +1287,10 @@ export async function mountGlobe(
       viewer.destroy();
     },
   };
+  } catch (error) {
+    disposed = true;
+    removeInteractionListeners();
+    if (!viewer.isDestroyed()) viewer.destroy();
+    throw error;
+  }
 }

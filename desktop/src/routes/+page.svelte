@@ -110,6 +110,9 @@
   let sheetLayout = $state(false);
   let reducedMotion = $state(false);
   let orbitActive = $state(false);
+  let cameraPending = $state(false);
+  let cameraGeneration = 0;
+  let startupSiteFocus: { intent: number; lon: number; lat: number } | null = null;
   let activeFilter = $state<ActiveFilter | null>(null);
   let askLabel = $state("");
   let returnFocusId = "rail-map";
@@ -350,6 +353,55 @@
     orbitActive = active;
   }
 
+  function invalidateCameraIntent() {
+    cameraGeneration += 1;
+    startupSiteFocus = null;
+    cameraPending = false;
+    buildingFrameBusy = false;
+    orbitActive = false;
+  }
+
+  function stopCameraMotion() {
+    invalidateCameraIntent();
+    globe?.stopOrbit();
+  }
+
+  function beginCameraIntent() {
+    stopCameraMotion();
+    cameraError = "";
+    buildingFrameError = "";
+    cameraPending = true;
+    return cameraGeneration;
+  }
+
+  function cameraIntentCurrent(intent: number) {
+    return !disposed && intent === cameraGeneration;
+  }
+
+  async function runCameraIntent(
+    intent: number,
+    action: (mounted: NonNullable<typeof globe>) => void | Promise<void>,
+    buildingFrame = false,
+  ) {
+    const mounted = globe;
+    try {
+      await tick();
+      if (!cameraIntentCurrent(intent) || !mounted || !mapReady) return;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      if (!cameraIntentCurrent(intent) || mounted !== globe || !mapReady) return;
+      await action(mounted);
+    } catch (error) {
+      if (!cameraIntentCurrent(intent)) return;
+      if (buildingFrame) buildingFrameError = errorText(error);
+      else cameraError = `Camera focus failed: ${errorText(error)}`;
+    } finally {
+      if (cameraIntentCurrent(intent)) {
+        cameraPending = false;
+        if (buildingFrame) buildingFrameBusy = false;
+      }
+    }
+  }
+
   function clearBuildingFootprint() {
     buildingController?.abort();
     buildingController = null;
@@ -363,21 +415,11 @@
 
   async function frameBuilding() {
     if (!globe || buildingState !== "ready") return;
-    const epoch = selectionToken;
-    const mounted = globe;
+    const intent = beginCameraIntent();
     buildingFrameBusy = true;
-    buildingFrameError = "";
-    orbitReady = false;
+    orbitReady = true;
     sheetExpanded = false;
-    try {
-      await tick();
-      if (disposed || epoch !== selectionToken) return;
-      await mounted.frameBuildingFootprint();
-    } catch (error) {
-      if (!disposed && epoch === selectionToken) buildingFrameError = errorText(error);
-    } finally {
-      if (!disposed && epoch === selectionToken) buildingFrameBusy = false;
-    }
+    await runCameraIntent(intent, (mounted) => mounted.frameBuildingFootprint(), true);
   }
 
   $effect(() => {
@@ -626,6 +668,7 @@
   }
 
   function clearFilter(): void {
+    stopCameraMotion();
     askToken += 1;
     activeFilter = null;
     globe?.setCveFilter(null);
@@ -641,7 +684,8 @@
     };
     setLens("all");
     globe?.setCveFilter(cve.contractorIds);
-    if (mapReady) globe?.flyToIds(cve.contractorIds);
+    const intent = beginCameraIntent();
+    void runCameraIntent(intent, (mounted) => mounted.flyToIds(cve.contractorIds));
   }
 
   function queryLabel(question: string, value: string, radiusKm?: number) {
@@ -739,6 +783,7 @@
   }
 
   async function openFind() {
+    stopCameraMotion();
     returnFocusId = "atlas-search-trigger";
     paletteOpen = true;
   }
@@ -789,11 +834,10 @@
     }
     paletteOpen = false;
     clearFind();
-    void tick().then(async () => {
-      returnFocusId = "atlas-search-trigger";
-      if (runner) runner();
-      else if (hit) void openSelection(hit.kind, hit.id, hit.name, hit.lat, hit.lon, true);
-      await tick();
+    returnFocusId = "atlas-search-trigger";
+    if (runner) runner();
+    else if (hit) void openSelection(hit.kind, hit.id, hit.name, hit.lat, hit.lon, true);
+    void tick().then(() => {
       if (activeSurface) workspaceTitleEl?.focus();
       else document.getElementById("rail-map")?.focus();
     });
@@ -919,22 +963,22 @@
   }
 
   function frameEndpoint(point: { lat: number; lon: number }) {
+    const intent = beginCameraIntent();
     sheetExpanded = false;
-    const epoch = selectionToken;
-    void tick().then(() => requestAnimationFrame(() => {
-      if (!disposed && epoch === selectionToken && mapReady) globe?.frame("site", point.lon, point.lat);
-    }));
+    if (mapState === "loading") {
+      startupSiteFocus = { intent, lon: point.lon, lat: point.lat };
+      return;
+    }
+    void runCameraIntent(intent, (mounted) => mounted.frame("site", point.lon, point.lat));
   }
 
   function fitConnections() {
     if (!selected) return;
+    const intent = beginCameraIntent();
     sheetExpanded = false;
     const origin = { lat: selected.lat, lon: selected.lon };
     const links = threadLinks();
-    const epoch = selectionToken;
-    void tick().then(() => requestAnimationFrame(() => {
-      if (!disposed && epoch === selectionToken && mapReady) globe?.flyToPositions([origin, ...links]);
-    }));
+    void runCameraIntent(intent, (mounted) => mounted.flyToPositions([origin, ...links]));
   }
 
   type NearbyRow = Omit<ThreadLink, "lat" | "lon"> & { lat: number | null; lon: number | null; riskScore: number | null; riskSeverity: string };
@@ -996,6 +1040,7 @@
   }
 
   function openSelection(kind: string, id: string, name: string, lat: number, lon: number, site = true) {
+    stopCameraMotion();
     clearThreads();
     clearBuildingFootprint();
     const epoch = ++selectionToken;
@@ -1022,6 +1067,7 @@
   }
 
   function closeSelection() {
+    stopCameraMotion();
     const dossierVisible = activeSurface === "dossier";
     const restoreClearFocus = document.activeElement?.id === "atlas-selection-clear";
     clearThreads();
@@ -1037,7 +1083,6 @@
     nearbyError = "";
     orbitReady = false;
     clearKill();
-    globe?.stopOrbit();
     globe?.clearSelect();
     globe?.clearEllipse();
     focusFeed(null);
@@ -1079,6 +1124,7 @@
   }
 
   function openDam(dam: DamRisk) {
+    stopCameraMotion();
     clearThreads();
     clearBuildingFootprint();
     const epoch = ++selectionToken;
@@ -1125,23 +1171,20 @@
   function fly(mode: "region" | "site" | "inspect" | "orbit") {
     if (!mapReady) { setPanel("layers"); return; }
     if (!selected) return;
+    const intent = beginCameraIntent();
     sheetExpanded = false;
     const target = selected;
-    const epoch = selectionToken;
     if (mode !== "orbit") orbitReady = mode === "inspect";
-    void tick().then(() => requestAnimationFrame(() => {
-      if (disposed || epoch !== selectionToken) return;
-      if (mode === "orbit") globe?.orbit(target.lon, target.lat);
-      else globe?.frame(mode, target.lon, target.lat);
-    }));
+    void runCameraIntent(intent, (mounted) => mode === "orbit"
+      ? mounted.orbit(target.lon, target.lat)
+      : mounted.frame(mode, target.lon, target.lat));
   }
 
   function resetView() {
     sheetExpanded = false;
     if (!mapReady) { setPanel("layers"); return; }
-    void tick().then(() => requestAnimationFrame(() => {
-      if (!disposed) globe?.flyToIds(points.map((point) => point.id));
-    }));
+    const intent = beginCameraIntent();
+    void runCameraIntent(intent, (mounted) => mounted.flyToIds(points.map((point) => point.id)));
   }
 
   async function generateKill() {
@@ -1278,6 +1321,7 @@
   async function runAsk(question: string, value: string, lat?: number, lon?: number, radiusKm?: number, surface: "ask" | "sites" = "ask") {
     clearFilter();
     const token = ++askToken;
+    const intent = beginCameraIntent();
     askNote = "";
     askError = "";
     askResult = null;
@@ -1300,18 +1344,24 @@
       if (facilityQuery) {
         activeFilter = { source: surface === "sites" ? "sites" : "ask", label: askLabel, total: result.total, contractorIds: null };
         globe?.setCveFilter(null);
-        if (mapReady && facilities.length > 0) globe?.flyToPositions(facilities.map((hit) => ({ lon: hit.lon, lat: hit.lat })));
+        if (cameraIntentCurrent(intent) && facilities.length > 0) {
+          await runCameraIntent(intent, (mounted) => mounted.flyToPositions(facilities.map((hit) => ({ lon: hit.lon, lat: hit.lat }))));
+        }
       } else {
         const ids = contractors.map((hit) => Number(hit.id)).filter((id) => Number.isFinite(id));
         activeFilter = { source: "ask", label: askLabel, total: result.total, contractorIds: ids };
         globe?.setCveFilter(ids);
-        if (mapReady && ids.length > 0) globe?.flyToIds(ids);
+        if (cameraIntentCurrent(intent) && ids.length > 0) {
+          await runCameraIntent(intent, (mounted) => mounted.flyToIds(ids));
+        }
       }
     } catch (error) {
       if (token !== askToken) return;
       askError = errorText(error);
       activeFilter = null;
       globe?.setCveFilter(null);
+    } finally {
+      if (cameraIntentCurrent(intent)) cameraPending = false;
     }
   }
 
@@ -1380,7 +1430,7 @@
     };
     const onMotion = () => {
       reducedMotion = motionQuery.matches;
-      if (motionQuery.matches) globe?.stopOrbit();
+      if (motionQuery.matches) stopCameraMotion();
       drawThreads();
     };
     sheetQuery.addEventListener("change", onSheet);
@@ -1406,6 +1456,7 @@
         const key = await invoke<string>("google_maps_key");
         if (!current()) return;
         if (!key) {
+          stopCameraMotion();
           mapState = "missing-key";
           return;
         }
@@ -1418,8 +1469,9 @@
           },
           onCamera: (cam) => {
             if (!current() || !cameraReady) return;
+            const intent = cameraGeneration;
             void invoke("set_camera", cam).catch((error) => {
-              if (current()) cameraError = `Camera focus failed: ${errorText(error)}`;
+              if (current() && cameraIntentCurrent(intent)) cameraError = `Camera focus failed: ${errorText(error)}`;
             });
           },
           onHover: (hit) => { if (current()) hover = hit; },
@@ -1429,6 +1481,7 @@
             trace({ ...hit, kind });
           },
           onOrbitChange: (active) => { if (current()) onOrbitChange(active); },
+          onUserInteraction: () => { if (current()) invalidateCameraIntent(); },
         }, readAtlasPalette(root));
         if (!current()) {
           mounted.destroy();
@@ -1436,6 +1489,9 @@
         }
         globe = mounted;
         if (mounted.tilesetError) {
+          stopCameraMotion();
+          mounted.destroy();
+          globe = null;
           mapState = "error";
           mapError = `Google Photorealistic 3D Tiles failed: ${mounted.tilesetError}`;
           return;
@@ -1459,10 +1515,15 @@
           mounted.select(selected.kind, selected.id);
           mounted.setEllipse(selected.lon, selected.lat, radius);
           drawThreads();
-          frameEndpoint(selected);
+        }
+        const pendingSite = startupSiteFocus;
+        startupSiteFocus = null;
+        if (pendingSite && cameraIntentCurrent(pendingSite.intent)) {
+          void runCameraIntent(pendingSite.intent, (renderer) => renderer.frame("site", pendingSite.lon, pendingSite.lat));
         }
       } catch (error) {
         if (current()) {
+          stopCameraMotion();
           mapState = "error";
           mapError = errorText(error);
         }
@@ -1476,6 +1537,12 @@
       }
       if (paletteOpen) return;
       if (event.key === "Escape") {
+        if (orbitActive || cameraPending) {
+          event.preventDefault();
+          stopCameraMotion();
+          return;
+        }
+        stopCameraMotion();
         if (activeSurface === "dossier" && tab === "kill" && openStep !== null) {
           stepToken += 1;
           openStep = null;
@@ -1496,7 +1563,6 @@
           void closeSelection();
           return;
         }
-        globe?.stopOrbit();
         return;
       }
       if (event.altKey || event.ctrlKey || event.metaKey) return;
@@ -1536,6 +1602,7 @@
     };
     window.addEventListener("keydown", onKey);
     return () => {
+      stopCameraMotion();
       disposed = true;
       bootGeneration += 1;
       catalogToken += 1;
@@ -1586,15 +1653,14 @@
     <button type="button" class="sc-btn sc-btn--secondary" disabled={!mapReady} onclick={() => fly("region")}>Region</button>
     <button type="button" class="sc-btn sc-btn--secondary" disabled={!mapReady} onclick={() => fly("site")}>Site</button>
     <button type="button" class="sc-btn sc-btn--secondary" disabled={!mapReady} onclick={() => fly("inspect")}>Inspect</button>
-    <button type="button" class="sc-btn sc-btn--secondary" disabled={!mapReady || !orbitReady || reducedMotion || orbitActive} onclick={() => fly("orbit")}>Orbit</button>
-    <button type="button" class="sc-btn sc-btn--secondary" disabled={!mapReady || !orbitActive} onclick={() => globe?.stopOrbit()}>Stop</button>
+    <button type="button" class="sc-btn sc-btn--secondary" disabled={!mapReady || !orbitReady || reducedMotion} onclick={() => fly("orbit")}>Orbit</button>
   {/if}
   {#if !mapReady}
     <p class="atlas-muted">Map unavailable</p>
   {:else if reducedMotion}
     <p class="atlas-muted">Orbit is off because reduced motion is on.</p>
   {:else if selected && !orbitReady}
-    <p class="atlas-muted">Inspect before Orbit.</p>
+    <p class="atlas-muted">Inspect or Frame building to enable Orbit.</p>
   {/if}
 {/snippet}
 
@@ -1697,7 +1763,17 @@
               </div>
             {/if}
           </div>
-          <div class="atlas-map-tools">
+          <div class="atlas-map-tools" data-moving={orbitActive || cameraPending}>
+            {#if orbitActive || cameraPending}
+              <div class="atlas-motion-status">
+                <span role="status">{cameraPending ? "Preparing view" : "Orbiting"}</span>
+                <span class="atlas-motion-hint">Drag, scroll or Esc to stop</span>
+                <button id="atlas-motion-stop" type="button" class="sc-btn sc-btn--secondary" aria-label="Stop camera motion" onclick={stopCameraMotion}>Stop</button>
+              </div>
+            {/if}
+            {#if cameraError || buildingFrameError}
+              <p class="atlas-camera-feedback sc-notice sc-notice--signal" role="alert">{buildingFrameError || cameraError}</p>
+            {/if}
             <div class="atlas-lens-segments sc-segmented" role="group" aria-label="Sectors">
               {#each LENSES as name (name)}
                 <button type="button" aria-pressed={lens === name} onclick={() => setLens(name)}>{LENS_LABEL[name]}</button>
@@ -1751,6 +1827,18 @@
                 <p class="atlas-muted">{selected.kind === "contractor" ? "Contractor" : "Facility"} · <span class="sc-mono">ID {selected.id}</span> · {selected.lat.toFixed(4)}, {selected.lon.toFixed(4)}</p>
               {/if}
             </div>
+            {#if !showMapChrome}
+              {#if orbitActive || cameraPending}
+                <div class="atlas-motion-status">
+                  <span role="status">{cameraPending ? "Preparing view" : "Orbiting"}</span>
+                  <span class="atlas-motion-hint">Drag, scroll or Esc to stop</span>
+                  <button id="atlas-workspace-motion-stop" type="button" class="sc-btn sc-btn--secondary atlas-workspace-motion-stop" aria-label="Stop camera motion" onclick={stopCameraMotion}>Stop</button>
+                </div>
+              {/if}
+              {#if cameraError || buildingFrameError}
+                <p class="atlas-camera-feedback sc-notice sc-notice--signal" role="alert">{buildingFrameError || cameraError}</p>
+              {/if}
+            {/if}
             <div class="atlas-actions">
               {#if activeSurface === "dossier"}
                 <button type="button" class="sc-btn sc-btn--ghost" onclick={backWorkspace}>Back</button>
@@ -1773,7 +1861,7 @@
               {#if activeSurface === "case" || activeSurface === "dossier"}<p class="atlas-muted" role="status">{caseNote}</p>{/if}
               {#if activeSurface === "explore"}
                 <div class="atlas-stack">
-                  <button type="button" class="sc-btn" onclick={() => { paletteOpen = true; }}>Search</button>
+                  <button type="button" class="sc-btn" onclick={openFind}>Search</button>
                   <p class="sc-label">Risk</p>
                   <div class="atlas-actions">
                     <button type="button" class="sc-btn sc-btn--secondary" onclick={() => void runAsk("risk", "critical")}>critical</button>
@@ -1972,7 +2060,7 @@
                   </div>
                   <button type="button" class="sc-btn sc-btn--secondary" disabled={!mapReady} onclick={showMobilityContext}>Show mobility overlays</button>
                   <p class="atlas-muted">Turns on flights, quakes, and satellites that are off. It does not turn an overlay off.</p>
-                  {#each [feedError, feedStartError, cameraError, feedFocusError].filter(Boolean) as error (error)}
+                  {#each [feedError, feedStartError, feedFocusError].filter(Boolean) as error (error)}
                     <p class="sc-notice sc-notice--signal" role="alert">{error}</p>
                   {/each}
                   <p class="atlas-muted">Live overlays use hollow symbols. Contractor severity symbols are listed in the map Legend.</p>

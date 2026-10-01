@@ -319,6 +319,46 @@
   max-width: calc(100% - 2 * var(--atlas-gutter));
 }
 
+.atlas-motion-status {
+  display: flex;
+  align-items: center;
+  gap: var(--sc-space-2);
+  flex: 0 0 auto;
+  max-width: 100%;
+  padding: var(--sc-space-1);
+  border: 1px solid var(--sc-line-2);
+  background: var(--sc-deck);
+  color: var(--sc-ink);
+  font-family: var(--sc-font-ui);
+  font-size: var(--sc-text-sm);
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.atlas-motion-hint {
+  color: var(--sc-ink-2);
+  font-size: var(--sc-text-xs);
+}
+
+.atlas-motion-status .sc-btn,
+.atlas-workspace-motion-stop {
+  min-width: 34px;
+  min-height: 34px;
+  flex-shrink: 0;
+}
+
+.atlas-camera-feedback.sc-notice {
+  width: min(360px, 100%);
+  min-width: 0;
+  max-height: 96px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  margin: 0;
+  padding: var(--sc-space-2);
+  background: var(--sc-deck);
+  color: var(--sc-signal-ink);
+}
+
 
 .atlas-lens-select,
 .atlas-view {
@@ -791,6 +831,12 @@ dialog.atlas-palette.sc-palette {
 }
 
 @media (pointer: coarse) {
+  .atlas-motion-status .sc-btn,
+  .atlas-workspace-motion-stop {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .atlas-topbar .sc-command,
   .atlas-topbar .sc-engine,
   .atlas-context-button,
@@ -813,6 +859,18 @@ dialog.atlas-palette.sc-palette {
 }
 
 /* Breakpoints (exact per contract, no dimension transitions) */
+/* Keep the direct exit above the separate credits row when map space is tight. */
+@media (max-width: 1099px), (max-height: 700px) {
+  .atlas-map-tools[data-moving="true"] {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .atlas-map-tools[data-moving="true"] > :not(.atlas-motion-status):not(.atlas-camera-feedback) {
+    display: none;
+  }
+}
+
 @media (min-width: 1600px) {
   .atlas-main.has-workspace {
     grid-template-columns: minmax(0, 1fr) 480px;
@@ -895,6 +953,8 @@ dialog.atlas-palette.sc-palette {
 }
 
 @media (max-width: 700px) {
+  .atlas-motion-hint { display: none; }
+
   .atlas-workspace-head { padding: 8px 16px; }
 
   .atlas-topbar.atlas-topbar {
@@ -974,6 +1034,10 @@ dialog.atlas-palette.sc-palette {
 
 /* Reduced motion: zero our transitions (Sirocco already zeros animations) */
 @media (prefers-reduced-motion: reduce) {
+  .atlas-motion-status,
+  .atlas-motion-status .sc-btn,
+  .atlas-workspace-motion-stop,
+  .atlas-camera-feedback,
   .atlas-content,
   .atlas-context-button,
   .atlas-result,
@@ -989,6 +1053,8 @@ dialog.atlas-palette.sc-palette {
 
 /* Forced colors: system tokens, no decorative overrides, readable HTML paths */
 @media (forced-colors: active) {
+  .atlas-motion-status,
+  .atlas-camera-feedback.sc-notice,
   .atlas-workspace,
   .atlas-thread-card,
   .atlas-hover,
@@ -1030,6 +1096,8 @@ dialog.atlas-palette.sc-palette {
   }
 
   .atlas-result:focus-visible,
+  .atlas-motion-status .sc-btn:focus-visible,
+  .atlas-workspace-motion-stop:focus-visible,
   .atlas-step:focus-visible,
   .atlas-context-button:focus-visible,
   .atlas-workspace .sc-btn:focus-visible,
