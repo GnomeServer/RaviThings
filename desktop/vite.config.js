@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import process from "node:process";
 import path from "node:path";
+import { cp } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 // @ts-expect-error serve-static ships no types and checkJs is enabled
 import serveStatic from "serve-static";
@@ -16,6 +17,11 @@ export default defineConfig(() => ({
       name: "cesium-static",
       configureServer(server) {
         server.middlewares.use("/cesium", serveStatic(cesiumRoot));
+      },
+      async writeBundle(options) {
+        if (this.environment.name !== "client" || !options.dir) return;
+        // The static adapter must receive the runtime, including lazy worker assets.
+        await cp(cesiumRoot, path.join(options.dir, "cesium"), { recursive: true });
       },
     },
   ],

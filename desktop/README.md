@@ -4,11 +4,31 @@ OSINT Atlas is a macOS investigation workbench for the DOE contractor catalog on
 
 ## Run
 
+### Standalone macOS app
+
+Use the standalone app when you do not need live code updates. From the repository root:
+
+```bash
+cd desktop
+npm install
+npm run tauri build -- --bundles app
+open "src-tauri/target/release/bundle/macos/OSINT Atlas.app"
+```
+
+The app includes Cesium's runtime, geometry workers, terrain-height data, and widget assets. It does not need the Vite development server. Google 3D Tiles and enabled live services still need network access.
+
+### Development
+
+Keep the development command running while you use the app:
+
+
 ```bash
 cd desktop
 npm install
 npm run tauri dev
 ```
+
+Cesium loads some worker files and data only when you select a site. If you stop the development server while leaving a development app window open, those requests can fail and stop map rendering. Relaunch with the command above, or use the standalone app.
 
 ## Investigate
 
