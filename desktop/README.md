@@ -17,7 +17,7 @@ npm run tauri dev
 3. In Nearby, choose a type and a 25, 50, or 100 km radius. Connections represent **geographic proximity**, not an inferred network relationship. The map draws the nearest eight named targets, plus an explicit ninth of the same type. A preview and Frame keep the origin selected; **Open dossier** selects the endpoint.
 4. Use **Pin** or **Pin step** to retain the entity and its note in Case. Case is stored locally and survives reloads. It deduplicates entities and keeps the latest 12 pins, replacing the oldest when full. Remove deletes one pin; Clear requires confirmation. A failed save leaves the existing pins unchanged.
 
-On the map, national-scale counts group contractors. Zoom in to see individual markers. Hover for a name, or click a marker to open its dossier. The lower-right sector controls hide other categories. CVE filters keep nonmatching markers dimmed and selectable.
+On the map, national-scale counts group contractors. Click a group's circle or count to frame its members at regional scale and see individual markers. This movement starts without waiting for a surface-height lookup and does not start an orbit. Hover for a name, or click a marker to open its dossier. The lower-right sector controls hide other categories. CVE filters keep nonmatching markers dimmed and selectable.
 
 **Hide** closes the workspace without clearing the selection, filter, or results. The map's selection and filter chips restore their corresponding views. **Back** returns to the preceding workspace. The separate Clear selection and Clear filter actions remove only their respective state.
 
@@ -38,6 +38,8 @@ The workspace docks beside the map on wide windows and becomes a bottom sheet be
 Use **Inspect** or **Frame building** for a close-up followed by one gentle, 40-second aerial revolution. **Orbit** explicitly starts another revolution after either close-up action. These views use the interactive Google Photorealistic **3D Tiles**, not the prerecorded Google Aerial View video API.
 
 Inspect and Orbit target the selected building footprint when a match is already available; otherwise they use the selected coordinates. Close-up and Site views use the actual Google tile surface height. If that height is unavailable, camera motion stops and a message explains the failure. Site, Region, and Nearby endpoint framing use the requested coordinates; a Nearby endpoint does not inherit the origin's building outline.
+
+Surface preparation first uses the Google geometry already rendered on the map. If the target surface is not rendered yet, preparation waits up to 10 seconds for detailed tiles. If the lookup fails or times out, motion stops and a message tells you to wait for the tiles to load before trying again. **Stop** cancels preparation immediately; a late tile response cannot restart the camera.
 
 While the camera is preparing or orbiting, **Stop** is directly available beside the map. In an expanded workspace, it moves to the workspace header so the map attribution stays clear. You can also stop by pressing **Escape**, pressing or touching the map, or scrolling over it. Your first map gesture still works normally. Stopping keeps your dossier, connections, and selection open; another Escape follows the dismissal order below.
 

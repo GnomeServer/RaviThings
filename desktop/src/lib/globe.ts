@@ -55,6 +55,8 @@ type Hit = {
   distanceKm?: number;
   label?: string;
   matched?: number;
+  clusterBounds?: CesiumNS.BoundingSphere;
+  clusterLabelHalfWidth?: number;
 };
 type ContractorRec = {
   id: number;
@@ -309,7 +311,11 @@ export async function mountGlobe(
 
   function clusteredNow() {
     if (viewer.isDestroyed?.() === true) return false;
-    return viewer.camera.positionCartographic.height > CLUSTER_M;
+    // Beyond a 2:1 viewport, fitting the short axis requires a higher camera.
+    // Keep a fitted regional group unclustered in shallow or narrow map layouts.
+    const { width, height } = viewer.canvas;
+    const aspect = Math.max(width, height) / Math.max(1, Math.min(width, height));
+    return viewer.camera.positionCartographic.height > CLUSTER_M * Math.max(1, aspect / 2);
   }
 
   function asHit(value: unknown): Hit | null {
@@ -321,16 +327,18 @@ export async function mountGlobe(
 
   function rebuildClusters() {
     clusterPoints.removeAll();
-    const bins = new Map<string, { lon: number; lat: number; height: number; n: number; matched: number }>();
+    const bins = new Map<string, { lon: number; lat: number; height: number; n: number; matched: number; positions: Cartesian3[] }>();
     for (const rec of contractors) {
       if (!contractorVisible(rec.category)) continue;
       const key = `${Math.floor(rec.lat / 2)}:${Math.floor(rec.lon / 2)}`;
-      const bin = bins.get(key) ?? { lon: 0, lat: 0, height: 0, n: 0, matched: 0 };
+      const bin = bins.get(key) ?? { lon: 0, lat: 0, height: 0, n: 0, matched: 0, positions: [] };
       const carto = Cesium.Cartographic.fromCartesian(rec.position);
       bin.lon += rec.lon;
       bin.lat += rec.lat;
       bin.height += carto.height;
       bin.n += 1;
+      // CVE filtering dims members; it does not remove them from the group.
+      bin.positions.push(rec.position);
       if (cveIds === null || cveIds.has(rec.id)) bin.matched += 1;
       bins.set(key, bin);
     }
@@ -346,6 +354,11 @@ export async function mountGlobe(
         name: label,
         label,
         matched: bin.matched,
+        // Snapshot the actual member extent, independent of the display centroid.
+        clusterBounds: Cesium.BoundingSphere.fromPoints(bin.positions),
+        // Digits and slash occupy 12px monospace cells (~7.2px). Pad to 8px
+        // per cell plus the text outline; no font measurement during rendering.
+        clusterLabelHalfWidth: label.length * 4 + 3,
       };
       const point = clusterPoints.add({
         position,
@@ -475,6 +488,7 @@ export async function mountGlobe(
     const clustered = clusteredNow();
     if (clustered) {
       ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
       ctx.font = `12px "Space Mono", ui-monospace, monospace`;
       const filtered = cveIds !== null;
       for (let i = 0; i < clusterPoints.length; i += 1) {
@@ -547,7 +561,21 @@ export async function mountGlobe(
     if (clusteredNow()) {
       for (let i = 0; i < clusterPoints.length; i += 1) {
         const point = clusterPoints.get(i);
-        consider(point.position, asHit(point.id), 14);
+        const hit = asHit(point.id);
+        if (!hit) continue;
+        const screen = project(point.position);
+        if (!screen) continue;
+        const dx = position.x - screen.x;
+        const dy = position.y - screen.y;
+        const distance = Math.hypot(dx, dy);
+        // Include the outlined count above the circle in the same pick target.
+        const onLabel = Math.abs(dx) <= (hit.clusterLabelHalfWidth ?? 0) && dy >= -25 && dy <= -6;
+        // Rank a label hit from the label, not a neighboring circle's padded halo.
+        const hitDistance = onLabel ? Math.min(distance, Math.hypot(dx, dy + 16)) : distance;
+        if ((distance <= 14 || onLabel) && hitDistance < bestDistance) {
+          bestDistance = hitDistance;
+          bestHit = hit;
+        }
       }
     } else {
       for (const rec of contractors) {
@@ -717,18 +745,48 @@ export async function mountGlobe(
     if (!photoreal || !viewer.scene.clampToHeightSupported) {
       throw new Error("Surface height is unavailable. Try again after the 3D tiles load.");
     }
-    // Snapshot exclusions and clone the input: clamp mutates its positions array.
-    // Cancellation settles immediately even if the tile query is still pending.
-    const clamped = await Promise.race([
-      viewer.scene.clampToHeightMostDetailed([Cesium.Cartesian3.clone(point)], [...buildingPrimitives], 10),
-      request.cancelled.then(() => null),
-    ]);
-    if (!currentMotion(request)) return null;
-    const center = clamped?.[0];
-    if (!center || !Number.isFinite(center.x) || !Number.isFinite(center.y) || !Number.isFinite(center.z)) {
-      throw new Error("Surface height is unavailable. Try again after the 3D tiles load.");
+    // Picking excludes individual points/billboards, not their collections.
+    // Snapshot owned geometry so none of it can stand in for the Google surface.
+    const exclude: object[] = [...buildingPrimitives, ...threadEntities];
+    if (ellipseEntity) exclude.push(ellipseEntity);
+    for (const collection of [contractorPoints, clusterPoints, threadPoints, live]) {
+      for (let i = 0; i < collection.length; i += 1) exclude.push(collection.get(i));
     }
-    return center;
+    let timer: number | undefined;
+    let timedOut = false;
+    try {
+      let center: Cartesian3 | undefined = viewer.scene.clampToHeight(Cesium.Cartesian3.clone(point), exclude, 10);
+      if (!center) {
+        // Clone the input: the detailed query mutates its positions array.
+        // Cancellation and the deadline settle even if Cesium keeps loading tiles.
+        const deadline = new Promise<never>((_resolve, reject) => {
+          timer = window.setTimeout(() => {
+            timedOut = true;
+            reject(new Error("Surface preparation timed out."));
+          }, 10_000);
+        });
+        const clamped = await Promise.race([
+          viewer.scene.clampToHeightMostDetailed([Cesium.Cartesian3.clone(point)], exclude, 10),
+          request.cancelled.then(() => null),
+          deadline,
+        ]);
+        if (!currentMotion(request)) return null;
+        center = clamped?.[0];
+      }
+      if (!currentMotion(request)) return null;
+      if (!center || !Number.isFinite(center.x) || !Number.isFinite(center.y) || !Number.isFinite(center.z)) {
+        throw new Error("Surface height is unavailable.");
+      }
+      return center;
+    } catch {
+      if (!currentMotion(request)) return null;
+      // focus stops this motion and forwards the failure to the page.
+      throw new Error(timedOut
+        ? "Surface preparation timed out after 10 seconds. Wait for the 3D tiles to load, then try again."
+        : "Surface height is unavailable. Try again after the 3D tiles load.");
+    } finally {
+      window.clearTimeout(timer);
+    }
   }
 
   async function focusFlight(
@@ -811,17 +869,35 @@ export async function mountGlobe(
   };
   reducedMotion.addEventListener("change", onReducedMotion);
 
+  async function focusCluster(hit: Hit): Promise<void> {
+    const bounds = hit.clusterBounds;
+    if (!bounds) return;
+    // Member bounds are already in world coordinates. No surface query is needed
+    // for a regional view, and a centroid-sized site flight can miss every member.
+    const sphere = new Cesium.BoundingSphere(bounds.center, Math.max(bounds.radius * 1.2, 20_000));
+    const request = beginMotion(sphere, false);
+    if (!request) return;
+    try {
+      await focusFlight(request, sphere, new Cesium.HeadingPitchRange(0, -Math.PI / 2, 0), reducedMotion.matches ? 0 : 0.7);
+      if (currentMotion(request)) stopOrbit();
+    } catch (error) {
+      if (!currentMotion(request)) return;
+      stopOrbit();
+      throw error;
+    }
+  }
+
   viewer.screenSpaceEventHandler.setInputAction((click: { position: Cartesian2 }) => {
     const hit = overlayHit(click.position) ?? asHit((viewer.scene.pick(click.position) as { id?: unknown } | undefined)?.id);
     if (!hit) return;
     if (hit.atlasKind === "cluster") {
-      const pending = frame("site", hit.lon, hit.lat);
+      const pending = focusCluster(hit);
       const generation = motionGeneration;
       const { x, y } = click.position;
       void pending.catch(() => {
         // A current failure stops its own generation; newer input must not show stale feedback.
         if (!disposed && motionGeneration === generation + 1) {
-          hooks.onHover({ name: "Surface height unavailable. Try again after the 3D tiles load.", x, y, severity: "" });
+          hooks.onHover({ name: "Cluster view unavailable. Try selecting the cluster again.", x, y, severity: "" });
         }
       });
       return;
