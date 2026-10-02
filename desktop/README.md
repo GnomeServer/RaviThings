@@ -17,6 +17,8 @@ npm run tauri dev
 3. In Nearby, choose a type and a 25, 50, or 100 km radius. Connections represent **geographic proximity**, not an inferred network relationship. The map draws the nearest eight named targets, plus an explicit ninth of the same type. A preview and Frame keep the origin selected; **Open dossier** selects the endpoint.
 4. Use **Pin** or **Pin step** to retain the entity and its note in Case. Case is stored locally and survives reloads. It deduplicates entities and keeps the latest 12 pins, replacing the oldest when full. Remove deletes one pin; Clear requires confirmation. A failed save leaves the existing pins unchanged.
 
+On the map, national-scale counts group contractors. Zoom in to see individual markers. Hover for a name, or click a marker to open its dossier. The lower-right sector controls hide other categories. CVE filters keep nonmatching markers dimmed and selectable.
+
 **Hide** closes the workspace without clearing the selection, filter, or results. The map's selection and filter chips restore their corresponding views. **Back** returns to the preceding workspace. The separate Clear selection and Clear filter actions remove only their respective state.
 
 ### Building footprints

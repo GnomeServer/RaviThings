@@ -319,6 +319,12 @@
   max-width: calc(100% - 2 * var(--atlas-gutter));
 }
 
+/* Back transparent sector controls with the same opaque surface as the other map tools. */
+.atlas-map-tools > .atlas-lens-segments,
+.atlas-map-tools > .atlas-lens-select {
+  background: var(--sc-deck);
+}
+
 .atlas-motion-status {
   display: flex;
   align-items: center;

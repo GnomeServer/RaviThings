@@ -211,6 +211,7 @@ export async function mountGlobe(
   viewer.scene.primitives.add(threadPoints);
   viewer.scene.primitives.add(clusterPoints);
   viewer.scene.primitives.add(live);
+  // Canvas owns marker rendering and eligibility; suppress only the GPU collections.
   contractorPoints.show = false;
   clusterPoints.show = false;
 
@@ -333,7 +334,6 @@ export async function mountGlobe(
       if (cveIds === null || cveIds.has(rec.id)) bin.matched += 1;
       bins.set(key, bin);
     }
-    const show = clusteredNow();
     for (const bin of bins.values()) {
       const lon = bin.lon / bin.n;
       const lat = bin.lat / bin.n;
@@ -352,7 +352,6 @@ export async function mountGlobe(
         pixelSize: 14,
         color: voidC.withAlpha(0),
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
-        show,
       });
       point.id = id;
     }
@@ -480,7 +479,6 @@ export async function mountGlobe(
       const filtered = cveIds !== null;
       for (let i = 0; i < clusterPoints.length; i += 1) {
         const point = clusterPoints.get(i);
-        if (!point.show) continue;
         const screen = project(point.position);
         if (!screen) continue;
         const hit = asHit(point.id);
@@ -503,7 +501,7 @@ export async function mountGlobe(
       ctx.globalAlpha = 1;
     } else {
       for (const rec of contractors) {
-        if (!rec.point.show) continue;
+        if (!contractorVisible(rec.category)) continue;
         const screen = project(rec.position);
         if (!screen) continue;
         const glyph = rec.glyph;
@@ -549,12 +547,11 @@ export async function mountGlobe(
     if (clusteredNow()) {
       for (let i = 0; i < clusterPoints.length; i += 1) {
         const point = clusterPoints.get(i);
-        if (!point.show) continue;
         consider(point.position, asHit(point.id), 14);
       }
     } else {
       for (const rec of contractors) {
-        if (!rec.point.show) continue;
+        if (!contractorVisible(rec.category)) continue;
         const glyph = rec.glyph;
         const r = glyph.diameter / 2 + 2 + (selectedId === `contractor:${rec.id}` ? 3 : 0);
         consider(rec.position, asHit(rec.point.id), r);
@@ -644,13 +641,6 @@ export async function mountGlobe(
   ];
 
   function applyVisibility() {
-    const clustered = clusteredNow();
-    for (const rec of contractors) {
-      rec.point.show = false; // canvas draws; keep for position/hit only
-    }
-    for (let i = 0; i < clusterPoints.length; i += 1) {
-      clusterPoints.get(i).show = clustered;
-    }
     for (const [key, bill] of liveByKey) {
       bill.show = liveShown(key.slice(0, key.indexOf(":")));
     }
