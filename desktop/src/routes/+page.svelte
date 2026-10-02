@@ -1,10 +1,12 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
-  import { invoke } from "@tauri-apps/api/core";
+  import { Channel, invoke } from "@tauri-apps/api/core";
   import { computeRiskScore, RISKY_PORTS } from "../../ui/src/risk";
   import DossierExposure from "../lib/DossierExposure.svelte";
   import AtlasIcon from "../lib/AtlasIcon.svelte";
   import CommandPalette from "../lib/CommandPalette.svelte";
+  import OperationProgress from "../lib/OperationProgress.svelte";
+  import { applyProgress, analysisError, type AnalysisProgress, type Operation } from "../lib/operation-progress";
   type PaletteItem = { id: string; group: "Actions" | "Entities"; label: string; detail: string };
 
   import { mountGlobe, type ContractorPoint, type Flight } from "../lib/globe";
@@ -175,6 +177,47 @@
   let askNote = $state("");
   let askError = $state("");
   let askToken = 0;
+  let askBusy = $state(false);
+  let operations = $state<Operation[]>([]);
+  let operationSequence = 0;
+
+  function pruneOperations(history: Operation[]): Operation[] {
+    const focusedId = document.activeElement?.closest("article[data-operation-id]")?.getAttribute("data-operation-id");
+    const latest = history.filter((operation) => operation.phase !== "running")
+      .sort((a, b) => (b.finishedAt ?? 0) - (a.finishedAt ?? 0) || b.id - a.id)
+      .slice(0, 3);
+    return history.filter((operation) => operation.phase === "running"
+      || latest.some((terminal) => terminal.id === operation.id)
+      || String(operation.id) === focusedId);
+  }
+
+  function startOperation(kind: string, subject: string, analysis = true) {
+    const id = ++operationSequence;
+    operations = pruneOperations([{
+      id, kind, subject, analysis, phase: "running", stage: analysis ? "preparing" : "querying",
+      message: analysis ? "Analysis requested" : "Loading catalog matches",
+      startedAt: performance.now(), attempt: 0, characters: 0, preview: "",
+    }, ...operations]);
+    return id;
+  }
+
+  function progressChannel(id: number) {
+    return new Channel<AnalysisProgress>((event) => {
+      if (disposed) return;
+      operations = operations.map((operation) => operation.id === id ? applyProgress(operation, event, performance.now()) : operation);
+    });
+  }
+
+  function finishOperation(id: number, error = "", message = "Analysis returned") {
+    if (disposed) return;
+    operations = pruneOperations(operations.map((operation) => operation.id === id && operation.phase === "running" ? {
+      ...operation, phase: error ? "failed" : "succeeded", error, message, preview: "", finishedAt: performance.now(),
+    } : operation));
+  }
+
+  function dismissOperation(id: number) {
+    operations = operations.filter((operation) => operation.id !== id || operation.phase === "running");
+  }
   let points = $state<ContractorPoint[]>([]);
   let pins = $state<Pin[]>([]);
   let caseError = $state("");
@@ -670,6 +713,7 @@
   function clearFilter(): void {
     stopCameraMotion();
     askToken += 1;
+    askBusy = false;
     activeFilter = null;
     globe?.setCveFilter(null);
   }
@@ -1188,9 +1232,10 @@
   }
 
   async function generateKill() {
-    if (!selected || selected.kind !== "contractor" || !openrouter) return;
+    if (!selected || selected.kind !== "contractor" || !openrouter || killBusy) return;
     const token = selectionToken;
     const id = Number(selected.id);
+    const operation = startOperation("Kill chain", selected.name);
     killBusy = true;
     killChain = null;
     killError = "";
@@ -1200,27 +1245,24 @@
     stepDetailBusy = false;
     stepToken += 1;
     try {
-      let result: any = await invoke("kill_chain", { contractorIndex: id });
-      if (token !== selectionToken) return;
+      let result: any = await invoke("kill_chain", { contractorIndex: id, progress: progressChannel(operation) });
       if (typeof result === "string") {
         try { result = JSON.parse(result); } catch {}
       }
       if (result && typeof result.steps === "string") {
         try { result.steps = JSON.parse(result.steps); } catch {}
       }
-      if (token !== selectionToken) return;
-      if (result && result.error) {
-        killError = String(result.error);
-      } else if (result && (Array.isArray(result.steps) || result.summary)) {
-        killChain = result;
-      } else {
-        killError = "No kill chain data";
-      }
+      const failure = analysisError(result, "kill");
+      finishOperation(operation, failure);
+      if (disposed || token !== selectionToken) return;
+      if (failure) killError = failure;
+      else killChain = result;
     } catch (error) {
-      if (token !== selectionToken) return;
-      killError = error instanceof Error ? error.message : String(error);
+      finishOperation(operation, errorText(error));
+      if (disposed || token !== selectionToken) return;
+      killError = errorText(error);
     } finally {
-      if (token === selectionToken) killBusy = false;
+      if (!disposed && token === selectionToken) killBusy = false;
     }
   }
 
@@ -1233,20 +1275,31 @@
       stepDetailBusy = false;
       return;
     }
+    if (!selected || selected.kind !== "contractor") return;
+    const selection = selectionToken;
+    const contractorIndex = Number(selected.id);
+    const operation = startOperation("Step detail", `${selected.name} · step ${stepNum} · ${step.technique_id ?? step.tactic ?? ""}`);
     openStep = stepNum;
     stepDetail = null;
     stepDetailError = "";
     stepDetailBusy = true;
     const token = ++stepToken;
     try {
-      const detail = await invoke("step_detail", { contractorIndex: Number(selected!.id), step });
-      if (token !== stepToken) return;
-      stepDetail = detail;
+      let detail: any = await invoke("step_detail", { contractorIndex, step, progress: progressChannel(operation) });
+      if (typeof detail === "string") {
+        try { detail = JSON.parse(detail); } catch {}
+      }
+      const failure = analysisError(detail, "step");
+      finishOperation(operation, failure);
+      if (disposed || token !== stepToken || selection !== selectionToken) return;
+      if (failure) stepDetailError = failure;
+      else stepDetail = detail;
     } catch (error) {
-      if (token !== stepToken) return;
-      stepDetailError = error instanceof Error ? error.message : String(error);
+      finishOperation(operation, errorText(error));
+      if (disposed || token !== stepToken || selection !== selectionToken) return;
+      stepDetailError = errorText(error);
     } finally {
-      if (token === stepToken) stepDetailBusy = false;
+      if (!disposed && token === stepToken && selection === selectionToken) stepDetailBusy = false;
     }
   }
 
@@ -1322,10 +1375,13 @@
     clearFilter();
     const token = ++askToken;
     const intent = beginCameraIntent();
+    cameraPending = false; // Reserve camera identity without claiming the query is camera work.
     askNote = "";
     askError = "";
     askResult = null;
     askLabel = queryLabel(question, value, radiusKm);
+    askBusy = true;
+    const operation = startOperation("Catalog query", askLabel, false);
     setPanel(surface);
     try {
       const result = await invoke<AskResult>("ask_catalog", {
@@ -1335,7 +1391,9 @@
         lon: lon ?? null,
         radiusKm: radiusKm ?? null,
       });
-      if (token !== askToken) return;
+      finishOperation(operation, "", `${result.total} matches returned`);
+      if (disposed || token !== askToken) return;
+      askBusy = false;
       askResult = result;
       const contractors = result.hits.filter((hit) => hit.kind === "contractor");
       const facilities = result.hits.filter((hit) => hit.kind === "facility");
@@ -1345,6 +1403,7 @@
         activeFilter = { source: surface === "sites" ? "sites" : "ask", label: askLabel, total: result.total, contractorIds: null };
         globe?.setCveFilter(null);
         if (cameraIntentCurrent(intent) && facilities.length > 0) {
+          cameraPending = true;
           await runCameraIntent(intent, (mounted) => mounted.flyToPositions(facilities.map((hit) => ({ lon: hit.lon, lat: hit.lat }))));
         }
       } else {
@@ -1352,15 +1411,18 @@
         activeFilter = { source: "ask", label: askLabel, total: result.total, contractorIds: ids };
         globe?.setCveFilter(ids);
         if (cameraIntentCurrent(intent) && ids.length > 0) {
+          cameraPending = true;
           await runCameraIntent(intent, (mounted) => mounted.flyToIds(ids));
         }
       }
     } catch (error) {
-      if (token !== askToken) return;
+      finishOperation(operation, errorText(error));
+      if (disposed || token !== askToken) return;
       askError = errorText(error);
       activeFilter = null;
       globe?.setCveFilter(null);
     } finally {
+      if (!disposed && token === askToken) askBusy = false;
       if (cameraIntentCurrent(intent)) cameraPending = false;
     }
   }
@@ -1669,7 +1731,7 @@
   <button type="button" class="sc-btn sc-btn--secondary" onclick={() => window.location.reload()}>Reload map</button>
 {/snippet}
 
-<div class="sc-app atlas-app">
+<div class="sc-app atlas-app" class:has-operations={operations.length > 0}>
   <a class="sc-skip-link" href="#atlas-main">Skip to map</a>
   <header class="sc-topbar atlas-topbar">
     <div class="sc-brand" aria-label="Starzl Enterprises | OSINT Atlas">
@@ -1690,6 +1752,9 @@
       <span class="sc-engine__label">{bootStatus}</span>
     </button>
   </header>
+  {#if operations.length > 0}
+    <OperationProgress {operations} ondismiss={dismissOperation} />
+  {/if}
   <div class="sc-body atlas-body">
     <nav class="sc-rail atlas-rail" aria-label="Atlas">
       <button id="rail-map" class="sc-rail__item" type="button" aria-current={railCurrent("map") ? "page" : undefined} onclick={() => { returnFocusId = "rail-map"; hideWorkspace(); }}>
@@ -1967,13 +2032,15 @@
                   {/if}
                 </div>
               {:else if activeSurface === "ask" || activeSurface === "sites"}
-                <div class="atlas-stack">
+                <div class="atlas-stack" aria-busy={askBusy}>
                   {#if askLabel}<p class="sc-label">{askLabel}</p>{/if}
                   {#if askNote || askError}
                     <p class="atlas-notice sc-notice sc-notice--signal" role="alert">{askNote || askError}</p>
                   {/if}
-                  {#if askResult === null && !askNote && !askError}
-                    <p role="status">Loading matches</p>
+                  {#if askBusy}
+                    <p role="status">Querying catalog · {askLabel}</p>
+                  {:else if askResult === null && !askNote && !askError}
+                    <p>Choose a query in Explore or Find.</p>
                   {:else if askResult}
                     <p role="status"><span class="sc-mono">{askResult.total}</span> matches · Showing {askResult.hits.length} of {askResult.total}</p>
                     {#if askResult.hits.length === 0}

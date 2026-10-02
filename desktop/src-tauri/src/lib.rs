@@ -3,7 +3,7 @@ mod feeds;
 mod orgfeed;
 mod key;
 
-use std::io::{Read, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
@@ -12,7 +12,7 @@ use std::time::Duration;
 use catalog::{CatalogStatus, Counts};
 use rusqlite::Connection;
 use serde_json::Value;
-use tauri::State;
+use tauri::{ipc::Channel, AppHandle, Manager, State};
 
 struct Atlas {
     db: Mutex<Option<Connection>>,
@@ -254,43 +254,118 @@ fn feed_snapshot(state: State<Atlas>) -> feeds::Snapshot {
 }
 
 #[tauri::command]
-fn kill_chain(state: State<Atlas>, contractor_index: i64) -> Result<Value, String> {
-    let key = key::openrouter_key(&state.repo, &state.data_dir);
-    if key.is_empty() {
-        return Err("Kill chain needs OPENROUTER_API_KEY".into());
-    }
-    let port = ensure_sidecar(&state, &key)?;
-    let client = reqwest::blocking::Client::builder()
-        .timeout(Duration::from_secs(180))
-        .build()
-        .map_err(|e| e.to_string())?;
-    let resp = client
-        .post(format!("http://127.0.0.1:{port}/kill-chain"))
-        .json(&serde_json::json!({ "contractor_index": contractor_index }))
-        .send()
-        .map_err(|e| e.to_string())?;
-    let value: Value = resp.json().map_err(|e| e.to_string())?;
-    Ok(scrub_kill_chain(value))
+async fn kill_chain(app: AppHandle, contractor_index: i64, progress: Channel<Value>) -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<Atlas>();
+        sidecar_request(&state, "/kill-chain",
+            serde_json::json!({ "contractor_index": contractor_index }), progress)
+            .map(scrub_kill_chain)
+    }).await.map_err(|_| "Analysis worker failed".to_string())?
 }
 
 #[tauri::command]
-fn step_detail(state: State<Atlas>, contractor_index: i64, step: Value) -> Result<Value, String> {
+async fn step_detail(app: AppHandle, contractor_index: i64, step: Value, progress: Channel<Value>) -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<Atlas>();
+        sidecar_request(&state, "/step-detail",
+            serde_json::json!({ "contractor_index": contractor_index, "step": step }), progress)
+    }).await.map_err(|_| "Analysis worker failed".to_string())?
+}
+
+fn sidecar_request(state: &Atlas, path: &str, body: Value, progress: Channel<Value>) -> Result<Value, String> {
+    let _ = progress.send(serde_json::json!({
+        "type": "stage", "stage": "preparing", "message": "Preparing analysis credentials"
+    }));
     let key = key::openrouter_key(&state.repo, &state.data_dir);
     if key.is_empty() {
         return Err("Kill chain needs OPENROUTER_API_KEY".into());
     }
-    let port = ensure_sidecar(&state, &key)?;
+    let _ = progress.send(serde_json::json!({
+        "type": "stage", "stage": "preparing", "message": "Preparing local analysis service"
+    }));
+    let port = ensure_sidecar(state, &key)?;
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(180))
         .build()
-        .map_err(|e| e.to_string())?;
-    let resp = client
-        .post(format!("http://127.0.0.1:{port}/step-detail"))
-        .json(&serde_json::json!({ "contractor_index": contractor_index, "step": step }))
-        .send()
-        .map_err(|e| e.to_string())?;
-    let value: Value = resp.json().map_err(|e| e.to_string())?;
-    Ok(value)
+        .map_err(|_| "Could not create analysis connection".to_string())?;
+    let _ = progress.send(serde_json::json!({
+        "type": "stage", "stage": "connecting", "message": "Sending request to local analysis service"
+    }));
+    let resp = client.post(format!("http://127.0.0.1:{port}{path}"))
+        .json(&body).send()
+        .map_err(|_| "Could not connect to analysis sidecar".to_string())?;
+    if !resp.status().is_success() {
+        return Err(format!("Analysis sidecar returned HTTP {}", resp.status().as_u16()));
+    }
+    let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok()).unwrap_or("");
+    if content_type.split(';').next().unwrap_or("").trim() != "application/x-ndjson" {
+        return Err("Analysis sidecar returned an invalid stream type".into());
+    }
+    read_analysis_stream(BufReader::new(resp), |event| {
+        progress.send(event).map_err(|_| "Could not deliver analysis progress".to_string())
+    })
+}
+
+fn read_analysis_stream(mut reader: impl BufRead, mut emit: impl FnMut(Value) -> Result<(), String>) -> Result<Value, String> {
+    let mut terminal = None;
+    let mut delivery_error = None;
+    loop {
+        let mut line = String::new();
+        let count = reader.read_line(&mut line)
+            .map_err(|_| "Analysis stream read failed".to_string())?;
+        if count == 0 {
+            break;
+        }
+        if terminal.is_some() || !line.ends_with('\n') {
+            return Err("Malformed analysis stream".into());
+        }
+        let frame: Value = serde_json::from_str(&line)
+            .map_err(|_| "Malformed analysis stream".to_string())?;
+        let obj = frame.as_object().ok_or("Malformed analysis frame")?;
+        match frame.get("type").and_then(Value::as_str) {
+            Some("result") if obj.len() == 2 && frame.get("result").is_some_and(Value::is_object) => {
+                terminal = Some(Ok(frame["result"].clone()));
+            }
+            Some("error") if obj.len() == 2 && frame.get("message").is_some_and(Value::is_string) => {
+                terminal = Some(Err(frame["message"].as_str().unwrap().to_string()));
+            }
+            Some(kind @ ("stage" | "delta" | "activity")) => {
+                let fields: &[&str] = match kind {
+                    "stage" => &["type", "stage", "message", "model", "attempt"],
+                    "delta" => &["type", "text", "characters", "model"],
+                    _ => &["type", "model"],
+                };
+                let valid = obj.keys().all(|key| fields.contains(&key.as_str()))
+                    && frame.get("model").map_or(true, Value::is_string)
+                    && match kind {
+                        "stage" => frame.get("message").is_some_and(Value::is_string)
+                            && matches!(frame.get("stage").and_then(Value::as_str),
+                                Some("preparing" | "connecting" | "waiting" | "streaming" | "parsing" | "verifying"))
+                            && frame.get("attempt").map_or(true, |n| n.as_u64().is_some()),
+                        "delta" => frame.get("text").is_some_and(Value::is_string)
+                            && frame.get("characters").and_then(Value::as_u64).is_some(),
+                        _ => true,
+                    };
+                if !valid {
+                    return Err("Malformed analysis progress".into());
+                }
+                // Continue consuming the real operation if its view disappears.
+                if delivery_error.is_none() {
+                    delivery_error = emit(frame).err();
+                }
+            }
+            _ => return Err("Malformed analysis frame".into()),
+        }
+    }
+    let result = terminal.ok_or("Analysis stream ended before a final result")?;
+    match result {
+        Err(error) => Err(error),
+        Ok(value) => match delivery_error {
+            Some(error) => Err(error),
+            None => Ok(value),
+        },
+    }
 }
 
 fn scrub_kill_chain(mut value: Value) -> Value {
@@ -309,13 +384,17 @@ fn scrub_kill_chain(mut value: Value) -> Value {
 
 fn ensure_sidecar(state: &Atlas, openrouter: &str) -> Result<u16, String> {
     let port_file = state.data_dir.join("sidecar.port");
-    if let Some(child) = state.sidecar.lock().expect("sidecar").as_mut() {
+    // Serialize child discovery, spawn, and port publication as one operation.
+    let mut guard = state.sidecar.lock().map_err(|_| "Sidecar state unavailable")?;
+    if let Some(child) = guard.as_mut() {
         if child.try_wait().map_err(|e| e.to_string())?.is_none() {
             if let Some(port) = read_port(&port_file) {
                 return Ok(port);
             }
+            return Err("Live sidecar has no published port".into());
         }
     }
+    *guard = None;
     let _ = std::fs::remove_file(&port_file);
     let sidecar = state.repo.join("desktop/sidecar.py");
     if !sidecar.is_file() {
@@ -332,15 +411,29 @@ fn ensure_sidecar(state: &Atlas, openrouter: &str) -> Result<u16, String> {
         .env("JEV_API_KEY", jev)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
-        .stderr(Stdio::piped());
+        .stderr(Stdio::null());
     let child = cmd.spawn().map_err(|e| format!("python spawn failed: {e}"))?;
-    *state.sidecar.lock().expect("sidecar") = Some(child);
+    *guard = Some(child);
     for _ in 0..50 {
+        if guard.as_mut().expect("spawned sidecar").try_wait()
+            .map_err(|_| "Could not inspect analysis sidecar")?.is_some() {
+            *guard = None;
+            return Err("Analysis sidecar exited during startup".into());
+        }
         if let Some(port) = read_port(&port_file) {
             return Ok(port);
         }
         std::thread::sleep(Duration::from_millis(100));
     }
+    // Reap a timed-out child before another command is allowed to start one.
+    if let Some(mut child) = guard.take() {
+        if child.kill().is_err() {
+            *guard = Some(child);
+            return Err("Sidecar startup timed out; could not stop child".into());
+        }
+        let _ = child.wait();
+    }
+    let _ = std::fs::remove_file(&port_file);
     Err("sidecar did not bind a port".into())
 }
 
@@ -491,4 +584,46 @@ fn ask_catalog_filters_fixture() {
     assert!(sites.hits.iter().all(|hit| hit.id != "dc-far"), "{sites:?}");
     let err = catalog::ask(&conn, "nope", "", None, None, None).unwrap_err();
     assert!(err.contains("unknown question"), "{err}");
+}
+
+#[cfg(test)]
+mod progress_protocol_tests {
+    use super::read_analysis_stream;
+    use std::io::{BufReader, Cursor};
+
+    #[test]
+    fn rejects_truncated_malformed_and_duplicate_terminal_frames() {
+        for input in [
+            "",
+            "{\"type\":\"activity\"}\n",
+            "{\"type\":\"result\",\"result\":{}}",
+            "not json\n",
+            "{\"type\":\"result\",\"result\":null}\n",
+            "{\"type\":\"result\",\"result\":{}}\n{\"type\":\"result\",\"result\":{}}\n",
+            "{\"type\":\"delta\",\"text\":\"x\",\"characters\":1,\"reasoning\":\"private\"}\n",
+            "{\"type\":\"stage\",\"stage\":\"complete\",\"message\":\"done\"}\n",
+        ] {
+            assert!(read_analysis_stream(Cursor::new(input), |_| Ok(())).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    fn reads_unicode_across_small_buffers_and_preserves_error_results() {
+        let input = "{\"type\":\"delta\",\"text\":\"é🌎\",\"characters\":2}\n{\"type\":\"result\",\"result\":{\"error\":\"model failed\"}}\n";
+        let mut events = Vec::new();
+        let result = read_analysis_stream(BufReader::with_capacity(1, Cursor::new(input)), |event| {
+            events.push(event);
+            Ok(())
+        }).unwrap();
+        assert_eq!(events[0]["text"], "é🌎");
+        assert_eq!(result["error"], "model failed");
+    }
+
+    #[test]
+    fn terminal_error_and_channel_failure_cannot_be_success() {
+        let error = read_analysis_stream(Cursor::new("{\"type\":\"error\",\"message\":\"safe failure\"}\n"), |_| Ok(()));
+        assert_eq!(error.unwrap_err(), "safe failure");
+        let input = "{\"type\":\"activity\"}\n{\"type\":\"result\",\"result\":{}}\n";
+        assert_eq!(read_analysis_stream(Cursor::new(input), |_| Err("closed".into())).unwrap_err(), "closed");
+    }
 }

@@ -1126,3 +1126,72 @@ dialog.atlas-palette.sc-palette {
   .atlas-glyph[data-severity="unknown"],
   .atlas-live-glyph[data-kind] { background: Canvas; border-color: CanvasText; box-shadow: none; }
 }
+
+/* Request-scoped progress occupies its own shell row, including over a full dossier. */
+.sc-app.atlas-app.has-operations {
+  grid-template-rows: 52px auto minmax(0, 1fr) 32px;
+}
+.atlas-operations {
+  max-height: min(28dvh, 240px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--sc-line);
+  background: var(--sc-deck);
+  color: var(--sc-ink);
+  font-size: var(--sc-text-sm);
+}
+.atlas-operation + .atlas-operation {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--sc-line);
+}
+.atlas-operation-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.atlas-operation-heading strong { min-width: 0; overflow-wrap: anywhere; }
+.atlas-operation-heading button { flex-shrink: 0; }
+.atlas-operation-status { margin: 2px 0; overflow-wrap: anywhere; }
+.atlas-operation[data-phase="failed"] .atlas-operation-status { color: var(--sc-signal-ink); }
+.atlas-operation-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin: 2px 0;
+  color: var(--sc-ink-2);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--sc-text-xs);
+}
+.atlas-operation-output { margin-top: 4px; font-size: var(--sc-text-xs); }
+.atlas-preview-reading { display: none; margin: 4px 0 0; }
+.atlas-preview-paused + .atlas-preview-reading { display: block; }
+.atlas-operation-output textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  max-height: 72px;
+  resize: none;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: monospace;
+  font-size: var(--sc-text-xs);
+}
+.atlas-operation:focus-visible,
+.atlas-operation-output textarea:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+@media (max-width: 700px) {
+  .atlas-operations { padding: 6px 12px; max-height: 25dvh; }
+}
+/* Progress uses text only: no animation or transition, including reduced-motion mode. */

@@ -31,3 +31,4 @@ starlette>=0.27.0
 # chromadb 1.5.x — pinning <1.0.0 would force pip to install 0.6.3 in
 # production and the persistent collection format would fail to open.
 chromadb>=1.5.0,<2.0.0
+typesafe-sdk>=0.1.0

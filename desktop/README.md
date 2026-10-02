@@ -39,7 +39,19 @@ Cesium loads some worker files and data only when you select a site. If you stop
 
 On the map, national-scale counts group contractors. Click a group's circle or count to frame its members at regional scale and see individual markers. This movement starts without waiting for a surface-height lookup and does not start an orbit. Hover for a name, or click a marker to open its dossier. The lower-right sector controls hide other categories. CVE filters keep nonmatching markers dimmed and selectable.
 
+As you zoom, the map loads the 3D tiles needed for the current view. Contractor markers and Nearby radius outlines follow the surfaces already loaded, without requesting maximum-detail tiles for every location. Their height updates run in small batches after movement stops and when tiles finish loading, leaving the map responsive while detail resolves. Image detail still depends on Google's coverage and your connection.
+
 **Hide** closes the workspace without clearing the selection, filter, or results. The map's selection and filter chips restore their corresponding views. **Back** returns to the preceding workspace. The separate Clear selection and Clear filter actions remove only their respective state.
+
+### Analysis and progress
+
+To follow a **Kill chain** or **Step detail** request, read its progress record. It appears immediately with the request type and subject. It shows reported stages, the model when reported, elapsed time, output character count, and when model data last arrived. Stages include preparing, connecting, waiting, streaming, parsing, and verifying. Completion shows **Complete**; an error shows **Failed** with its message.
+
+The provisional answer preview shows only the last 1,200 characters of streamed output. It is separate from the final validated result shown in the dossier. It contains no private model reasoning, estimated finish time, or invented percentage. To read without the text changing, focus the preview or scroll up. The preview text pauses while progress counters continue. Return to the end and move focus out of the preview to resume the live tail. This pauses only the display; the model continues working.
+
+Changing selection or collapsing a step does not cancel its model request. Each concurrent request keeps its own subject and progress, with the newest active request first. An earlier result cannot attach to a new dossier or a different step. History retains the latest three finished records plus a finished record that still has focus. To remove a finished record, use **Dismiss**.
+
+Ask, filter, CVE, and port queries have their own busy, result, and error feedback. Catalog queries can run while analysis is active. Camera preparation has separate feedback and remains stoppable with **Stop**.
 
 ### Building footprints
 

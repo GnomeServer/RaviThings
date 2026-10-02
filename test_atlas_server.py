@@ -528,7 +528,7 @@ async def full_assessment_endpoint(req: KillChainRequest):
     """
     import json as _json
     import re as _re2
-    from backend.kill_chain import assemble_contractor_intel, generate_kill_chain
+    from backend.kill_chain import assemble_contractor_intel, generate_kill_chain, generate_step_detail
 
     with open(BASE / "frontend" / "static" / "contractors.json") as f:
         data = _json.load(f)
@@ -572,83 +572,7 @@ async def full_assessment_endpoint(req: KillChainRequest):
         for idx, step in enumerate(steps):
             yield f"data: {_json.dumps({'phase': 'step_detail', 'step': idx + 1, 'total': len(steps), 'status': 'generating', 'tactic': step.get('tactic', '')})}\n\n"
 
-            if llm.is_available():
-                # Build step detail prompt (same as /api/step-detail endpoint)
-                svc_lines = "\n".join(
-                    f"  {s.get('ip','')}:{s['port']}/{s.get('transport','tcp')} "
-                    f"{s.get('product','')} {s.get('version','')}"
-                    for s in intel.get("all_services", [])[:15]
-                )
-
-                user_content = f"""KILL CHAIN STEP TO ANALYZE:
-Tactic: {step.get('tactic', '')}
-Technique: {step.get('technique_id', '')} — {step.get('technique_name', '')}
-Description: {step.get('description', '')}
-Evidence: {step.get('evidence', '')}
-
-CONTRACTOR: {intel['name']} ({intel['city']}, {intel['state']})
-Domain: {intel['domain']}
-
-ON-PREM IPs:
-{chr(10).join('  ' + ip for ip in intel.get('onprem_ips', [])[:20])}
-
-EXPOSED SERVICES:
-{svc_lines}
-
-TOP CVEs: {', '.join(intel.get('all_vulns', [])[:15])}
-
-Provide a complete defensive analysis of this specific step."""
-
-                system_prompt = STEP_DETAIL_SYSTEM_PROMPT
-                if _RED_TEAM_EXTENSION:
-                    rt_context = _RED_TEAM_EXTENSION
-                    ip_match = _re2.search(r'(\d+\.\d+\.\d+\.\d+)', step.get('evidence', '') + ' ' + step.get('description', ''))
-                    port_match = _re2.search(r':(\d+)', step.get('evidence', '') + ' ' + step.get('description', ''))
-                    target_ip = ip_match.group(1) if ip_match else (intel.get('onprem_ips', [''])[0] if intel.get('onprem_ips') else '')
-                    target_port = port_match.group(1) if port_match else ''
-                    target_svc = next((s for s in intel.get('all_services', []) if str(s.get('port')) == target_port or s.get('ip') == target_ip), {})
-                    target_product = f"{target_svc.get('product', '')} {target_svc.get('version', '')}".strip()
-
-                    rt_context = rt_context.replace('TARGET_IP_HERE', target_ip)
-                    rt_context = rt_context.replace('TARGET_PROTOCOL_HERE', target_svc.get('transport', 'tcp'))
-                    rt_context = rt_context.replace('TARGET_URL_HERE', f'http://{target_ip}:{target_port}' if target_port else f'http://{target_ip}')
-                    rt_context = rt_context.replace('PORT_RANGE', target_port or '1-65535')
-                    rt_context = rt_context.replace('SERVICE_NAME', target_product or 'unknown')
-                    system_prompt += f"\n\n{rt_context}\n\nFOCUS: Target {target_ip}:{target_port} running {target_product}. Add 'red_team' key to JSON. IMPORTANT: Escape all backslashes as \\\\\\\\ in JSON strings."
-
-                messages = [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_content},
-                ]
-
-                try:
-                    raw = await llm.chat(messages, max_tokens=None, reasoning_effort="low")
-                    json_str = raw
-                    if "```json" in raw:
-                        json_str = raw.split("```json")[1].split("```")[0]
-                    elif "```" in raw:
-                        json_str = raw.split("```")[1].split("```")[0]
-                    try:
-                        detail = _json.loads(json_str)
-                    except _json.JSONDecodeError:
-                        fixed = _re2.sub(r'(?<!\\)\\(?!["\\/bfnrtu])', r'\\\\', json_str)
-                        try:
-                            detail = _json.loads(fixed)
-                        except _json.JSONDecodeError:
-                            # Strip control chars, try brace extraction
-                            clean = _re2.sub(r'[\x00-\x1f]', ' ', json_str)
-                            b0, b1 = clean.find('{'), clean.rfind('}')
-                            if b0 >= 0 and b1 > b0:
-                                try:
-                                    detail = _json.loads(clean[b0:b1+1])
-                                except _json.JSONDecodeError:
-                                    detail = {"vulnerability": {"description": raw[:2000]}, "detection": {}, "remediation": {}, "references": []}
-                            else:
-                                detail = {"vulnerability": {"description": raw[:2000]}, "detection": {}, "remediation": {}, "references": []}
-                except Exception as e:
-                    detail = {"vulnerability": {"description": f"Analysis failed: {e}"}, "detection": {}, "remediation": {}, "references": []}
-            else:
-                detail = {"vulnerability": {"description": "GLM-5.3 not available"}, "detection": {}, "remediation": {}, "references": []}
+            detail = await generate_step_detail(llm, intel, step)
 
             step_details.append(detail)
             yield f"data: {_json.dumps({'phase': 'step_detail', 'step': idx + 1, 'total': len(steps), 'status': 'complete', 'data': detail})}\n\n"
@@ -665,67 +589,13 @@ class StepDetailRequest(BaseModel):
     step: dict  # The kill chain step object
 
 
-STEP_DETAIL_SYSTEM_PROMPT = """\
-You are a defensive security analyst providing detailed technical analysis of a \
-specific attack vector identified in a DOE contractor's infrastructure. Your goal \
-is to help defenders understand the vulnerability deeply so they can protect against it.
-
-For the given kill chain step, provide:
-
-1. VULNERABILITY ANALYSIS: What the weakness is, why it exists, what versions are affected
-2. WHAT AN ATTACKER SEES: The exact banner/response an attacker would observe (from our Shodan data)
-3. DETECTION: How to detect if this vector is being probed or exploited (Snort/Sigma rules, log patterns)
-4. REMEDIATION: Specific commands to fix this on this exact system (firewall rules, config changes, patches)
-5. REFERENCES: Links to CVE advisories, CISA alerts, vendor bulletins, MITRE ATT&CK page
-
-RULES:
-- Be specific to the exact IP, port, service version, and CVE provided
-- Include concrete detection signatures and remediation commands
-- Reference only real CVEs and advisories
-- Output valid JSON matching the schema
-
-OUTPUT JSON:
-{
-  "vulnerability": {"description": "...", "affected_versions": "...", "cvss": "...", "cwe": "..."},
-  "attacker_view": {"banner": "...", "what_they_see": "..."},
-  "detection": {"signatures": ["..."], "log_indicators": ["..."], "monitoring_advice": "..."},
-  "remediation": {"immediate": ["..."], "long_term": ["..."], "commands": ["..."]},
-  "references": [{"title": "...", "url": "..."}],
-  "alternative_vectors": ["Description of other ways this service could be attacked"]
-}
-"""
-
-# === AUTHORIZED RED TEAM PROMPT EXTENSION ===
-# Loaded from RED_TEAM_PROMPT.json if present, or RED_TEAM_PROMPT env var as fallback.
-# The backend LLM (GLM-5.3) executes this in your controlled environment.
-_RED_TEAM_EXTENSION = ""
-_rt_path = BASE / "RED_TEAM_PROMPT.json"
-if _rt_path.exists():
-    try:
-        import json as _rtjson
-        _rt_data = _rtjson.loads(_rt_path.read_text())
-        # Support both {"prompt": "..."} and structured JSON (serialize as context)
-        if isinstance(_rt_data, dict) and "prompt" in _rt_data:
-            _RED_TEAM_EXTENSION = _rt_data["prompt"]
-        elif isinstance(_rt_data, dict):
-            _RED_TEAM_EXTENSION = (
-                "AUTHORIZED RED TEAM ANALYSIS FRAMEWORK:\n"
-                + _rtjson.dumps(_rt_data, indent=2)
-            )
-        else:
-            _RED_TEAM_EXTENSION = str(_rt_data)
-        print(f"Red team prompt loaded from {_rt_path} ({len(_RED_TEAM_EXTENSION)} chars)")
-    except Exception as _e:
-        print(f"Warning: could not load {_rt_path}: {_e}")
-if not _RED_TEAM_EXTENSION:
-    _RED_TEAM_EXTENSION = os.environ.get("RED_TEAM_PROMPT", "")
 
 
 @app.post("/api/step-detail")
 async def step_detail_endpoint(req: StepDetailRequest):
     """Generate detailed analysis for a specific kill chain step."""
     import json as _json
-    from backend.kill_chain import assemble_contractor_intel
+    from backend.kill_chain import assemble_contractor_intel, generate_step_detail
 
     with open(BASE / "frontend" / "static" / "contractors.json") as f:
         data = _json.load(f)
@@ -738,146 +608,7 @@ async def step_detail_endpoint(req: StepDetailRequest):
     intel = assemble_contractor_intel(contractor)
     step = req.step
 
-    # Build the user prompt with step context + contractor intel
-    svc_lines = "\n".join(
-        f"  {s.get('ip','')}:{s['port']}/{s.get('transport','tcp')} "
-        f"{s.get('product','')} {s.get('version','')}"
-        for s in intel.get("all_services", [])[:15]
-    )
-
-    user_content = f"""KILL CHAIN STEP TO ANALYZE:
-Tactic: {step.get('tactic', '')}
-Technique: {step.get('technique_id', '')} — {step.get('technique_name', '')}
-Description: {step.get('description', '')}
-Evidence: {step.get('evidence', '')}
-
-CONTRACTOR: {intel['name']} ({intel['city']}, {intel['state']})
-Domain: {intel['domain']}
-
-ON-PREM IPs:
-{chr(10).join('  ' + ip for ip in intel.get('onprem_ips', [])[:20])}
-
-EXPOSED SERVICES:
-{svc_lines}
-
-TOP CVEs: {', '.join(intel.get('all_vulns', [])[:15])}
-
-Provide a complete defensive analysis of this specific step."""
-
-    system_prompt = STEP_DETAIL_SYSTEM_PROMPT
-
-    if _RED_TEAM_EXTENSION:
-        # Dynamically substitute placeholders with real step data
-        rt_context = _RED_TEAM_EXTENSION
-
-        # Extract the primary IP and port from the step evidence
-        import re as _re
-        ip_match = _re.search(r'(\d+\.\d+\.\d+\.\d+)', step.get('evidence', '') + ' ' + step.get('description', ''))
-        port_match = _re.search(r':(\d+)', step.get('evidence', '') + ' ' + step.get('description', ''))
-        target_ip = ip_match.group(1) if ip_match else (intel.get('onprem_ips', [''])[0] if intel.get('onprem_ips') else '')
-        target_port = port_match.group(1) if port_match else ''
-
-        # Find the matching service for product/version info
-        target_svc = next(
-            (s for s in intel.get('all_services', [])
-             if str(s.get('port')) == target_port or s.get('ip') == target_ip),
-            {}
-        )
-        target_product = f"{target_svc.get('product', '')} {target_svc.get('version', '')}".strip()
-
-        # Map MITRE tactic to the relevant red team phase
-        tactic_to_phase = {
-            'Initial Access': 'reconnaissance + vulnerability_identification',
-            'Execution': 'vulnerability_exploitation',
-            'Credential Access': 'vulnerability_exploitation + exploitation',
-            'Lateral Movement': 'post_exploitation',
-            'Persistence': 'post_exploitation',
-            'Discovery': 'reconnaissance',
-            'Collection': 'post_exploitation',
-            'Exfiltration': 'post_exploitation',
-        }
-        relevant_phase = tactic_to_phase.get(step.get('tactic', ''), 'vulnerability_identification')
-
-        # Perform substitutions
-        rt_context = rt_context.replace('TARGET_IP_HERE', target_ip)
-        rt_context = rt_context.replace('TARGET_PROTOCOL_HERE', target_svc.get('transport', 'tcp'))
-        rt_context = rt_context.replace('TARGET_URL_HERE', f'http://{target_ip}:{target_port}' if target_port else f'http://{target_ip}')
-        rt_context = rt_context.replace('PORT_RANGE', target_port or '1-65535')
-        rt_context = rt_context.replace('SERVICE_NAME', target_product or 'unknown')
-
-        system_prompt += f"\n\n{rt_context}"
-        system_prompt += f"\n\nFOCUS: This step maps to red team phase(s): {relevant_phase}. "
-        system_prompt += f"Target: {target_ip}:{target_port} running {target_product}. "
-        system_prompt += "Provide phase-specific tool commands and techniques for THIS exact target. "
-        system_prompt += "Add a 'red_team' key to your JSON output with: {\"tools\": [...], \"commands\": [...], \"techniques\": [...]}. "
-        system_prompt += "IMPORTANT: In JSON strings, escape all backslashes as \\\\. Do not use raw \\n or \\t in string values."
-
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_content},
-    ]
-
-    if llm.is_available():
-        try:
-            raw = await llm.chat(messages, max_tokens=None, reasoning_effort="low")
-            # Parse JSON from response
-            json_str = raw
-            if "```json" in raw:
-                json_str = raw.split("```json")[1].split("```")[0]
-            elif "```" in raw:
-                json_str = raw.split("```")[1].split("```")[0]
-
-            # Robust JSON parsing — handle LLM escape issues
-            try:
-                result = _json.loads(json_str)
-            except _json.JSONDecodeError:
-                # Fix common LLM JSON errors: unescaped backslashes
-                import re as _re2
-                fixed = _re2.sub(r'(?<!\\)\\(?!["\\/bfnrtu])', r'\\\\', json_str)
-                try:
-                    result = _json.loads(fixed)
-                except _json.JSONDecodeError:
-                    # Try finding first { to last }
-                    brace_start = json_str.find('{')
-                    brace_end = json_str.rfind('}')
-                    if brace_start >= 0 and brace_end > brace_start:
-                        subset = json_str[brace_start:brace_end+1]
-                        # Remove control characters that break JSON
-                        subset = _re2.sub(r'[\x00-\x1f]', ' ', subset)
-                        try:
-                            result = _json.loads(subset)
-                        except _json.JSONDecodeError:
-                            # Truly broken — return raw as vulnerability description
-                            result = {
-                                "vulnerability": {"description": raw[:2000]},
-                                "detection": {"signatures": [], "log_indicators": [], "monitoring_advice": "See raw analysis above."},
-                                "remediation": {"immediate": [], "long_term": [], "commands": []},
-                                "references": [],
-                            }
-                    else:
-                        result = {
-                            "vulnerability": {"description": raw[:2000]},
-                            "detection": {"signatures": [], "log_indicators": [], "monitoring_advice": ""},
-                            "remediation": {"immediate": [], "long_term": [], "commands": []},
-                            "references": [],
-                        }
-        except Exception as e:
-            result = {
-                "vulnerability": {"description": f"Analysis generation failed: {e}"},
-                "detection": {"signatures": [], "log_indicators": [], "monitoring_advice": ""},
-                "remediation": {"immediate": [], "long_term": [], "commands": []},
-                "references": [],
-                "alternative_vectors": [],
-            }
-    else:
-        result = {
-            "vulnerability": {"description": "GLM-5.3 not available for detailed analysis."},
-            "detection": {"signatures": [], "log_indicators": [], "monitoring_advice": "Enable logging on this service."},
-            "remediation": {"immediate": ["Block this port at the firewall"], "long_term": ["Patch to latest version"], "commands": []},
-            "references": [{"title": "MITRE ATT&CK", "url": f"https://attack.mitre.org/techniques/{step.get('technique_id', 'T1190')}/"}],
-            "alternative_vectors": [],
-        }
-
+    result = await generate_step_detail(llm, intel, step)
     return JSONResponse(result)
 
 

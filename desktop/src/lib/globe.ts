@@ -93,6 +93,7 @@ const ENERGY = "Energy & Utilities";
 const DIGITAL = "IT & Cyber";
 const DEFENSE = new Set(["Security & Defense", "Research & Labs", "Manufacturing"]);
 const CLUSTER_M = 800_000;
+const SURFACE_PICK_BATCH_SIZE = 4;
 
 export async function mountGlobe(
   container: HTMLElement,
@@ -284,7 +285,7 @@ export async function mountGlobe(
   let clusterQueued = false;
   let hoverPoint: Cartesian2 | null = null;
   let hoverQueued = false;
-  let ellipse: { remove: () => void; refine: () => void } | null = null;
+  let ellipse: { remove: () => void; refine: (gen: number, exclude: object[]) => Promise<void> } | null = null;
   let ellipseEntity: CesiumNS.Entity | null = null;
   let ellipseGen = 0;
   let threadEntities: CesiumNS.Entity[] = [];
@@ -371,8 +372,17 @@ export async function mountGlobe(
     invalidateOverlay();
   }
 
-  function inView(lon: number, lat: number) {
-    const rect = viewer.camera.computeViewRectangle();
+  function surfaceExclusions(): object[] {
+    // Picking excludes individual points/billboards, not their collections.
+    const exclude: object[] = [...buildingPrimitives, ...threadEntities];
+    if (ellipseEntity) exclude.push(ellipseEntity);
+    for (const collection of [contractorPoints, clusterPoints, threadPoints, live]) {
+      for (let i = 0; i < collection.length; i += 1) exclude.push(collection.get(i));
+    }
+    return exclude;
+  }
+
+  function inView(lon: number, lat: number, rect: CesiumNS.Rectangle | undefined) {
     if (!rect) return true;
     const pad = Cesium.Math.toRadians(0.5);
     const west = rect.west - pad;
@@ -390,54 +400,39 @@ export async function mountGlobe(
     clampTimer = window.setTimeout(() => {
       if (disposed || cameraMoving) return;
       void clampSurfaces();
-      ellipse?.refine();
     }, 180);
   }
 
   async function clampSurfaces() {
-    if (!viewer.scene.clampToHeightSupported) {
-      return;
-    }
-    if (viewer.camera.positionCartographic.height > 2_000_000) {
-      return;
-    }
+    if (!viewer.scene.clampToHeightSupported || viewer.camera.positionCartographic.height > 2_000_000) return;
     const gen = ++clampGen;
-    const jobs: { cartesian: Cartesian3; apply: (next: Cartesian3) => void }[] = [];
-    for (const rec of contractors) {
-      if (!inView(rec.lon, rec.lat)) continue;
-      jobs.push({
-        cartesian: Cesium.Cartesian3.fromDegrees(rec.lon, rec.lat, 0),
-        apply: (next) => {
-          rec.position = next;
-          rec.point.position = next;
-        },
-      });
+    const rect = viewer.camera.computeViewRectangle();
+    const currentEllipse = ellipse;
+    const exclude = surfaceExclusions();
+    const sampled = new Cesium.Cartesian3();
+    let picked = 0;
+    let wrote = false;
+    try {
+      for (const rec of contractors) {
+        if (gen !== clampGen || cameraMoving || disposed) return;
+        if (!contractorVisible(rec.category) || !inView(rec.lon, rec.lat, rect)) continue;
+        // Decoration follows rendered tiles; it must not download distant leaf tiles.
+        const next = viewer.scene.clampToHeight(rec.position, exclude, 10, sampled);
+        if (next && !Cesium.Cartesian3.equals(next, rec.position)) {
+          Cesium.Cartesian3.clone(next, rec.position);
+          rec.point.position = rec.position;
+          wrote = true;
+          invalidateOverlay();
+        }
+        if (++picked % SURFACE_PICK_BATCH_SIZE === 0) {
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        }
+      }
+    } finally {
+      if (wrote && !disposed) rebuildClusters();
     }
-    if (jobs.length === 0) return;
-    const exclude: object[] = [contractorPoints, clusterPoints, live, ...buildingPrimitives];
-    if (ellipseEntity) exclude.push(ellipseEntity);
-    for (let i = 0; i < jobs.length; i += 200) {
-      if (gen !== clampGen || cameraMoving || disposed) {
-        return;
-      }
-      const slice = jobs.slice(i, i + 200);
-      let clamped: Array<Cartesian3 | undefined>;
-      try {
-        clamped = await viewer.scene.clampToHeightMostDetailed(slice.map((job) => job.cartesian), exclude, 10);
-      } catch {
-        return;
-      }
-      if (gen !== clampGen || cameraMoving || disposed) {
-        return;
-      }
-      let wrote = false;
-      for (let j = 0; j < clamped.length; j += 1) {
-        const next = clamped[j];
-        if (!next) continue;
-        slice[j].apply(Cesium.Cartesian3.clone(next));
-        wrote = true;
-      }
-      if (wrote) rebuildClusters();
+    if (gen === clampGen && !cameraMoving && !disposed && ellipse === currentEllipse) {
+      await currentEllipse?.refine(gen, exclude);
     }
   }
 
@@ -745,13 +740,7 @@ export async function mountGlobe(
     if (!photoreal || !viewer.scene.clampToHeightSupported) {
       throw new Error("Surface height is unavailable. Try again after the 3D tiles load.");
     }
-    // Picking excludes individual points/billboards, not their collections.
-    // Snapshot owned geometry so none of it can stand in for the Google surface.
-    const exclude: object[] = [...buildingPrimitives, ...threadEntities];
-    if (ellipseEntity) exclude.push(ellipseEntity);
-    for (const collection of [contractorPoints, clusterPoints, threadPoints, live]) {
-      for (let i = 0; i < collection.length; i += 1) exclude.push(collection.get(i));
-    }
+    const exclude = surfaceExclusions();
     let timer: number | undefined;
     let timedOut = false;
     try {
@@ -1096,11 +1085,10 @@ export async function mountGlobe(
       if (ellipse) ellipse.remove();
       const meters = radiusKm * 1000;
       const steps = 96;
-      const sampledCenter = viewer.scene.sampleHeight(Cesium.Cartographic.fromDegrees(lon, lat), buildingPrimitives);
+      const sampledCenter = viewer.scene.sampleHeight(Cesium.Cartographic.fromDegrees(lon, lat), surfaceExclusions());
       const centerH = typeof sampledCenter === "number" && Number.isFinite(sampledCenter) ? sampledCenter : 0;
-      // Refine every vertex in the batch below, rather than forcing synchronous GPU picks here.
-      const positions: Cartesian3[] = [];
-      const ground: Cartesian3[] = [];
+      // Refine against rendered tiles in small batches after the camera settles.
+      let positions: Cartesian3[] = [];
       for (let i = 0; i <= steps; i += 1) {
         const heading = (i / steps) * Math.PI * 2;
         const delta = meters / 6378137;
@@ -1111,10 +1099,7 @@ export async function mountGlobe(
           Math.sin(heading) * Math.sin(delta) * Math.cos(lat1),
           Math.cos(delta) - Math.sin(lat1) * Math.sin(lat2),
         );
-        const endLon = Cesium.Math.toDegrees(lon2);
-        const endLat = Cesium.Math.toDegrees(lat2);
-        ground.push(Cesium.Cartesian3.fromDegrees(endLon, endLat, 0));
-        positions.push(Cesium.Cartesian3.fromDegrees(endLon, endLat, centerH + 40));
+        positions.push(Cesium.Cartesian3.fromRadians(lon2, lat2, centerH + 40));
       }
       const ink = gold.withAlpha(0.9);
       const entity = viewer.entities.add({
@@ -1129,30 +1114,36 @@ export async function mountGlobe(
       });
       ellipseEntity = entity;
       const generation = ++ellipseGen;
-      let refinePending = true;
       ellipse = {
         remove: () => {
           ellipseGen += 1;
           viewer.entities.remove(entity);
           if (ellipseEntity === entity) ellipseEntity = null;
         },
-        refine: () => {
-          if (!refinePending || disposed || generation !== ellipseGen) return;
-          refinePending = false;
-          void viewer.scene.clampToHeightMostDetailed(ground, [entity, ...buildingPrimitives], 10).then((clamped) => {
-            if (disposed || generation !== ellipseGen || ellipseEntity !== entity || !entity.polyline) return;
-            const raised: Cartesian3[] = [];
-            for (let i = 0; i < positions.length; i += 1) {
-              const next = clamped[i];
-              if (!next) {
-                raised.push(positions[i]);
-                continue;
+        refine: async (gen, exclude) => {
+          const raised = positions.slice();
+          const sampled = new Cesium.Cartesian3();
+          const carto = new Cesium.Cartographic();
+          let wrote = false;
+          for (let i = 0; i < positions.length; i += 1) {
+            if (disposed || cameraMoving || gen !== clampGen || generation !== ellipseGen) return;
+            const next = viewer.scene.clampToHeight(positions[i], exclude, 10, sampled);
+            if (next) {
+              Cesium.Cartographic.fromCartesian(next, Cesium.Ellipsoid.WGS84, carto);
+              Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, carto.height + 40, Cesium.Ellipsoid.WGS84, sampled);
+              if (!Cesium.Cartesian3.equals(sampled, positions[i])) {
+                raised[i] = Cesium.Cartesian3.clone(sampled);
+                wrote = true;
               }
-              const carto = Cesium.Cartographic.fromCartesian(next);
-              raised.push(Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, carto.height + 40));
             }
-            entity.polyline.positions = new Cesium.ConstantProperty(raised);
-          }).catch(() => undefined);
+            if ((i + 1) % SURFACE_PICK_BATCH_SIZE === 0) {
+              await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+            }
+          }
+          if (wrote && entity.polyline) {
+            positions = raised;
+            entity.polyline.positions = new Cesium.ConstantProperty(positions);
+          }
         },
       };
       scheduleClamp();
