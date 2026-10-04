@@ -1,5 +1,6 @@
 <script lang="ts">
   import { RISKY_PORTS } from "../../ui/src/risk";
+  import { summarizeEntity } from "./entity-insights";
   import AtlasIcon from "./AtlasIcon.svelte";
 
   type Factor = { text: string; level: string };
@@ -12,15 +13,24 @@
     risk,
     onCve,
     onPort,
+    kind = 'contractor',
   }: {
     payload: Rec | null;
     risk: Risk;
     onCve: (id: string) => void;
     onPort: (port: number) => void;
+    kind?: string;
   } = $props();
 
   let copiedIp = $state("");
   let copyNote = $state("");
+  let exposureRoot = $state<HTMLDivElement>();
+  const facilityProperties = $derived.by(() => {
+    const properties = rec(payload?.properties) ?? {};
+    return Object.entries({ ...properties, ...rec(properties.tags) }).filter(([, value]) =>
+      (typeof value === "string" && value.trim() !== "") || typeof value === "number" || typeof value === "boolean");
+  });
+
 
   const DANGER_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2 };
   const PORTS: Record<number, { name: string; danger: "critical" | "high" | "medium"; reason: string }> = {
@@ -114,6 +124,10 @@
   const web = $derived(rec(osint?.web));
   const shodanIp = $derived(rec(osint?.shodan_ip));
   const nvd = $derived(rec(osint?.nvd_cvss));
+  const ct = $derived(rec(osint?.ct));
+  const asn = $derived(rec(osint?.asn));
+  const subdomains = $derived(strings(ct?.unique_subdomains));
+  const asnHosts = $derived(arr(asn?.hosts).map(rec).filter((row): row is Rec => row !== null));
   const roleLine = $derived(cleanRole(payload?.role));
   const showAi = $derived(ai?.queried === true);
   const aiError = $derived(typeof ai?.error === "string" && ai.error ? ai.error : "");
@@ -185,8 +199,7 @@
   const cves = $derived(
     arr(shodan?.vulns)
       .map((item) => rec(item)?.cve)
-      .filter((item): item is string => typeof item === "string" && item.length > 0)
-      .slice(0, 12),
+      .filter((item): item is string => typeof item === "string" && item.length > 0),
   );
   const topPorts = $derived(
     arr(shodan?.top_ports)
@@ -200,7 +213,7 @@
   const nvdScores = $derived.by(() => {
     const scores = rec(nvd?.scores);
     if (!scores) return [] as { id: string; rest: string }[];
-    return Object.keys(scores).slice(0, 12).map((key) => {
+    return Object.keys(scores).map((key) => {
       const row = rec(scores[key]);
       if (!row) return { id: key, rest: "" };
       const bits: string[] = [];
@@ -222,6 +235,8 @@
   const shownContractIds = $derived(contractIds.slice(0, 40));
   const shownPeople = $derived(people.slice(0, 20));
 
+
+  const summary = $derived(summarizeEntity(payload));
   function shownIp(value: unknown): string {
     if (typeof value === "string" && value.trim()) return value;
     const row = rec(value);
@@ -279,6 +294,25 @@
     return line;
   }
 
+  function navigateTo(section: string) {
+    const target = exposureRoot?.querySelector(`[data-section="${section}"]`);
+    if (!target) return;
+    // open disclosures before scroll for network/profile etc
+    if (target instanceof HTMLDetailsElement) {
+      target.open = true;
+    } else {
+      const det = target.querySelector('details');
+      if (det instanceof HTMLDetailsElement) det.open = true;
+    }
+    const reduced = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' });
+    const head = target.querySelector('h3, h4, summary, [role="heading"]') as HTMLElement | null;
+    if (head) {
+      if (head.tagName !== "SUMMARY") head.setAttribute("tabindex", "-1");
+      head.focus({ preventScroll: true });
+    }
+  }
+
   function serviceLine(item: unknown): string {
     const row = rec(item);
     if (!row) return text(item);
@@ -295,20 +329,74 @@
   }
 </script>
 
-<div class="atlas-exposure">
-  <section class="sc-panel atlas-exposure__summary" aria-labelledby="exposure-summary-title">
-    <h3 id="exposure-summary-title" class="sc-label">Exposure summary</h3>
-    <div class="sc-kpis">
-      <div class="sc-kpi">
-        <p class="sc-kpi__label">Exposure score</p>
-        {#if risk}
-          <p class="sc-kpi__value sc-kpi__value--mono" data-severity={severityRole(risk.severity)}>{risk.score}</p>
-          <p class="sc-kpi__sub" data-severity={severityRole(risk.severity)}>{risk.severity}</p>
-        {:else}
-          <p class="sc-kpi__value">Not available</p>
-        {/if}
+{#snippet cveLinks(ids: string[], limit = 12)}
+  <div class="atlas-tags">{#each ids.slice(0, limit) as id}<button type="button" class="sc-mono atlas-action" onclick={() => onCve(id)}>{id}</button>{/each}</div>
+  {#if ids.length > limit}
+    <details class="atlas-inline-evidence"><summary>Show {ids.length - limit} more recorded CVEs</summary><div class="atlas-tags">{#each ids.slice(limit) as id}<button type="button" class="sc-mono atlas-action" onclick={() => onCve(id)}>{id}</button>{/each}</div></details>
+  {/if}
+{/snippet}
+
+<div class="atlas-exposure" bind:this={exposureRoot}>
+  <nav class="atlas-nav" aria-label="Dossier sections">
+    <button type="button" class="atlas-nav__btn" onclick={() => navigateTo("overview")}>Overview</button>
+    {#if kind === "contractor"}
+      <button type="button" class="atlas-nav__btn" onclick={() => navigateTo("drivers")}>Findings</button>
+      <button type="button" class="atlas-nav__btn" onclick={() => navigateTo("brief")}>Brief</button>
+      <button type="button" class="atlas-nav__btn" onclick={() => navigateTo("network")}>Network</button>
+      <button type="button" class="atlas-nav__btn" onclick={() => navigateTo("sources")}>Sources</button>
+    {/if}
+    <button type="button" class="atlas-nav__btn" onclick={() => navigateTo("profile")}>Profile</button>
+  </nav>
+  <section class="sc-panel atlas-overview" data-section="overview" aria-labelledby="overview-title">
+    <h3 id="overview-title" class="sc-label">{kind === "contractor" ? "Exposure overview" : "Facility record"}</h3>
+    {#if kind === "contractor"}
+      {#if risk}
+        <div class="atlas-score-hero">
+          <div><strong data-severity={severityRole(risk.severity)}>{risk.score}</strong><span>/100</span></div>
+          <div><span class="atlas-score-severity" data-severity={severityRole(risk.severity)}>{risk.severity} exposure</span><span class="atlas-score-caption">Catalog-derived indicator</span></div>
+        </div>
+        <div class="atlas-exposure-viz__track" aria-hidden="true"><div class="atlas-exposure-viz__bar" style:width={`${Math.max(0, Math.min(100, risk.score))}%`} data-severity={severityRole(risk.severity)}></div></div>
+      {:else}
+        <p class="atlas-metric__value">Exposure not assessed</p>
+      {/if}
+      <dl class="atlas-kpi-grid">
+        <div><dt>Federal obligation</dt><dd>{summary.obligation}</dd></div>
+        <div><dt>Contracts</dt><dd>{summary.contracts}</dd></div>
+        <div><dt>Hosts observed</dt><dd>{summary.hosts}</dd></div>
+        <div><dt>Recorded CVEs</dt><dd>{summary.cves}</dd></div>
+      </dl>
+      <div class="atlas-identity">
+        {#if summary.domain}<p><AtlasIcon name="source" /><span class="sc-mono">{summary.domain}</span></p>{/if}
+        {#if summary.address}<p><AtlasIcon name="mission" /><span>{summary.address}</span></p>{/if}
       </div>
+      <p class="atlas-caveat">Heuristic score from recorded exposure indicators. Missing collection can affect the score; a low score does not establish security. CVEs are not proof of exploitability.</p>
+      {#if summary.domainMismatch}<p class="atlas-warning"><AtlasIcon name="alert" />The identity domain differs from the DNS or web observation. Review the source domains before attributing findings.</p>{/if}
+    {:else}
+      <h4 class="atlas-facility-kind">{summary.category}</h4>
+      {#if summary.operator}<p class="atlas-facility-operator">Operated by {summary.operator}</p>{/if}
+      <p class="atlas-caveat">OpenStreetMap / Open Infrastructure Map · ODbL. Geographic context only; no contractor exposure assessment is attached to this facility.</p>
+    {/if}
+  </section>
+  {#if kind === "contractor"}
+  <details class="atlas-disclosure sc-panel atlas-sources" data-section="sources">
+    <summary><AtlasIcon name="source" /><span>Evidence sources</span><span class="atlas-source-count">{summary.collectedCount}/{summary.sourceCount} collected</span></summary>
+    <div class="atlas-disclosure__body">
+      <p class="atlas-note">Includes successful queries with no results. These are stored observations, not live checks.</p>
+      <ul class="atlas-source-list">
+        {#each summary.sources as src (src.label)}
+          <li class="atlas-source" data-state={src.state}>
+            <span class="atlas-source__label">{src.label}</span>
+            <span class="atlas-source__state">{src.state === "empty" ? "No results" : src.state === "missing" ? "Not collected" : src.state === "stale" ? "Needs refresh" : src.state}</span>
+            <span class="atlas-source__detail">{src.detail}</span>
+            {#if src.observedAt}<span class="atlas-source__date">Recorded {src.observedAt}</span>{/if}
+          </li>
+        {/each}
+      </ul>
+      {#if summary.latestEvidence}<p class="atlas-note">Latest successful observation: {summary.latestEvidence}. Source dates may differ.</p>{/if}
     </div>
+  </details>
+  <section class="sc-panel atlas-exposure__summary" aria-labelledby="exposure-summary-title" data-section="drivers">
+    <h3 id="exposure-summary-title" class="sc-label">Exposure drivers</h3>
     {#if risk}
       <ul class="atlas-factors">
         {#each risk.factors as factor}
@@ -322,7 +410,7 @@
         {#each services as svc}
           <li>
             <p>
-              <button type="button" class="sc-mono atlas-action" data-severity={severityRole(svc.danger)} onclick={() => onPort(svc.port)}>{svc.port}</button>
+              {#if RISKY_PORTS.has(svc.port)}<button type="button" class="sc-mono atlas-action" data-severity={severityRole(svc.danger)} onclick={() => onPort(svc.port)}>{svc.port}</button>{:else}<span class="sc-mono">{svc.port}</span>{/if}
               {svc.name}
               <span data-severity={severityRole(svc.danger)}>{svc.danger}</span>
             </p>
@@ -359,14 +447,17 @@
       <h4 class="sc-label">NVD</h4>
       <p class="sc-mono">{Object.entries(nvdSummary).map(([key, value]) => `${key} ${value ?? "not collected"}`).join(" · ")}</p>
       <ul class="atlas-rows">
-        {#each nvdScores as line}
+        {#each nvdScores.slice(0, 12) as line}
           <li class="sc-mono"><button type="button" class="atlas-action" onclick={() => onCve(line.id)}>{line.id}</button>{line.rest}</li>
         {/each}
       </ul>
+      {#if nvdScores.length > 12}
+        <details class="atlas-inline-evidence"><summary>Show {nvdScores.length - 12} more NVD records</summary><ul class="atlas-rows">{#each nvdScores.slice(12) as line}<li class="sc-mono"><button type="button" class="atlas-action" onclick={() => onCve(line.id)}>{line.id}</button>{line.rest}</li>{/each}</ul></details>
+      {/if}
     {/if}
   </section>
 
-  <article class="sc-dossier atlas-brief" data-sc-theme="sand" aria-labelledby="atlas-brief-title">
+  <article class="sc-dossier atlas-brief" data-sc-theme="sand" data-section="brief" aria-labelledby="atlas-brief-title">
     <h3 id="atlas-brief-title" class="sc-label">Intelligence brief</h3>
     <p class="atlas-brief__meta">Mission and role from the catalog. Queried AI research, when present, is separate from collected network evidence.</p>
     <p class="atlas-brief__prose">{mission(payload)}</p>
@@ -387,7 +478,7 @@
     {/if}
   </article>
 
-  <section class="atlas-network" aria-labelledby="network-evidence-title">
+  <section class="atlas-network" data-section="network" aria-labelledby="network-evidence-title">
     <h3 id="network-evidence-title" class="sc-label">Network evidence</h3>
     {#if showOnprem && onprem}
       <details class="atlas-disclosure sc-panel" open>
@@ -458,6 +549,38 @@
         </div>
       </details>
     {/if}
+    {#if ct}
+      <details class="atlas-disclosure sc-panel">
+        <summary>Certificate transparency <span class="atlas-source-count">{subdomains.length} listed subdomains</span></summary>
+        <div class="atlas-disclosure__body">
+          {#if ct._invalidated_by}<p class="atlas-warning">Historic domain evidence; invalidated after an identity change.</p>{/if}
+          {#if ct.error}<p class="atlas-note">{text(ct.error)}</p>{/if}
+          <p class="atlas-note">Recorded for {text(ct.domain)}. Certificate names do not establish current ownership or a live service.</p>
+          <p>{text(ct.total_certs)} certificate records</p>
+          {#if subdomains.length}<div class="atlas-evidence-scroll sc-mono">{#each subdomains as name}<p>{name}</p>{/each}</div>{/if}
+          {#if arr(ct.top_issuers).length}<h4 class="sc-label">Certificate issuers</h4>{#each arr(ct.top_issuers) as issuer}{@const row = rec(issuer)}<p>{row ? `${text(row.issuer)} · ${text(row.count)}` : text(issuer)}</p>{/each}{/if}
+        </div>
+      </details>
+    {/if}
+    {#if asn}
+      <details class="atlas-disclosure sc-panel">
+        <summary>ASN host discovery <span class="atlas-source-count">{asnHosts.length} listed hosts</span></summary>
+        <div class="atlas-disclosure__body">
+          <p class="atlas-note">Recorded for {text(asn.domain)}. Shared hosting and CDN endpoints do not establish dedicated ownership.</p>
+          {#if asn.error}<p class="atlas-note">{text(asn.error)}</p>{/if}
+          <p>{text(asn.total_ports)} unique ports · {text(asn.total_vulns)} recorded CVEs in this source</p>
+          {#each asnHosts as host}
+            <div class="atlas-asn-host">
+              {#if shownIp(host.ip)}<button class="atlas-action sc-mono" type="button" onclick={() => copyIp(shownIp(host.ip))}><AtlasIcon name="copy" />{shownIp(host.ip)}</button>{/if}
+              {#if host.reverse_dns}<p class="atlas-note">{text(host.reverse_dns)}</p>{/if}
+              {#if arr(host.ports).length}<p class="sc-mono">Ports {arr(host.ports).join(", ")}</p>{/if}
+              {#if strings(host.vulns).length}{@render cveLinks(strings(host.vulns), 8)}{/if}
+            </div>
+          {/each}
+          {#if strings(asn.all_vulns).length}{@render cveLinks(strings(asn.all_vulns))}{/if}
+        </div>
+      </details>
+    {/if}
     {#if hosts.length}
       <p class="sc-mono">{hosts.length} hosts · {findings.length} critical</p>
       {#each hosts as host, index (`${shownIp(host.ip)}:${index}`)}
@@ -485,8 +608,9 @@
             {#each arr(host.services).slice(0, 10) as svc}
               <p class="sc-mono">{serviceLine(svc)}</p>
             {/each}
+            {#if arr(host.services).length > 10}<details class="atlas-inline-evidence"><summary>Show {arr(host.services).length - 10} more services</summary>{#each arr(host.services).slice(10) as svc}<p class="sc-mono">{serviceLine(svc)}</p>{/each}</details>{/if}
             {#if strings(host.vulns).length}
-              <p class="sc-mono">{strings(host.vulns).slice(0, 8).join(" ")}</p>
+              {@render cveLinks(strings(host.vulns), 8)}
             {/if}
           </div>
         </details>
@@ -498,7 +622,7 @@
         <div class="atlas-disclosure__body">
           <p class="sc-mono">{text(shodan.total_hosts)} hosts</p>
           {#if cves.length}
-            <p class="sc-mono">{#each cves as id}<button type="button" class="atlas-action" onclick={() => onCve(id)}>{id}</button> {/each}</p>
+            {@render cveLinks(cves)}
           {/if}
           {#if topPorts.length}<p class="sc-mono">{topPorts.join(", ")}</p>{/if}
         </div>
@@ -506,7 +630,7 @@
     {/if}
   </section>
 
-  <details class="atlas-disclosure sc-panel">
+  <details class="atlas-disclosure sc-panel" data-section="profile">
     <summary>Contract profile</summary>
     <div class="atlas-disclosure__body">
       <h4 class="sc-label">Financial summary</h4>
@@ -556,6 +680,16 @@
       <p>URL <span class="sc-mono">{text(payload?.url)}</span></p>
     </div>
   </details>
+  {:else}
+    <section class="sc-panel atlas-facility-profile" data-section="profile" aria-labelledby="facility-profile-title">
+      <h3 id="facility-profile-title" class="sc-label">Facility profile</h3>
+      {#if facilityProperties.length}
+        <dl>{#each facilityProperties as [key, value] (key)}<div><dt>{key.replaceAll("_", " ")}</dt><dd>{String(value)}</dd></div>{/each}</dl>
+      {:else}
+        <p class="atlas-note">No additional facility metadata was supplied by the geographic source.</p>
+      {/if}
+    </section>
+  {/if}
 
   <p class="atlas-copy-status" role="status">{#if copyNote}{copyNote}{#if copiedIp} {copiedIp}{/if}{/if}</p>
 </div>
@@ -574,8 +708,6 @@
   }
 
   .atlas-exposure .sc-label,
-  .atlas-exposure .sc-kpi__label,
-  .atlas-exposure .sc-kpi__sub,
   .atlas-exposure .sc-chip {
     font-size: 13px;
   }
@@ -751,4 +883,176 @@
       min-height: 44px;
     }
   }
+  .atlas-overview,
+  .atlas-sources {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .atlas-nav {
+    display: flex;
+    gap: 2px;
+    position: sticky;
+    top: -16px;
+    z-index: 2;
+    padding-block: 6px;
+    background: var(--sc-deck);
+    border-bottom: 1px solid var(--sc-line);
+  }
+
+  .atlas-nav__btn {
+    min-height: 34px;
+    padding: 4px 8px;
+    border: 1px solid transparent;
+    background: var(--sc-deck);
+    color: var(--sc-ink);
+    font: 11px var(--sc-font-ui);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .atlas-nav__btn:hover { background: var(--sc-gold-2); color: var(--sc-gold); }
+
+  .atlas-nav__btn:focus-visible {
+    outline: 2px solid var(--sc-gold);
+    outline-offset: 1px;
+  }
+
+  @media (pointer: coarse) {
+    .atlas-nav__btn {
+      min-height: 44px;
+      padding: 6px 12px;
+    }
+  }
+
+  .atlas-metric__value {
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+
+
+  .atlas-exposure-viz__track {
+    flex: 1;
+    height: 6px;
+    background: var(--sc-deck-3);
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 80px;
+  }
+
+  .atlas-exposure-viz__bar {
+    height: 100%;
+    background: var(--sc-gold);
+  }
+
+  .atlas-exposure-viz__bar[data-severity="critical"] { background: var(--sc-signal); }
+  .atlas-exposure-viz__bar[data-severity="high"] { background: var(--sc-gold); }
+
+
+  .atlas-caveat,
+  .atlas-note {
+    font-size: 11px;
+    color: var(--sc-ink-2);
+    line-height: 1.6;
+  }
+
+  .atlas-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--sc-gold);
+    font-size: 11px;
+    padding: 10px 12px;
+    border: 1px solid var(--sc-line-2);
+    background: var(--sc-gold-2);
+    border-radius: 3px;
+  }
+
+  .atlas-source-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .atlas-source {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+    font-size: 12px;
+    align-items: baseline;
+    padding-block: 12px;
+    border-bottom: 1px solid var(--sc-line);
+  }
+
+  .atlas-source[data-state="error"] {
+    color: var(--sc-signal-ink);
+  }
+
+  .atlas-source[data-state="empty"],
+  .atlas-source[data-state="missing"] {
+    color: var(--sc-ink-2);
+  }
+
+  .atlas-source__state {
+    font-size: 10px;
+    text-transform: uppercase;
+    padding: 1px 4px;
+    border: 1px solid currentColor;
+  }
+
+  .atlas-source__date {
+    font-size: 10px;
+    color: var(--sc-ink-2);
+    grid-column: 1 / -1;
+  }
+
+  @media (pointer: coarse) {
+    .atlas-action,
+    .atlas-disclosure > summary,
+    .atlas-nav__btn {
+      min-height: 44px;
+    }
+  }
+  .atlas-overview { padding: 18px; border-top: 2px solid var(--sc-gold); border-radius: 5px; background: var(--sc-deck-2); }
+  .atlas-overview .sc-label { font-size: 10px; letter-spacing: .1em; color: var(--sc-gold); }
+  .atlas-score-hero { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 6px 0; }
+  .atlas-score-hero > div:first-child { display: flex; align-items: baseline; gap: 5px; }
+  .atlas-score-hero strong { font: 500 48px/1 var(--sc-font-display); letter-spacing: -.04em; }
+  .atlas-score-hero > div:first-child > span { font: 12px var(--sc-font-mono); color: var(--sc-ink-2); }
+  .atlas-score-hero > div:last-child { display: grid; gap: 5px; text-align: right; }
+  .atlas-score-severity { font: 500 14px var(--sc-font-display); text-transform: capitalize; }
+  .atlas-score-caption { font-size: 10px; color: var(--sc-ink-2); }
+  .atlas-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 10px 0; padding: 16px 0; border-block: 1px solid var(--sc-line); gap: 10px; }
+  .atlas-kpi-grid dt { color: var(--sc-ink-2); font-size: 10px; line-height: 1.5; min-height: 30px; }
+  .atlas-kpi-grid dd { margin: 5px 0 0; font: 500 21px var(--sc-font-display); font-variant-numeric: tabular-nums; }
+  .atlas-identity { display: grid; gap: 10px; margin-bottom: 6px; }
+  .atlas-identity p { display: flex; gap: 8px; align-items: flex-start; color: var(--sc-ink-2); font-size: 11px; line-height: 1.5; }
+  .atlas-identity :global(svg), .atlas-warning :global(svg) { width: 14px; height: 14px; flex: 0 0 auto; margin-top: 2px; }
+  .atlas-sources > summary { align-items: center; }
+  .atlas-sources > summary :global(svg) { width: 14px; height: 14px; color: var(--sc-gold); }
+  .atlas-source-count { margin-left: auto; font: 10px var(--sc-font-mono); color: var(--sc-ink-2); }
+  .atlas-source__detail { grid-column: 1 / -1; color: var(--sc-ink-2); font-size: 11px; line-height: 1.5; }
+  .atlas-factors { display: grid; gap: 8px; }
+  .atlas-factors li { border-left: 2px solid currentColor; padding-left: 10px; font-size: 12px; }
+  .atlas-exposure__summary { border-radius: 5px; padding: 16px; gap: 12px; }
+  .atlas-exposure__summary .sc-label { font-size: 10px; }
+  .atlas-disclosure > summary::before { content: "+"; color: var(--sc-gold); font: 14px var(--sc-font-mono); }
+  .atlas-disclosure[open] > summary::before { content: "−"; }
+  .atlas-disclosure > summary::-webkit-details-marker { display: none; }
+  .atlas-facility-kind { margin: 6px 0; font: 500 24px var(--sc-font-display); text-transform: capitalize; }
+  .atlas-facility-profile dl { margin: 12px 0 0; }
+  .atlas-facility-profile dl > div { display: grid; grid-template-columns: minmax(90px, 1fr) 2fr; gap: 12px; padding-block: 10px; border-bottom: 1px solid var(--sc-line); }
+  .atlas-facility-profile dt { font-size: 11px; color: var(--sc-ink-2); }
+  .atlas-facility-profile dd { margin: 0; font-size: 12px; overflow-wrap: anywhere; }
+  @media (max-width: 700px) { .atlas-nav { top: -12px; } .atlas-nav__btn { padding-inline: 6px; } }
+  .atlas-inline-evidence > summary { min-height: 34px; padding-block: 8px; cursor: pointer; color: var(--sc-gold); font-size: 11px; }
+  .atlas-evidence-scroll { max-height: 240px; overflow: auto; padding: 10px; border: 1px solid var(--sc-line); }
+  .atlas-asn-host { padding-block: 10px; border-top: 1px solid var(--sc-line); }
+  .atlas-facility-operator { color: var(--sc-ink-2); font-size: 13px; }
+  @media (pointer: coarse) { .atlas-inline-evidence > summary { min-height: 44px; } }
+  [data-section] { scroll-margin-top: 54px; }
 </style>

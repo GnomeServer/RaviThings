@@ -33,15 +33,19 @@ Cesium loads some worker files and data only when you select a site. If you stop
 ## Investigate
 
 1. Press **Cmd/Ctrl+K** to find an entity or command. Search examples include `Hope Gas`, `risk critical`, `port 3389`, and `cve CVE-2007-2768`. The palette also opens Settings, Case, Shared CVEs, and Critical sites. Search uses the existing catalog queries, not natural-language analysis.
-2. Open a dossier to read **Exposure**, **Nearby**, or **Kill chain**. Exposure retains the source evidence and its view limits. CVE and supported port actions open their corresponding catalog results. Results show both the returned count and the actual total.
+2. Open a dossier to read **Exposure**, **Nearby**, or **Kill chain**. Exposure starts with the catalog-derived score, federal obligation, contract count, observed hosts, and recorded CVEs. Use **Overview**, **Findings**, **Brief**, **Network**, **Sources**, and **Profile** to jump to the corresponding evidence. Additional CVEs, host services, certificate subdomains, and ASN hosts remain available in expandable lists. CVE and supported port actions open their corresponding catalog results, with both the returned count and the actual total.
 3. In Nearby, choose a type and a 25, 50, or 100 km radius. Connections represent **geographic proximity**, not an inferred network relationship. The map draws the nearest eight named targets, plus an explicit ninth of the same type. A preview and Frame keep the origin selected; **Open dossier** selects the endpoint.
 4. Use **Pin** or **Pin step** to retain the entity and its note in Case. Case is stored locally and survives reloads. It deduplicates entities and keeps the latest 12 pins, replacing the oldest when full. Remove deletes one pin; Clear requires confirmation. A failed save leaves the existing pins unchanged.
 
-On the map, national-scale counts group contractors. Click a group's circle or count to frame its members at regional scale and see individual markers. This movement starts without waiting for a surface-height lookup and does not start an orbit. Hover for a name, or click a marker to open its dossier. The lower-right sector controls hide other categories. CVE filters keep nonmatching markers dimmed and selectable.
+On the map, national-scale counts group contractors. Click a group's circle or count to frame its members at regional scale and see individual markers. This movement starts without waiting for a surface-height lookup and does not start an orbit. Hover for identity, category, location, and catalog exposure where available; click a marker to open its dossier. A selected entity keeps a labeled map marker and a summary card with **Inspect**, **Nearby**, and **Pin** actions. Contractor cards include recorded evidence totals and collection status; facility cards show geographic identity and operator details without assigning a contractor exposure score. The lower-right sector controls hide other categories. CVE filters keep nonmatching markers dimmed and selectable.
+
+**Evidence sources** distinguishes successful collection, no results, errors, uncollected data, and records that need refreshing after a domain change. Missing or failed collection is not shown as a zero observation. Source dates describe stored observations, not live checks; the latest successful date does not imply every source is current. Source errors and conflicting domain observations are called out in the dossier and selection card.
 
 As you zoom, the map loads the 3D tiles needed for the current view. Contractor markers and Nearby radius outlines follow the surfaces already loaded, without requesting maximum-detail tiles for every location. Their height updates run in small batches after movement stops and when tiles finish loading, leaving the map responsive while detail resolves. Image detail still depends on Google's coverage and your connection.
 
-**Hide** closes the workspace without clearing the selection, filter, or results. The map's selection and filter chips restore their corresponding views. **Back** returns to the preceding workspace. The separate Clear selection and Clear filter actions remove only their respective state.
+The compact attribution strip uses **Google Maps** text instead of a logo, as permitted for space-constrained layouts by the [Map Tiles API attribution policy](https://developers.google.com/maps/documentation/tile/policies#logo). **Data attribution** opens the viewport's provider credits over the app window, including when the dossier is expanded. Cesium ion branding is omitted because Atlas uses Google's API directly, with no ion assets or geocoder; this does not remove Google's or other data providers' attribution.
+
+**Hide** closes the workspace without clearing the selection, filter, or results. The map's selection card and filter chips restore their corresponding views. **Back** returns to the preceding workspace. The separate Clear selection and Clear filter actions remove only their respective state.
 
 ### Analysis and progress
 
@@ -63,7 +67,7 @@ A building footprint is **not a parcel or ownership boundary**. If the catalog h
 
 The existing Google key must have **Geocoding API** enabled and allowed by its API restrictions, separately from Map Tiles API. See [Google's destination lookup documentation](https://developers.google.com/maps/documentation/geocoding/search-for-destinations). After enabling the API, use **Retry footprint**; changing the saved Maps key still requires Reload map.
 
-The workspace docks beside the map on wide windows and becomes a bottom sheet below 1100 px. **Expand** reserves a 72 px map-and-credits strip; **Collapse** restores the map area. The native minimum window size is 480×560.
+The workspace docks beside the map on wide windows and becomes a bottom sheet below 1100 px. **Expand** reserves a 72 px map-and-credits strip; **Collapse** restores the map area. Short bottom-sheet windows open expanded so the dossier remains readable. The native minimum window size is 480×560.
 
 ### Inspect and orbit
 
@@ -106,10 +110,11 @@ GodsEyeView layers are read from `GEV_ROOT` (default `/Users/ravistarzl/Document
 
 ## Development checks
 
-From `desktop`, check the Svelte/TypeScript frontend and build its assets:
+From `desktop`, check the Svelte/TypeScript frontend, run the evidence-summary regression tests, and build its assets:
 
 ```bash
 npm run check
+npm run test:insights
 npm run build
 ```
 

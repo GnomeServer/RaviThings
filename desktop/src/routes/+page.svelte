@@ -3,13 +3,15 @@
   import { Channel, invoke } from "@tauri-apps/api/core";
   import { computeRiskScore, RISKY_PORTS } from "../../ui/src/risk";
   import DossierExposure from "../lib/DossierExposure.svelte";
+  import EntityMapCard from "../lib/EntityMapCard.svelte";
+  import { summarizeEntity } from "../lib/entity-insights";
   import AtlasIcon from "../lib/AtlasIcon.svelte";
   import CommandPalette from "../lib/CommandPalette.svelte";
   import OperationProgress from "../lib/OperationProgress.svelte";
   import { applyProgress, analysisError, type AnalysisProgress, type Operation } from "../lib/operation-progress";
   type PaletteItem = { id: string; group: "Actions" | "Entities"; label: string; detail: string };
 
-  import { mountGlobe, type ContractorPoint, type Flight } from "../lib/globe";
+  import { mountGlobe, type ContractorPoint, type Flight, type MapHover } from "../lib/globe";
   import { readAtlasPalette } from "../lib/atlas-theme";
   import { lookupBuildingFootprint, type BuildingFootprint } from "../lib/building-footprint";
   import "../app.css";
@@ -171,7 +173,7 @@
   let keyError = $state("");
   let keyStatusError = $state("");
   let mapsChanged = $state(false);
-  let hover = $state<{ name: string; x: number; y: number; severity: string } | null>(null);
+  let hover = $state<MapHover | null>(null);
   let hoverEl = $state<HTMLDivElement | undefined>(undefined);
   let askResult = $state<AskResult | null>(null);
   let askNote = $state("");
@@ -240,6 +242,10 @@
   const creditLine = $derived(dataCredit(feeds, aisOn, firmsOn));
 
   const risk = $derived(payload && !payloadBusy && !selectionError && selected?.kind === "contractor" ? computeRiskScore(payload) : null);
+  const entitySummary = $derived(summarizeEntity(payloadBusy || selectionError ? null : payload));
+  const selectionPinned = $derived(pins.some((pin) => pin.kind === selected?.kind && pin.id === selected?.id));
+  const criticalCount = $derived(points.filter((point) => point.riskSeverity === "critical").length);
+  const footprintLabel = $derived(buildingState === "ready" ? "Matched" : buildingState === "loading" ? "Locating…" : buildingState === "error" ? "Lookup failed" : "Unavailable");
   const briefStep = $derived.by(() => {
     const steps = Array.isArray(killChain?.steps) ? killChain.steps : [];
     if (openStep !== null) {
@@ -353,7 +359,7 @@
 
   function setPanel(next: PanelName | null): void {
     hover = null;
-    if (next !== activeSurface) sheetExpanded = false;
+    if (next !== activeSurface) sheetExpanded = next !== null && sheetLayout && window.innerHeight < 720;
     const opening = next !== null && next !== activeSurface;
     activeSurface = next;
     if (opening) consumeWorkspaceFocus();
@@ -363,10 +369,32 @@
     hover = null;
     if (!selected) return;
     if (activeSurface !== "dossier") {
-      sheetExpanded = false;
+      sheetExpanded = sheetLayout && window.innerHeight < 720;
     }
     activeSurface = "dossier";
     consumeWorkspaceFocus();
+  }
+
+  function openBuildingDetails() {
+    const keyboard = focusWorkspaceOnOpen;
+    focusWorkspaceOnOpen = false;
+    returnFocusId = "atlas-building-chip";
+    showDossier();
+    void tick().then(() => {
+      const section = document.getElementById("atlas-building-status");
+      if (section instanceof HTMLDetailsElement) section.open = true;
+      const details = document.getElementById("atlas-building-details");
+      if (details instanceof HTMLDetailsElement) details.open = true;
+      section?.scrollIntoView({ block: "nearest" });
+      if (keyboard) section?.querySelector("summary")?.focus();
+    });
+  }
+
+  function openMapNearby() {
+    returnFocusId = "atlas-selection-chip";
+    showDossier();
+    tab = "nearby";
+    if (!threadKind) setThreadChip("kin");
   }
 
   function hideWorkspace(): void {
@@ -908,7 +936,7 @@
         globe?.setContractors(loaded);
         globe?.setLens(lens);
         globe?.setCveFilter(activeFilter?.contractorIds ?? null);
-        if (selected) globe?.select(selected.kind, selected.id);
+        if (selected) globe?.select(selected.kind, selected.id, selected);
       }
     } catch (error) {
       if (disposed || token !== catalogToken) return;
@@ -1100,14 +1128,14 @@
     tab = "exposure";
     orbitReady = false;
     clearKill();
-    sheetExpanded = false;
     activeSurface = "dossier";
     consumeWorkspaceFocus();
-    if (mapReady) globe?.select(kind, id);
+    if (mapReady) globe?.select(kind, id, selected);
     focusFeed(kind === "contractor" ? Number(id) : null);
     void loadPayload(kind, id, epoch);
     void setRadius(50);
     if (site) frameEndpoint({ lat, lon });
+    sheetExpanded = sheetLayout && window.innerHeight < 720;
   }
 
   function closeSelection() {
@@ -1185,7 +1213,7 @@
     orbitReady = false;
     radius = 50;
     clearKill();
-    sheetExpanded = false;
+    sheetExpanded = sheetLayout && window.innerHeight < 720;
     activeSurface = "dossier";
     consumeWorkspaceFocus();
     focusFeed(null);
@@ -1205,7 +1233,7 @@
       }),
     };
     if (mapReady) {
-      globe?.select("facility", dam.damId);
+      globe?.select("facility", dam.damId, { name: dam.damName, lat: dam.lat, lon: dam.lon });
       globe?.setEllipse(dam.lon, dam.lat, 50);
     }
     frameEndpoint({ lat: dam.lat, lon: dam.lon });
@@ -1351,13 +1379,14 @@
   function pinSelected(note: string) {
     if (!selected) return;
     if (selected.kind !== "contractor" && selected.kind !== "facility") return;
+    const existing = pins.find((pin) => pin.kind === selected?.kind && pin.id === selected?.id);
     const pin: Pin = {
       kind: selected.kind,
       id: selected.id,
       name: selected.name,
       lat: selected.lat,
       lon: selected.lon,
-      note,
+      note: note || existing?.note || "",
     };
     const next = [...pins.filter((item) => item.kind !== pin.kind || item.id !== pin.id), pin];
     writeCase(next.length > 12 ? next.slice(next.length - 12) : next);
@@ -1497,7 +1526,10 @@
     };
     sheetQuery.addEventListener("change", onSheet);
     motionQuery.addEventListener("change", onMotion);
-    const onResize = () => { hover = null; };
+    const onResize = () => {
+      hover = null;
+      if (sheetQuery.matches && window.innerHeight < 720 && activeSurface) sheetExpanded = true;
+    };
     const beforeClick = (event: MouseEvent) => {
       focusWorkspaceOnOpen = event.detail === 0 && event.target instanceof Element && !!event.target.closest("button");
     };
@@ -1574,7 +1606,7 @@
         if (!current()) return;
         cameraReady = true;
         if (selected) {
-          mounted.select(selected.kind, selected.id);
+          mounted.select(selected.kind, selected.id, selected);
           mounted.setEllipse(selected.lon, selected.lat, radius);
           drawThreads();
         }
@@ -1732,6 +1764,7 @@
 {/snippet}
 
 <div class="sc-app atlas-app" class:has-operations={operations.length > 0}>
+  <p class="sc-visually-hidden" role="status">{caseNote}</p>
   <a class="sc-skip-link" href="#atlas-main">Skip to map</a>
   <header class="sc-topbar atlas-topbar">
     <div class="sc-brand" aria-label="Starzl Enterprises | OSINT Atlas">
@@ -1794,30 +1827,20 @@
               </div>
             </div>
           {/if}
-          <div class="atlas-context">
-            {#if status || points.length > 0}
-              <div class="atlas-context-row">
-                <span>DOE contractor catalog</span>
+          <div class="atlas-context" class:has-selection={selected !== null}>
+            {#if !selected && (status || points.length > 0)}
+              <div class="atlas-catalog-stamp">
+                <span class="atlas-catalog-stamp__icon"><AtlasIcon name="mission" /></span>
+                <div><p class="sc-label">DOE intelligence atlas</p><p><strong>{points.length.toLocaleString()}</strong> mapped contractors <span>· {LENS_LABEL[lens]}</span></p></div>
               </div>
+              <button class="atlas-map-prompt" type="button" onclick={openFind}>Find an entity to begin an investigation <kbd class="sc-kbd">⌘K</kbd></button>
             {/if}
             {#if selected}
-              <div class="atlas-context-row">
-                <button id="atlas-selection-chip" class="atlas-context-button" type="button" onclick={() => { returnFocusId = "atlas-selection-chip"; showDossier(); }}>{selected.name}</button>
-                <button id="atlas-selection-clear" class="sc-icon-btn" type="button" aria-label="Clear selection" onclick={() => void closeSelection()}>
-                  <AtlasIcon name="close" />
-                </button>
-              </div>
-              <div class="atlas-context-row">
-                <button id="atlas-building-chip" class="atlas-context-button" type="button" onclick={() => {
-                  returnFocusId = "atlas-building-chip";
-                  showDossier();
-                  void tick().then(() => {
-                    const details = document.getElementById("atlas-building-details");
-                    if (details instanceof HTMLDetailsElement) details.open = true;
-                    document.getElementById("atlas-building-status")?.scrollIntoView({ block: "nearest" });
-                  });
-                }}>Building footprint: {buildingState === "ready" ? "shown" : buildingState === "loading" ? "loading" : buildingState === "error" ? "lookup failed" : "unavailable"}</button>
-              </div>
+              <EntityMapCard entity={selected} summary={entitySummary} {risk} busy={payloadBusy} error={selectionError}
+                pinned={selectionPinned} {mapReady} footprint={footprintLabel}
+                onopen={() => { returnFocusId = "atlas-selection-chip"; showDossier(); }}
+                onclear={closeSelection} oninspect={() => fly("inspect")} onnearby={openMapNearby}
+                onpin={() => pinSelected("")} onfootprint={openBuildingDetails} />
             {/if}
             {#if activeFilter}
               <div class="atlas-context-row">
@@ -1870,8 +1893,11 @@
           </div>
           {#if hover}
             <div class="atlas-hover" bind:this={hoverEl}>
-              <span>{hover.name}</span>
-              {#if hover.severity}<span class="atlas-severity" data-severity={hover.severity.toLowerCase()}>{hover.severity}</span>{/if}
+              <span class="atlas-hover-kind">{hover.kind === "thread" ? "Nearby connection" : hover.kind}</span>
+              <strong>{hover.name}</strong>
+              {#if hover.detail}<span class="atlas-hover-detail">{hover.detail}</span>{/if}
+              {#if hover.severity}<span class="atlas-severity" data-severity={hover.severity.toLowerCase()}>{hover.score !== null ? `${hover.score}/100 · ` : ""}{hover.severity} exposure</span>{/if}
+              {#if hover.kind === "contractor"}<span class="atlas-hover-hint">Click to inspect evidence</span>{/if}
             </div>
           {/if}
           {#if showMapThread}
@@ -1887,9 +1913,11 @@
         <aside class="sc-drawer atlas-workspace" aria-labelledby="workspace-title">
           <div class="atlas-workspace-head">
             <div class="atlas-dossier-heading">
+              <p class="atlas-workspace-eyebrow">{activeSurface === "dossier" ? "Entity dossier" : "Investigation workspace"}{#if activeSurface === "dossier" && selectionPinned}<span><AtlasIcon name="check" />In Case</span>{/if}</p>
               <h1 id="workspace-title" tabindex="-1" bind:this={workspaceTitleEl}>{workspaceTitle}</h1>
               {#if activeSurface === "dossier" && selected}
-                <p class="atlas-muted">{selected.kind === "contractor" ? "Contractor" : "Facility"} · <span class="sc-mono">ID {selected.id}</span> · {selected.lat.toFixed(4)}, {selected.lon.toFixed(4)}</p>
+                <p class="atlas-entity-meta">{selected.kind === "contractor" ? entitySummary.category || "Contractor" : "Facility"}{#if entitySummary.location} · {entitySummary.location}{/if}</p>
+                <p class="atlas-entity-reference"><span>ID {selected.id}</span><span>{selected.lat.toFixed(4)}, {selected.lon.toFixed(4)}</span></p>
               {/if}
             </div>
             {#if !showMapChrome}
@@ -1907,10 +1935,11 @@
             <div class="atlas-actions">
               {#if activeSurface === "dossier"}
                 <button type="button" class="sc-btn sc-btn--ghost" onclick={backWorkspace}>Back</button>
-                <button type="button" class="sc-btn sc-btn--secondary" onclick={() => pinSelected("")}>Pin</button>
+                <button type="button" class="sc-btn sc-btn--secondary" onclick={() => pinSelected("")}><AtlasIcon name={selectionPinned ? "check" : "archive"} />{selectionPinned ? "Pinned" : "Pin to Case"}</button>
+                <button type="button" class="sc-btn sc-btn--secondary" disabled={!mapReady} onclick={() => fly("inspect")}><AtlasIcon name="eye" />Inspect</button>
               {/if}
               <button type="button" class="sc-btn sc-btn--secondary atlas-sheet-toggle" aria-expanded={sheetExpanded} onclick={() => sheetExpanded = !sheetExpanded}>{sheetExpanded ? "Collapse" : "Expand"}</button>
-              <button type="button" class="sc-btn sc-btn--ghost" onclick={hideWorkspace}>Hide</button>
+              <button type="button" class="sc-btn sc-btn--ghost atlas-hide-workspace" aria-label="Hide workspace" onclick={hideWorkspace}><AtlasIcon name="close" /><span>Hide</span></button>
             </div>
           </div>
           {#if activeSurface === "dossier"}
@@ -1923,10 +1952,16 @@
           <div class="atlas-workspace-body" bind:this={workspaceBodyEl}>
             <div class="atlas-content">
               {#if (activeSurface === "case" || activeSurface === "dossier") && caseError}<p class="sc-notice sc-notice--signal" role="alert">{caseError}</p>{/if}
-              {#if activeSurface === "case" || activeSurface === "dossier"}<p class="atlas-muted" role="status">{caseNote}</p>{/if}
+              {#if (activeSurface === "case" || activeSurface === "dossier") && caseNote}<p class="atlas-muted">{caseNote}</p>{/if}
               {#if activeSurface === "explore"}
                 <div class="atlas-stack">
-                  <button type="button" class="sc-btn" onclick={openFind}>Search</button>
+                  <section class="atlas-explore-intro">
+                    <p class="sc-label">From geography to evidence</p>
+                    <h2>Find the signal.<br />Follow the evidence.</h2>
+                    <p>Inspect the DOE contractor landscape, connect nearby context, and keep your findings in Case.</p>
+                    <div class="atlas-explore-metrics"><div><strong>{points.length.toLocaleString()}</strong><span>Mapped contractors</span></div><div><strong>{criticalCount.toLocaleString()}</strong><span>Critical exposure scores</span></div></div>
+                    <button type="button" class="sc-btn sc-btn--secondary" onclick={openFind}><AtlasIcon name="search" />Find entity or command <kbd class="sc-kbd">⌘K</kbd></button>
+                  </section>
                   <p class="sc-label">Risk</p>
                   <div class="atlas-actions">
                     <button type="button" class="sc-btn sc-btn--secondary" onclick={() => void runAsk("risk", "critical")}>critical</button>
@@ -2151,28 +2186,6 @@
                 </div>
               {:else if activeSurface === "dossier" && selected}
                 {#if selectionError}<p class="atlas-notice sc-notice sc-notice--signal" role="alert">{selectionError}</p>{/if}
-                <section id="atlas-building-status" class="atlas-section atlas-building-status sc-panel" aria-labelledby="atlas-building-title" aria-busy={buildingState === "loading"}>
-                  <div class="atlas-actions">
-                    <h3 id="atlas-building-title" class="sc-label">Building footprint</h3>
-                    <span role="status">{buildingState === "ready" ? "Shown" : buildingState === "loading" ? "Loading" : buildingState === "error" ? "Lookup failed" : "Unavailable"}</span>
-                    {#if buildingState === "ready"}<button type="button" class="sc-btn sc-btn--secondary" disabled={buildingFrameBusy} onclick={() => void frameBuilding()}>{buildingFrameBusy ? "Framing…" : "Frame building"}</button>{/if}
-                  </div>
-                  {#if buildingFrameError}<p role="alert" class="sc-notice sc-notice--signal">{buildingFrameError}</p>{/if}
-                  <details id="atlas-building-details">
-                    <summary>Google source and match</summary>
-                    <div class="atlas-section">
-                      <p>{buildingMessage}</p>
-                      {#if building?.address}<p>{building.address}</p>{/if}
-                      <p class="atlas-muted">Building outline, not a parcel boundary. Frame building follows the address match; the catalog location stays unchanged.</p>
-                      {#if buildingState === "error" || buildingState === "unavailable"}
-                        <div class="atlas-actions">
-                          <button type="button" class="sc-btn sc-btn--secondary" disabled={!mapReady || payloadBusy} onclick={() => buildingAttempt += 1}>Retry footprint</button>
-                          {#if buildingState === "error"}<button type="button" class="sc-btn sc-btn--ghost" onclick={() => setPanel("keys")}>Settings</button>{/if}
-                        </div>
-                      {/if}
-                    </div>
-                  </details>
-                </section>
                 <div id="atlas-dossier-panel" class="atlas-tab-panel" role="tabpanel" aria-labelledby={`atlas-tab-${tab}`}>
                   {#if tab === "exposure"}
                     {#if payloadBusy}
@@ -2187,10 +2200,13 @@
                     {:else if payload === null}
                       <p class="sc-empty">No evidence in catalog</p>
                     {:else}
-                      <DossierExposure payload={payload} risk={risk} onCve={(id) => { void runAsk("cve", id); }} onPort={(port) => { void runAsk("port", String(port)); }} />
+                      {#key `${selected.kind}:${selected.id}`}
+                        <DossierExposure payload={payload} risk={risk} kind={selected.kind} onCve={(id) => { void runAsk("cve", id); }} onPort={(port) => { void runAsk("port", String(port)); }} />
+                      {/key}
                     {/if}
                   {:else if tab === "nearby"}
                     <div class="atlas-stack">
+                      <div class="atlas-section-intro"><p class="sc-label">Geographic context</p><h2>What’s around this entity?</h2><p>Explore proximity within {radius} km. Connections indicate distance, not shared infrastructure or ownership.</p></div>
                       <div class="sc-segmented" role="group" aria-label="Nearby kind">
                         <button type="button" aria-pressed={threadKind === "kin"} onclick={() => setThreadChip("kin")}>Contractors</button>
                         <button type="button" aria-pressed={threadKind === "dam"} onclick={() => setThreadChip("dam")}>Dams</button>
@@ -2367,6 +2383,27 @@
                     </div>
                   {/if}
                 </div>
+                <details id="atlas-building-status" class="atlas-building-status" aria-busy={buildingState === "loading"}>
+                  <summary><span><AtlasIcon name="mission" />Building footprint</span><span class="atlas-building-state">{footprintLabel}</span></summary>
+                  <div class="atlas-building-body">
+                    {#if buildingState === "ready"}<button type="button" class="sc-btn sc-btn--secondary" disabled={buildingFrameBusy} onclick={() => void frameBuilding()}>{buildingFrameBusy ? "Framing…" : "Frame building"}</button>{/if}
+                    {#if buildingFrameError}<p role="alert" class="sc-notice sc-notice--signal">{buildingFrameError}</p>{/if}
+                    <details id="atlas-building-details">
+                      <summary>Google source and match</summary>
+                      <div class="atlas-section">
+                        <p>{buildingMessage}</p>
+                        {#if building?.address}<p>{building.address}</p>{/if}
+                        <p class="atlas-muted">Building outline, not a parcel boundary. Frame building follows the address match; the catalog location stays unchanged.</p>
+                        {#if buildingState === "error" || buildingState === "unavailable"}
+                          <div class="atlas-actions">
+                            <button type="button" class="sc-btn sc-btn--secondary" disabled={!mapReady || payloadBusy} onclick={() => buildingAttempt += 1}>Retry footprint</button>
+                            {#if buildingState === "error"}<button type="button" class="sc-btn sc-btn--ghost" onclick={() => setPanel("keys")}>Settings</button>{/if}
+                          </div>
+                        {/if}
+                      </div>
+                    </details>
+                  </div>
+                </details>
               {/if}
             </div>
           </div>

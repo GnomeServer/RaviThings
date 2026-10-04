@@ -43,6 +43,16 @@ export type Flight = {
 };
 
 export type SelectPayload = { kind: "contractor" | "facility"; id: string; lat: number; lon: number; name: string };
+export type MapHover = {
+  name: string;
+  x: number;
+  y: number;
+  severity: string;
+  kind: string;
+  detail: string;
+  score: number | null;
+};
+
 
 type Lens = "all" | "energy" | "digital" | "defense";
 type Hit = {
@@ -65,6 +75,9 @@ type ContractorRec = {
   lat: number;
   lon: number;
   severity: string;
+  city: string;
+  state: string;
+  score: number;
   position: Cartesian3;
   point: CesiumNS.PointPrimitive;
   glyph: Glyph;
@@ -102,14 +115,15 @@ export async function mountGlobe(
   hooks: {
     onSelect: (hit: SelectPayload) => void;
     onCamera: (cam: { lat: number; lon: number; heightM: number; west: number; south: number; east: number; north: number }) => void;
-    onHover: (hit: { name: string; x: number; y: number; severity: string } | null) => void;
+    onHover: (hit: MapHover | null) => void;
     onThread: (hit: { id: string; kind: string; name: string; lat: number; lon: number; distanceKm: number }) => void;
     onOrbitChange: (active: boolean) => void;
     onUserInteraction: () => void;
   },
   palette: AtlasPalette,
 ) {
-  Cesium.GoogleMaps.defaultApiKey = apiKey;
+  // No ion assets or geocoder: remove renderer branding, not provider attribution.
+  Cesium.CreditDisplay.cesiumCredit = new Cesium.Credit("");
   Cesium.RequestScheduler.requestsByServer["tile.googleapis.com:443"] = 36;
   Cesium.RequestScheduler.maximumRequests = 64;
   const viewer = new Cesium.Viewer(container, {
@@ -125,6 +139,8 @@ export async function mountGlobe(
     infoBox: false,
     baseLayer: false,
     creditContainer: credits,
+    // The credits popup must remain usable above an expanded dossier's tiny map.
+    creditViewport: container.ownerDocument.body,
   });
   viewer.targetFrameRate = 60;
   viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
@@ -183,9 +199,14 @@ export async function mountGlobe(
   let tilesetError = "";
   let photoreal: CesiumNS.Cesium3DTileset | undefined;
   try {
-    photoreal = await Cesium.createGooglePhotorealistic3DTileset({
-      onlyUsingWithGoogleGeocoder: true,
-    }, {
+    const resource = new Cesium.Resource({
+      url: "https://tile.googleapis.com/v1/3dtiles/root.json",
+      queryParameters: { key: apiKey },
+    });
+    photoreal = await Cesium.Cesium3DTileset.fromUrl(resource, {
+      cacheBytes: 1536 * 1024 * 1024,
+      maximumCacheOverflowBytes: 1024 * 1024 * 1024,
+      enableCollision: true,
       cullRequestsWhileMoving: false,
       preloadFlightDestinations: true,
       skipLevelOfDetail: true,
@@ -199,6 +220,8 @@ export async function mountGlobe(
       preferLeaves: true,
     });
     viewer.scene.primitives.add(photoreal);
+    // Text attribution keeps the compact map-and-credits strip readable.
+    viewer.creditDisplay.addStaticCredit(new Cesium.Credit('<span class="atlas-google-attribution">Google Maps</span>', true));
     viewer.scene.globe.show = false;
     viewer.scene.requestRenderMode = false;
   } catch (error) {
@@ -280,6 +303,9 @@ export async function mountGlobe(
 
   let lens: Lens = "all";
   let selectedId = "";
+  let selectedPosition: Cartesian3 | null = null;
+  let selectedContractor: ContractorRec | null = null;
+  let selectedAnnotation: { line1: string; line2: string; width: number } | null = null;
   let cveIds: Set<number> | null = null;
   const shownLayers = new Set<string>();
   let clusterQueued = false;
@@ -413,6 +439,13 @@ export async function mountGlobe(
     let picked = 0;
     let wrote = false;
     try {
+      if (selectedPosition && !selectedContractor) {
+        const next = viewer.scene.clampToHeight(selectedPosition, exclude, 10, sampled);
+        if (next && !Cesium.Cartesian3.equals(next, selectedPosition)) {
+          Cesium.Cartesian3.clone(next, selectedPosition);
+          invalidateOverlay();
+        }
+      }
       for (const rec of contractors) {
         if (gen !== clampGen || cameraMoving || disposed) return;
         if (!contractorVisible(rec.category) || !inView(rec.lon, rec.lat, rect)) continue;
@@ -514,7 +547,6 @@ export async function mountGlobe(
         const screen = project(rec.position);
         if (!screen) continue;
         const glyph = rec.glyph;
-        const isSel = selectedId === `contractor:${rec.id}`;
         const r = glyph.diameter / 2 + 2;
         ctx.globalAlpha = cveIds && !cveIds.has(rec.id) ? 0.25 : 1;
         ctx.fillStyle = glyph.css;
@@ -528,15 +560,43 @@ export async function mountGlobe(
           ctx.arc(screen.x, screen.y, r - 1, 0, Math.PI * 2);
           ctx.stroke();
         }
-        if (isSel) {
-          ctx.strokeStyle = palette.head;
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.arc(screen.x, screen.y, r + 3, 0, Math.PI * 2);
-          ctx.stroke();
-        }
       }
       ctx.globalAlpha = 1;
+    }
+    // Selection paints last so nearby glyphs never overwrite the annotation.
+    if (!clustered && selectedPosition && selectedAnnotation && (!selectedContractor || contractorVisible(selectedContractor.category))) {
+      const screen = project(selectedPosition);
+      if (!screen) return;
+      const radius = selectedContractor ? selectedContractor.glyph.diameter / 2 + 5 : 9;
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = palette.head;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      const boxWidth = Math.min(selectedAnnotation.width, width - 16);
+      const left = Math.max(8, Math.min(width - boxWidth - 8, screen.x + radius + 12));
+      const bottom = Math.max(52, screen.y - radius - 12);
+      ctx.strokeStyle = palette.gold;
+      ctx.beginPath();
+      ctx.moveTo(screen.x, screen.y - radius);
+      ctx.lineTo(left, bottom - 10);
+      ctx.stroke();
+      ctx.fillStyle = palette.void;
+      ctx.globalAlpha = 0.94;
+      ctx.fillRect(left, bottom - 42, boxWidth, 42);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = palette.gold;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(left, bottom - 42, boxWidth, 42);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.font = `11px "Space Mono", ui-monospace, monospace`;
+      ctx.fillStyle = palette.head;
+      ctx.fillText(selectedAnnotation.line1, left + 10, bottom - 25, boxWidth - 20);
+      ctx.font = `10px "Space Mono", ui-monospace, monospace`;
+      ctx.fillStyle = palette.gold;
+      ctx.fillText(selectedAnnotation.line2, left + 10, bottom - 10, boxWidth - 20);
     }
   }
 
@@ -886,7 +946,7 @@ export async function mountGlobe(
       void pending.catch(() => {
         // A current failure stops its own generation; newer input must not show stale feedback.
         if (!disposed && motionGeneration === generation + 1) {
-          hooks.onHover({ name: "Cluster view unavailable. Try selecting the cluster again.", x, y, severity: "" });
+          hooks.onHover({ name: "Cluster view unavailable. Try selecting the cluster again.", x, y, severity: "", kind: "cluster", detail: "", score: null });
         }
       });
       return;
@@ -937,10 +997,39 @@ export async function mountGlobe(
         hooks.onHover(null);
         return;
       }
-      const severity = hit.atlasKind === "contractor"
-        ? contractors.find((rec) => rec.id === Number(hit.atlasId))?.severity ?? ""
-        : "";
-      hooks.onHover({ name: String(hit.name), x: position.x, y: position.y, severity });
+      let severity = "";
+      let kind = hit.atlasKind;
+      let detail = "";
+      let score: number | null = null;
+      if (kind === "contractor") {
+        const rec = contractors.find((r) => r.id === Number(hit.atlasId));
+        severity = rec?.severity ?? "";
+        if (rec) {
+          const loc = rec.city && rec.state ? `${rec.city}, ${rec.state}` : rec.city || rec.state || "";
+          detail = rec.category + (loc ? ` · ${loc}` : "");
+          score = rec.score;
+        }
+        kind = "contractor";
+      } else if (kind === "cluster") {
+        kind = "cluster";
+        detail = cveIds !== null ? `${hit.label} matched contractors` : `${hit.label} contractors · click to expand`;
+        score = null;
+      } else if (kind === "thread") {
+        kind = "thread";
+        const sub = hit.kind || "proximity";
+        const d = typeof hit.distanceKm === "number" ? `${hit.distanceKm} km` : "";
+        detail = `${sub} · ${d} · geographic proximity`.replace(/ ·  · /g, " · ");
+        score = null;
+      } else if (kind === "install" || kind === "facility") {
+        kind = "facility";
+        detail = "";
+        score = null;
+      } else {
+        kind = hit.atlasKind;
+        detail = "";
+        score = null;
+      }
+      hooks.onHover({ name: String(hit.name), x: position.x, y: position.y, severity, kind, detail, score });
     });
   }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
@@ -1033,6 +1122,9 @@ export async function mountGlobe(
       stopOrbit();
       clearBuildingFootprint();
       selectedId = "";
+      selectedPosition = null;
+      selectedContractor = null;
+      selectedAnnotation = null;
       applyVisibility();
       if (ellipse) ellipse.remove();
       ellipse = null;
@@ -1062,23 +1154,45 @@ export async function mountGlobe(
           lat: point.lat,
           lon: point.lon,
           severity: point.riskSeverity,
+          city: point.city,
+          state: point.state,
+          score: point.riskScore,
           position,
           point: primitive,
           glyph,
         };
       });
+      if (selectedId.startsWith("contractor:")) {
+        selectedContractor = contractors.find((row) => row.id === Number(selectedId.slice(11))) ?? null;
+        selectedPosition = selectedContractor?.position ?? null;
+      }
       rebuildClusters();
       applyVisibility();
       scheduleClamp();
       invalidateOverlay();
     },
-    select(kind: string, id: string) {
+    select(kind: string, id: string, target: { name: string; lat: number; lon: number }) {
       const nextId = `${kind}:${id}`;
       if (selectedId !== nextId) {
         stopOrbit();
         clearBuildingFootprint();
       }
       selectedId = nextId;
+      selectedContractor = kind === "contractor" ? contractors.find((row) => row.id === Number(id)) ?? null : null;
+      if (selectedContractor) {
+        selectedPosition = selectedContractor.position;
+      } else {
+        const sampled = viewer.scene.sampleHeight(Cesium.Cartographic.fromDegrees(target.lon, target.lat), surfaceExclusions());
+        selectedPosition = Cesium.Cartesian3.fromDegrees(target.lon, target.lat, typeof sampled === "number" && Number.isFinite(sampled) ? sampled : 0);
+      }
+      const name = target.name.trim();
+      const line1 = name.length > 38 ? `${name.slice(0, 37)}…` : name;
+      const context = selectedContractor
+        ? [selectedContractor.category, [selectedContractor.city, selectedContractor.state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")
+        : kind === "contractor" ? "Contractor" : "Geographic facility";
+      const line2 = context.length > 42 ? `${context.slice(0, 41)}…` : context;
+      selectedAnnotation = { line1, line2, width: Math.max(line1.length * 7, line2.length * 6.5, 100) + 20 };
+      scheduleClamp();
       applyVisibility();
     },
     setEllipse(lon: number, lat: number, radiusKm: number) {
@@ -1340,6 +1454,9 @@ export async function mountGlobe(
       removers.length = 0;
       initialRem?.();
       allRem?.();
+      selectedPosition = null;
+      selectedContractor = null;
+      selectedAnnotation = null;
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
       viewer.destroy();
     },
