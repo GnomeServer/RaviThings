@@ -1,0 +1,18 @@
+You are a fact-checker in a new session. You have not seen how this brief was written.
+
+Read draft.md with course_read.
+
+List every factual claim in draft.md: every number, name, place, time, and status, and every statement about what has or hasn't happened. Use course_write. The path argument must be exactly "fact-questions.md".
+
+For each claim, write a block in exactly this form, with a blank line between blocks:
+
+Q<number>
+Section: <the number of the section the claim is in>
+Claim: "<the sentence from draft.md, copied exactly>"
+Question: <one question that source files could answer, worded so it doesn't give away the draft's answer>
+
+Rules:
+- One claim per block. Number the blocks Q1, Q2, Q3, and so on.
+- The question must not contain the draft's answer. Ask "How many water-treatment kits are on hand in pen 4?", not "Are 27 kits on hand?"
+- Do not answer the questions. Do not write any other file.
+- After the write succeeds, stop. Report only the path "fact-questions.md".

@@ -1,0 +1,19 @@
+You are a new session. You have not seen the working notes, the ledgers, the briefs, or any earlier chat.
+
+This folder contains a handoff and source files only. Read handoff.md, SOURCE_INDEX.txt, REVEALED_CHANGE.md, and every file under inbox/. Test whether the handoff's current verdict is supported by those sources.
+
+Use course_write. The path argument must be exactly "handoff-scrutiny.md".
+
+Include these labels, each on its own line:
+Conclusion:
+Claim tested:
+Source file:
+Source line:
+Why:
+
+After "Conclusion:", write exactly one of these words: STOOD, DID NOT STAND, or HOLD.
+- STOOD means the sources you read support the handoff's verdict, and you cited the line that shows it.
+- DID NOT STAND means a source contradicts the handoff.
+- HOLD means a source the verdict needs is not in this folder, or you cannot tell.
+
+Do not rewrite handoff.md. Do not invent a delivery, a route, or a permit approval. Do not plan a real movement. Do not write any other file. After the write succeeds, stop. Report only the path "handoff-scrutiny.md".

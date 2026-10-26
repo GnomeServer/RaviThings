@@ -1,0 +1,3 @@
+Read every markdown file under the work root's inbox/ directory using the course_read tool (paths are relative to the work root you were given).
+Use the course_write tool. The path argument must be exactly the string "producer-rebuttal.md" (this will be resolved under the authorized work root, not the process cwd).
+Argue that VX-204 can GO now using only the inbox files. After the write tool succeeds, stop and report only the path "producer-rebuttal.md".

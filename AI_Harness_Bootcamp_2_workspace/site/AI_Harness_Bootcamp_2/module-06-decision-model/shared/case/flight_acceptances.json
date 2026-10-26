@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "records": [
+    {
+      "acceptance_id": "BG-AC2104",
+      "cargo_id": "BG-C104",
+      "flight_id": "BG-F17",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2008",
+      "cargo_id": "BG-C108",
+      "flight_id": "BG-F17",
+      "status": "PENDING",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2019",
+      "cargo_id": "BG-C119",
+      "flight_id": "BG-F17",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC3019",
+      "cargo_id": "BG-C119",
+      "flight_id": "BG-F71",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:45:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2052",
+      "cargo_id": "BG-C152",
+      "flight_id": "BG-F17",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T03:40:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC3052",
+      "cargo_id": "BG-C152",
+      "flight_id": "BG-F17",
+      "status": "WITHDRAWN",
+      "issued_at": "2026-10-15T04:50:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2075",
+      "cargo_id": "BG-C175",
+      "flight_id": "BG-F71",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:25:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2007",
+      "cargo_id": "BG-C107",
+      "flight_id": "BG-F17",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2016",
+      "cargo_id": "BG-C116",
+      "flight_id": "BG-F17",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2020",
+      "cargo_id": "BG-C120",
+      "flight_id": "BG-F17",
+      "status": "PENDING",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2040",
+      "cargo_id": "BG-C140",
+      "flight_id": "BG-F17",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2044",
+      "cargo_id": "BG-C144",
+      "flight_id": "BG-F17",
+      "status": "PENDING",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2050",
+      "cargo_id": "BG-C150",
+      "flight_id": "BG-F17",
+      "status": "PENDING",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2068",
+      "cargo_id": "BG-C168",
+      "flight_id": "BG-F17",
+      "status": "PENDING",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2071",
+      "cargo_id": "BG-C171",
+      "flight_id": "BG-F17",
+      "status": "PENDING",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2079",
+      "cargo_id": "BG-C179",
+      "flight_id": "BG-F17",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2024",
+      "cargo_id": "BG-C124",
+      "flight_id": "BG-F17",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2036",
+      "cargo_id": "BG-C136",
+      "flight_id": "BG-F17",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2047",
+      "cargo_id": "BG-C147",
+      "flight_id": "BG-F17",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2054",
+      "cargo_id": "BG-C154",
+      "flight_id": "BG-F17",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    },
+    {
+      "acceptance_id": "BG-AC2074",
+      "cargo_id": "BG-C174",
+      "flight_id": "BG-F17",
+      "status": "ACCEPTED",
+      "issued_at": "2026-10-15T04:10:00+02:00",
+      "valid_until": "2026-10-15T06:30:00+02:00"
+    }
+  ]
+}

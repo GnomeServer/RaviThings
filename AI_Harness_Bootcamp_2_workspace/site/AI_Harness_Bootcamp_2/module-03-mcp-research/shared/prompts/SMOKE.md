@@ -1,0 +1,1 @@
+Use the vault tools you have been given. List the top-level folders you can see, then read the note Handbook/Handling rules.md and tell me its first heading and how many notes you can see in total. Do not create or change anything. Reply in two short lines.

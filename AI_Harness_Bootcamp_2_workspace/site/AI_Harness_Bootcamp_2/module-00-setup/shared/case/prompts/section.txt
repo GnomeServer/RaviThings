@@ -1,0 +1,17 @@
+You are writing one section of a status brief. You have not been in any earlier chat.
+
+Read these files with course_read: brief.md, outline.md, STYLE.md, and every file in sources/.{{EARLIER}}
+
+Write section {{N}} of outline.md, and only that section.
+
+First, in your reply, quote each source line you will rely on, with its file name. Then write the section.
+
+Use course_write. The path argument must be exactly "{{OUTPUT}}". Write only the section's prose. Don't write a heading; the heading comes from outline.md.
+
+Rules:
+- Do the section's Job for this reader, using only the facts on its Facts line. Where the reader could misread a fact, say what it means for them and what it doesn't.
+- Aim for the section's Words. Don't pad: no filler, no point made twice, and no fact that isn't on the Facts line.
+- Use numbers, names, and times exactly as the sources give them.
+- Don't add a fact, a time, a vehicle, a date, or a promise the sources don't contain.
+- Don't repeat what an earlier section already says, unless this section's Job is to sum up.
+- Do not write any other file. After the write succeeds, stop. Report only the path "{{OUTPUT}}".

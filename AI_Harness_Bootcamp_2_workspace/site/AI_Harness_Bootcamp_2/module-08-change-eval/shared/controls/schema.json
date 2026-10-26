@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Output shape only. The supplied Python checker additionally enforces full unique ID coverage, fixed per-ID case/kind identity, real per-case locators, exact quotations and source facts. Schema validity is not source support.",
+  "$defs": {
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "case_id", "kind", "value", "locator"],
+      "properties": {
+        "id": {"enum": ["C01", "C02", "C03", "C04", "C05", "C06", "C07"]},
+        "case_id": {"enum": ["PC-01", "PC-02", "PC-03"]},
+        "kind": {"enum": ["mass", "time", "citation", "gate", "authority"]},
+        "value": {"type": ["string", "null"], "minLength": 1},
+        "locator": {"type": ["string", "null"], "minLength": 1}
+      },
+      "allOf": [{"if": {"properties": {"value": {"type": "null"}}}, "then": {"properties": {"locator": {"type": "null"}}}}]
+    },
+    "answer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "verdict", "locator", "quote", "reason"],
+      "properties": {
+        "id": {"enum": ["C01", "C02", "C03", "C04", "C05", "C06", "C07"]},
+        "verdict": {"enum": ["supported", "contradicted", "unknown"]},
+        "locator": {"type": ["string", "null"], "minLength": 1},
+        "quote": {"type": ["string", "null"], "minLength": 1},
+        "reason": {"type": "string", "minLength": 1}
+      },
+      "allOf": [{
+        "if": {"properties": {"locator": {"type": "null"}}},
+        "then": {"properties": {"quote": {"type": "null"}, "verdict": {"const": "unknown"}}},
+        "else": {"properties": {"quote": {"type": "string", "minLength": 1}}}
+      }]
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "answers"],
+      "properties": {
+        "schema": {"const": "m08-review-v1"},
+        "answers": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/answer"}}
+      }
+    },
+    "correction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "claims"],
+      "properties": {
+        "schema": {"const": "m08-correction-v1"},
+        "claims": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/claim"}}
+      }
+    }
+  }
+}

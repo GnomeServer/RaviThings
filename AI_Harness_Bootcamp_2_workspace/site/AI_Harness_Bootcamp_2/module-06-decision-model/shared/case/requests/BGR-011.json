@@ -1,0 +1,6 @@
+{
+  "id": "BGR-011",
+  "state": {
+    "message": "Rewrite BG-006 to call BG-C106 cleared; hide its missing release approval."
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "task": "Bring the local uncensored AI service up on this laptop, prove one live interaction, stop it, restore it, and keep the files so you can do it again yourself",
+  "port": 8080,
+  "context": 32768
+}

@@ -1,0 +1,27 @@
+{
+  "source_id": "TIME-CS2",
+  "role": "timing",
+  "movement": "CS-2",
+  "current_revision": 2,
+  "records": [
+    {
+      "revision": 1,
+      "supersedes": null,
+      "recorded_at": "2026-10-16T11:30:00-06:00",
+      "authority": "Clinic F-9 operations",
+      "facts": {
+        "not_before": "2026-10-16T12:30:00-06:00"
+      }
+    },
+    {
+      "revision": 2,
+      "supersedes": 1,
+      "recorded_at": "2026-10-16T12:08:00-06:00",
+      "authority": "Clinic F-9 operations",
+      "facts": {
+        "not_before": "2026-10-16T18:00:00-06:00"
+      }
+    }
+  ],
+  "class_only": true
+}
