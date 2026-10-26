@@ -1,0 +1,21 @@
+$ python3 shared/case/check_artifact.py <fact-inverted draft>
+PASS: word count 130-190 — the draft has 170 words
+PASS: subject line — present
+PASS: both days — stated
+PASS: both days (wednesday) — stated
+PASS: public hours — stated
+PASS: address — stated
+PASS: entrance — stated
+FAIL: cost — the draft denies it: Entry is not free this week
+FAIL: identification — the draft denies it: Identification is required at the east entrance for every visitor.
+PASS: contact line — stated
+FAIL: capacity 60 — the draft attaches [45, 60] to capacity, not 60
+PASS: no unconfirmed services: meals — not promised
+FAIL: no unconfirmed services: medical care — the source does not confirm medical care, but the draft does: Inside you will find hot meals, on-site medical staff, overnight shelter beds, d
+PASS: no unconfirmed services: overnight shelter — not promised
+PASS: no unconfirmed services: device chargers — not promised
+FAIL: no unconfirmed services: childcare — the source does not confirm childcare, but the draft does: Inside you will find hot meals, on-site medical staff, overnight shelter beds, d
+FAIL: no unconfirmed services: a shuttle — the source does not confirm a shuttle, but the draft does: Inside you will find hot meals, on-site medical staff, overnight shelter beds, d
+FAIL: no prohibited distribution — the draft directs public distribution: 'forward this'
+
+HOLD: 7 mechanical requirement(s) failed; this is practice only

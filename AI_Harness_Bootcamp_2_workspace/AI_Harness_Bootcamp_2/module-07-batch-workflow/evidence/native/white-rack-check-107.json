@@ -1,0 +1,22 @@
+[
+  {
+    "mode": "predicted-change",
+    "result": "HOLD",
+    "reason": "Record terminator changed for \"LW-80\". Unpredicted serialized change for \"LW-80\".",
+    "baseline_name": "white-rack-65.csv",
+    "actual_name": "added-final-newline.csv",
+    "baseline_size": 1389,
+    "actual_size": 1426,
+    "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+    "actual_sha256": "5701e77e31f8e491364b1820d3ab928d3bf4d8bf1ce4867b6dddd4a22198a65c",
+    "expected_sha256": "",
+    "identity_check": "not_requested",
+    "raw_byte_equal": false,
+    "baseline_row_count": 80,
+    "actual_row_count": 80,
+    "row_count_checked": 80,
+    "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+    "changed_count": 3,
+    "unchanged_count": 76
+  }
+]

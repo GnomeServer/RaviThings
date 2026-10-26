@@ -1,0 +1,225 @@
+{
+  "name": "White Rack receipt checker",
+  "nodes": [
+    {
+      "name": "Upload comparison",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "parameters": {
+        "formTitle": "White Rack — receipt checker",
+        "formDescription": "Upload unchanged files. Keep the downloaded report beside this attempt. For file-identity, upload the same preserved workflow export to both file fields.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "baseline",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "actual",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "delta",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "mode",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "exact"
+                  },
+                  {
+                    "option": "predicted-change"
+                  },
+                  {
+                    "option": "file-identity"
+                  }
+                ]
+              },
+              "requiredField": true,
+              "defaultValue": "exact"
+            },
+            {
+              "fieldLabel": "expected_sha256",
+              "fieldType": "text",
+              "requiredField": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        0,
+        0
+      ],
+      "id": "07a7e444-0cdd-422f-9647-f27ea0f42558",
+      "webhookId": "12a9d81b-03b5-4a68-a190-294080013e0a"
+    },
+    {
+      "name": "Hash baseline",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": true,
+        "binaryPropertyName": "baseline",
+        "dataPropertyName": "baseline_sha256",
+        "encoding": "hex"
+      },
+      "position": [
+        240,
+        -120
+      ],
+      "id": "7f9723c5-9faf-4146-aaee-c05f9221f8ec"
+    },
+    {
+      "name": "Hash actual",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": true,
+        "binaryPropertyName": "actual",
+        "dataPropertyName": "actual_sha256",
+        "encoding": "hex"
+      },
+      "position": [
+        240,
+        120
+      ],
+      "id": "bf063d2a-155b-4717-b285-afffafe2f8cf"
+    },
+    {
+      "name": "Keep files and hashes",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "position": [
+        500,
+        0
+      ],
+      "id": "ef47e809-a27e-497d-a074-646ccc428750"
+    },
+    {
+      "name": "Compare complete files",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// n8n Code v2, Run Once for All Items. Native Crypto v2 supplies SHA256 hex.\n// Binary content is read only through the documented helper, never metadata.data.\nconst items = $input.all();\nconst item = items[0];\nif (!item?.binary?.baseline || !item?.binary?.actual) {\n  throw new Error('HOLD: upload one baseline file and one actual file.');\n}\nconst baseline = await this.helpers.getBinaryDataBuffer(0, 'baseline');\nconst actual = await this.helpers.getBinaryDataBuffer(0, 'actual');\nconst input = item.json || {};\nconst report = {\n  mode: typeof input.mode === 'string' ? input.mode : '',\n  result: 'HOLD', reason: '',\n  baseline_name: item.binary.baseline.fileName || '',\n  actual_name: item.binary.actual.fileName || '',\n  baseline_size: baseline.length, actual_size: actual.length,\n  baseline_sha256: typeof input.baseline_sha256 === 'string' ? input.baseline_sha256 : '',\n  actual_sha256: typeof input.actual_sha256 === 'string' ? input.actual_sha256 : '',\n  expected_sha256: typeof input.expected_sha256 === 'string' ? input.expected_sha256 : '',\n  identity_check: 'not_requested',\n  raw_byte_equal: baseline.equals(actual),\n  baseline_row_count: null, actual_row_count: null,\n  row_count_checked: 0, changed_ids: '[]', changed_count: 0, unchanged_count: 0,\n};\nconst fail = (message) => { throw new Error(message); };\nconst same = (a, b) => a.length === b.length && a.every((value, i) => value === b[i]);\nconst validPair = (route, status) =>\n  (route === 'pass' && status === 'READY') ||\n  (route === 'hold' && ['OPEN', 'RESOURCE_CONFLICT'].includes(status)) ||\n  (route === 'reject' && status === 'NOT_AUTHORIZED');\n\n// Strict UTF-8 by lossless round-trip, retaining BOM, raw fields and each record's\n// terminator separately. CSV quoting is parsed, never normalized for comparison.\nfunction csv(buffer, columns, label) {\n  const text = buffer.toString('utf8');\n  if (!Buffer.from(text, 'utf8').equals(buffer)) fail(`${label}: invalid UTF-8.`);\n  const bom = text.startsWith('\\uFEFF') ? '\\uFEFF' : '';\n  let pos = bom.length;\n  const records = [];\n  while (pos < text.length) {\n    const start = pos;\n    const values = [];\n    const tokens = [];\n    let eol = '';\n    while (true) {\n      const fieldStart = pos;\n      let value = '';\n      if (text[pos] === '\"') {\n        pos++;\n        let closed = false;\n        while (pos < text.length) {\n          if (text[pos] === '\"') {\n            if (text[pos + 1] === '\"') { value += '\"'; pos += 2; }\n            else { pos++; closed = true; break; }\n          } else value += text[pos++];\n        }\n        if (!closed) fail(`${label}: unclosed CSV quote.`);\n        if (pos < text.length && ![',', '\\r', '\\n'].includes(text[pos])) fail(`${label}: text after closing CSV quote.`);\n      } else {\n        while (pos < text.length && ![',', '\\r', '\\n'].includes(text[pos])) {\n          if (text[pos] === '\"') fail(`${label}: quote inside an unquoted field.`);\n          value += text[pos++];\n        }\n      }\n      values.push(value);\n      tokens.push(text.slice(fieldStart, pos));\n      if (text[pos] === ',') { pos++; continue; }\n      const end = pos;\n      if (text[pos] === '\\r') {\n        if (text[pos + 1] !== '\\n') fail(`${label}: bare CR is not a CSV record terminator.`);\n        eol = '\\r\\n'; pos += 2;\n      } else if (text[pos] === '\\n') { eol = '\\n'; pos++; }\n      records.push({ values, tokens, raw: text.slice(start, end), eol });\n      break;\n    }\n  }\n  if (!records.length || !same(records[0].values, columns)) fail(`${label}: expected exactly ${columns.join(',')} in that order.`);\n  const ids = new Set();\n  for (const [i, record] of records.slice(1).entries()) {\n    if (record.values.length !== columns.length) fail(`${label}: row ${i + 1} has the wrong number of fields.`);\n    if (record.values.some(value => /[\\x00-\\x1f\\x7f]/.test(value))) fail(`${label}: row ${i + 1} contains a control character.`);\n    const id = record.values[0];\n    if (!id.trim() || /[,\"\\r\\n\\0]/.test(id)) fail(`${label}: row ${i + 1} has an invalid lot.`);\n    if (ids.has(id)) fail(`${label}: duplicate lot ${JSON.stringify(id)}.`);\n    ids.add(id);\n    for (let field = 1; field < columns.length; field += 2) {\n      if (!validPair(record.values[field], record.values[field + 1])) fail(`${label}: row ${i + 1} has an invalid route/status pair.`);\n    }\n  }\n  return { bom, header: records[0], rows: records.slice(1) };\n}\n\ntry {\n  if (items.length !== 1) fail('Provide exactly one comparison item.');\n  if (!['exact', 'predicted-change', 'file-identity'].includes(input.mode)) fail('Choose exact, predicted-change, or file-identity mode.');\n  for (const key of ['baseline_sha256', 'actual_sha256']) {\n    if (typeof input[key] !== 'string' || !/^[a-fA-F0-9]{64}$/.test(input[key])) fail(`Missing or invalid ${key}; run the native SHA256 Crypto node.`);\n    report[key] = input[key].toLowerCase();\n  }\n  if (report.raw_byte_equal && report.baseline_sha256 !== report.actual_sha256) fail('Equal files have inconsistent native hashes; check Crypto field selection.');\n  const expected = input.expected_sha256;\n  if (expected !== undefined && expected !== '') {\n    if (typeof expected !== 'string' || !/^[a-fA-F0-9]{64}$/.test(expected)) fail('expected_sha256 must be the 64-digit hex digest from the retained original report.');\n    report.expected_sha256 = expected.toLowerCase();\n    report.identity_check = 'mismatch';\n    if (report.baseline_sha256 !== report.expected_sha256 || report.actual_sha256 !== report.expected_sha256) fail('Files do not match the retained original expected_sha256.');\n    report.identity_check = 'matched';\n  }\n  if (input.mode === 'file-identity') {\n    if (!report.raw_byte_equal) fail('File identity requires byte-identical baseline and actual files.');\n    if (report.identity_check === 'not_requested') report.identity_check = 'initial_record_only';\n  } else {\n    const columns = ['lot', 'route', 'status'];\n    const before = csv(baseline, columns, 'baseline');\n    const after = csv(actual, columns, 'actual');\n    report.baseline_row_count = before.rows.length;\n    report.actual_row_count = after.rows.length;\n    let predictions = new Map();\n    if (input.mode === 'predicted-change') {\n      if (!item.binary.delta) fail('Upload a delta CSV; a header-only delta declares zero changes.');\n      const deltaBuffer = await this.helpers.getBinaryDataBuffer(0, 'delta');\n      const delta = csv(deltaBuffer, ['lot', 'before_route', 'before_status', 'after_route', 'after_status'], 'delta');\n      predictions = new Map(delta.rows.map(row => [row.values[0], row.values]));\n    }\n    const problems = [];\n    if (before.rows.length !== after.rows.length) problems.push('Receipt row counts differ (missing or extra rows).');\n    if (before.bom !== after.bom || before.header.raw !== after.header.raw || before.header.eol !== after.header.eol) problems.push('Receipt header/BOM/framing changed.');\n    const changed = [];\n    const baselineIds = new Set(before.rows.map(row => row.values[0]));\n    for (const id of predictions.keys()) if (!baselineIds.has(id)) problems.push(`Predicted lot ${JSON.stringify(id)} is absent from baseline.`);\n    for (let i = 0; i < before.rows.length; i++) {\n      const b = before.rows[i];\n      const a = after.rows[i];\n      if (!a) continue;\n      report.row_count_checked++;\n      const id = b.values[0];\n      if (id !== a.values[0]) { problems.push(`Lot identity/order changed at row ${i + 1}.`); continue; }\n      const differs = !same(b.values, a.values);\n      if (differs) changed.push(id);\n      else if (b.raw === a.raw && b.eol === a.eol) report.unchanged_count++;\n      if (b.eol !== a.eol) problems.push(`Record terminator changed for ${JSON.stringify(id)}.`);\n      const prediction = predictions.get(id);\n      if (input.mode === 'predicted-change' && prediction) {\n        if (!differs) problems.push(`Prediction for ${JSON.stringify(id)} is a no-op.`);\n        if (!same(prediction.slice(1, 3), b.values.slice(1)) || !same(prediction.slice(3), a.values.slice(1))) problems.push(`Prediction before/after mismatch for ${JSON.stringify(id)}.`);\n        if (b.tokens[0] !== a.tokens[0] || b.tokens.some((token, j) => token.startsWith('\"') !== a.tokens[j].startsWith('\"'))) problems.push(`CSV field framing changed for ${JSON.stringify(id)}.`);\n      } else if (b.raw !== a.raw || b.eol !== a.eol) {\n        problems.push(`Unpredicted serialized change for ${JSON.stringify(id)}.`);\n      }\n    }\n    report.changed_ids = JSON.stringify(changed);\n    report.changed_count = changed.length;\n    if (input.mode === 'exact' && !report.raw_byte_equal) problems.push('Exact comparison requires complete raw-byte equality.');\n    if (problems.length) fail(problems.join(' '));\n  }\n  report.result = 'PASS';\n  report.reason = input.mode === 'file-identity' && report.identity_check === 'initial_record_only'\n    ? 'Files are identical. Retain this initial digest report; future verification must supply its original expected_sha256.'\n    : 'All comparison requirements satisfied.';\n} catch (error) {\n  report.reason = error instanceof Error ? error.message : String(error);\n}\nreturn [{ json: report, pairedItem: { item: 0 } }];\n"
+      },
+      "position": [
+        740,
+        0
+      ],
+      "id": "f289214d-6bfe-4615-b6be-0f4dd612805c"
+    },
+    {
+      "name": "Download report",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "parameters": {
+        "operation": "toJson",
+        "mode": "once",
+        "binaryPropertyName": "data",
+        "options": {
+          "format": true,
+          "fileName": "=white-rack-check-{{$execution.id}}.json"
+        }
+      },
+      "position": [
+        980,
+        0
+      ],
+      "id": "83f93243-88bb-4010-be48-bec848c95528"
+    }
+  ],
+  "connections": {
+    "Upload comparison": {
+      "main": [
+        [
+          {
+            "node": "Hash baseline",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Hash actual",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Keep files and hashes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hash baseline": {
+      "main": [
+        [
+          {
+            "node": "Keep files and hashes",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Hash actual": {
+      "main": [
+        [
+          {
+            "node": "Keep files and hashes",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Keep files and hashes": {
+      "main": [
+        [
+          {
+            "node": "Compare complete files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare complete files": {
+      "main": [
+        [
+          {
+            "node": "Download report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "active": false
+}

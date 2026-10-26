@@ -1,0 +1,54 @@
+{
+  "schema": "m08-claims-v1",
+  "claims": [
+    {
+      "id": "C01",
+      "case_id": "PC-03",
+      "kind": "mass",
+      "value": "2040 kg",
+      "locator": null
+    },
+    {
+      "id": "C02",
+      "case_id": "PC-01",
+      "kind": "time",
+      "value": "13:05",
+      "locator": null
+    },
+    {
+      "id": "C03",
+      "case_id": "PC-01",
+      "kind": "time",
+      "value": "13:05 UTC",
+      "locator": null
+    },
+    {
+      "id": "C04",
+      "case_id": "PC-03",
+      "kind": "citation",
+      "value": "The heater-fuel cans staged for SB-5 weigh 2233 kg on the Ridge Depot inventory record for vehicle SB-4.",
+      "locator": "SB-PC-03#payload"
+    },
+    {
+      "id": "C05",
+      "case_id": "PC-01",
+      "kind": "gate",
+      "value": "The gate for SB-4 at Ridge Depot is open at 19:05 UTC which is 13:05 MDT for the route to Clinic T-8. The window closes after that time.",
+      "locator": "SB-PC-01#gate"
+    },
+    {
+      "id": "C06",
+      "case_id": "PC-02",
+      "kind": "mass",
+      "value": "2222 kg",
+      "locator": "SB-PC-02#payload"
+    },
+    {
+      "id": "C07",
+      "case_id": "PC-03",
+      "kind": "authority",
+      "value": "This shipment is released for dispatch.",
+      "locator": null
+    }
+  ]
+}

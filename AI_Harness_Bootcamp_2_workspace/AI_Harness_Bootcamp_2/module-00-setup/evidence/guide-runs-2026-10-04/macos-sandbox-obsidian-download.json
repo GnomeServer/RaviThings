@@ -1,0 +1,347 @@
+{
+ "annotation": "Box 555 is marked FAIL only because the run plan wrongly expected an existing /Applications/Obsidian.app. This Mac had none, so the box ran as written: it downloaded Obsidian-1.13.7.dmg, printed SHA256 VERIFIED 05daa54f5e1a4458f75da29f8faaa17e8e37ae16998432537f674c626db99bce, and opened the disk image (detached afterwards; nothing was installed). The run stopped there; macos-sandbox.json is the full pass.",
+ "platform": "macos-arm64-sandbox",
+ "guide": "macos.md",
+ "machine": "/private/tmp/aihb-guide-lab/main/mac-20261004T074442Z/home",
+ "outcome": "FAIL",
+ "error": "",
+ "finished": "2026-10-04T01:45:48",
+ "boxes_passed": 12,
+ "boxes_failed": 1,
+ "rows": [
+  {
+   "kind": "environment",
+   "what": "sandbox HOME",
+   "detail": "/private/tmp/aihb-guide-lab/main/mac-20261004T074442Z/home; Docker Desktop's per-user cli-plugins link created as Docker Desktop does for each user"
+  },
+  {
+   "kind": "window",
+   "what": "w1-first",
+   "detail": "Terminal.app login zsh: env -i, /bin/zsh -l -i + ['GIT_CONFIG_NOSYSTEM']"
+  },
+  {
+   "kind": "environment",
+   "what": "no saved GitHub credential",
+   "detail": "GIT_CONFIG_NOSYSTEM=1 hides the system osxkeychain helper, as for a learner with nothing stored"
+  },
+  {
+   "kind": "box",
+   "line": 15,
+   "heading": "1. Check this Mac",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "git version 2.54.0 (Apple Git-157)",
+    "PYTHON /opt/homebrew/opt/python@3.12/bin/python3.12",
+    "NOTHING TO INSTALL",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 112,
+   "heading": "2. Install missing tools",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "nothing missing on this Mac, so nothing installs",
+   "tail": [
+    "git version 2.54.0 (Apple Git-157)",
+    "Python 3.12.14",
+    "TOOLS READY /opt/homebrew/opt/python@3.12/bin/python3.12",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 158,
+   "heading": "3. Install Oh My Pi",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 5.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "PROFILE READY /private/tmp/aihb-guide-lab/main/mac-20261004T074442Z/home/.zprofile",
+    "PROFILE READY /private/tmp/aihb-guide-lab/main/mac-20261004T074442Z/home/.zshrc",
+    "OMP_VERSION omp/18.3.5",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 258,
+   "heading": "4. Get the course files",
+   "window": "w1-first",
+   "status": "failed",
+   "exit": 1,
+   "seconds": 0.6,
+   "verdict": "PASS",
+   "expected_status": "failed",
+   "missing": [],
+   "answered": [],
+   "note": "expected: no GitHub credentials yet",
+   "tail": [
+    "course_get_checkout() {  R=\"$HOME/Documents/AIHB_OCT_2026\"  M=\"$R/AI_Harness_Bootcamp_2/module-00-setup\"  if ! GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code https://github.com/TheHolofex/AIHB_OCT_2026.git HEAD; then    printf 'ACCESS HOLD: set up GitHub access below, then paste this box again\\n' >&2    return 1  fi  if [ -L \"$HOME/Documents\" ] || [ -L \"$R\" ]; then    printf 'STOP: the checkout path is a symlink; nothing was changed\\n' >&2    return 1  fi  if [ ! -e \"$R\" ]; then    git clone https://github.com/TheHolofex/AIHB_OCT_2026.git \"$R\" || return 1  elif [ -d \"$R/.git\" ] && [ \"$(git -C \"$R\" remote get-url origin 2>/dev/null)\" = https://github.com/TheHolofex/AIHB_OCT_2026.git ] && git -C \"$R\" rev-parse --verify HEAD >/dev/null 2>&1; then    printf 'KEEP: using the existing checkout without changing it\\n'  else    printf 'STOP: %s holds other or incomplete work; it was not changed\\n' \"$R\" >&2    return 1  fi  if [ ! -f \"$R/shared/run_omp.py\" ] || [ ! -f \"$M/shared/case/verify_tool_proof.py\" ] || [ ! -f \"$M/scripts/verify-setup.sh\" ]; then    printf 'STOP: the checkout is missing course files\\n' >&2    return 1  fi  printf 'CHECKOUT READY %s\\n' \"$R\"}course_get_checkout",
+    "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
+    "ACCESS HOLD: set up GitHub access below, then paste this box again",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_1__",
+    "%"
+   ]
+  },
+  {
+   "kind": "window",
+   "what": "w2-github",
+   "detail": "Terminal.app login zsh: env -i, /bin/zsh -l -i + ['GH_TOKEN', 'GIT_CONFIG_NOSYSTEM']"
+  },
+  {
+   "kind": "stand-in",
+   "what": "GitHub browser sign-in",
+   "detail": "GH_TOKEN in this window's environment only; nothing is written to the keychain"
+  },
+  {
+   "kind": "box",
+   "line": 299,
+   "heading": "If GitHub access fails",
+   "window": "w2-github",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 5.5,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "A new release of gh is available: 2.100.0 \u2192 2.102.0",
+    "To upgrade, run: brew upgrade gh",
+    "https://github.com/cli/cli/releases/tag/v2.102.0",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "not run",
+   "what": "gh auth login --web",
+   "detail": "would write a token to the login keychain shared with the real account"
+  },
+  {
+   "kind": "box",
+   "line": 340,
+   "heading": "If GitHub access fails",
+   "window": "w2-github",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 11.6,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  - Token: gho_************************************",
+    "  - Token scopes: 'gist', 'read:org', 'repo', 'workflow'",
+    "746ec5798db384db236940c8367d2a8804e95977\tHEAD",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 258,
+   "heading": "4. Get the course files",
+   "window": "w2-github",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 4.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Receiving objects:  99% (2756/2783), 100.85 MiB | 49.38 MiB/sReceiving objects: 100% (2783/2783), 100.85 MiB | 49.38 MiB/sReceiving objects: 100% (2783/2783), 124.42 MiB | 50.38 MiB/s, done.",
+    "Resolving deltas:   0% (0/1203)Resolving deltas:   1% (13/1203)Resolving deltas:   2% (25/1203)Resolving deltas:   3% (37/1203)Resolving deltas:   4% (49/1203)Resolving deltas:   5% (61/1203)Resolving deltas:   6% (73/1203)Resolving deltas:   7% (88/1203)Resolving deltas:   8% (97/1203)Resolving deltas:   9% (109/1203)Resolving deltas:  10% (122/1203)Resolving deltas:  11% (133/1203)Resolving deltas:  12% (145/1203)Resolving deltas:  13% (158/1203)Resolving deltas:  14% (171/1203)Resolving deltas:  15% (181/1203)Resolving deltas:  16% (193/1203)Resolving deltas:  17% (206/1203)Resolving deltas:  18% (219/1203)Resolving deltas:  19% (229/1203)Resolving deltas:  20% (241/1203)Resolving deltas:  21% (255/1203)Resolving deltas:  22% (265/1203)Resolving deltas:  23% (277/1203)Resolving deltas:  24% (289/1203)Resolving deltas:  25% (301/1203)Resolving deltas:  26% (313/1203)Resolving deltas:  27% (325/1203)Resolving deltas:  28% (337/1203)Resolving deltas:  29% (349/1203)Resolving deltas:  30% (361/1203)Resolving deltas:  31% (373/1203)Resolving deltas:  32% (385/1203)Resolving deltas:  33% (397/1203)Resolving deltas:  34% (410/1203)Resolving deltas:  35% (423/1203)Resolving deltas:  36% (435/1203)Resolving deltas:  37% (446/1203)Resolving deltas:  38% (458/1203)Resolving deltas:  39% (470/1203)Resolving deltas:  40% (482/1203)Resolving deltas:  41% (494/1203)Resolving deltas:  42% (507/1203)Resolving deltas:  43% (518/1203)Resolving deltas:  44% (530/1203)Resolving deltas:  45% (546/1203)Resolving deltas:  46% (555/1203)Resolving deltas:  47% (567/1203)Resolving deltas:  48% (578/1203)Resolving deltas:  49% (590/1203)Resolving deltas:  50% (602/1203)Resolving deltas:  51% (614/1203)Resolving deltas:  52% (626/1203)Resolving deltas:  53% (638/1203)Resolving deltas:  54% (650/1203)Resolving deltas:  55% (662/1203)Resolving deltas:  56% (677/1203)Resolving deltas:  57% (686/1203)Resolving deltas:  58% (698/1203)Resolving deltas:  59% (710/1203)Resolving deltas:  60% (723/1203)Resolving deltas:  61% (737/1203)Resolving deltas:  62% (747/1203)Resolving deltas:  63% (758/1203)Resolving deltas:  64% (772/1203)Resolving deltas:  65% (782/1203)Resolving deltas:  66% (795/1203)Resolving deltas:  67% (807/1203)Resolving deltas:  68% (819/1203)Resolving deltas:  69% (832/1203)Resolving deltas:  70% (845/1203)Resolving deltas:  71% (855/1203)Resolving deltas:  72% (868/1203)Resolving deltas:  73% (879/1203)Resolving deltas:  74% (891/1203)Resolving deltas:  75% (904/1203)Resolving deltas:  76% (915/1203)Resolving deltas:  77% (927/1203)Resolving deltas:  78% (939/1203)Resolving deltas:  79% (951/1203)Resolving deltas:  80% (963/1203)Resolving deltas:  81% (975/1203)Resolving deltas:  82% (987/1203)Resolving deltas:  83% (1000/1203)Resolving deltas:  84% (1013/1203)Resolving deltas:  85% (1023/1203)Resolving deltas:  86% (1035/1203)Resolving deltas:  87% (1047/1203)Resolving deltas:  88% (1059/1203)Resolving deltas:  89% (1071/1203)Resolving deltas:  90% (1083/1203)Resolving deltas:  91% (1095/1203)Resolving deltas:  92% (1107/1203)Resolving deltas:  93% (1119/1203)Resolving deltas:  94% (1131/1203)Resolving deltas:  95% (1144/1203)Resolving deltas:  96% (1155/1203)Resolving deltas:  97% (1167/1203)Resolving deltas:  98% (1180/1203)Resolving deltas:  99% (1191/1203)Resolving deltas: 100% (1203/1203)Resolving deltas: 100% (1203/1203), done.",
+    "CHECKOUT READY /private/tmp/aihb-guide-lab/main/mac-20261004T074442Z/home/Documents/AIHB_OCT_2026",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "window",
+   "what": "w3-new-terminal",
+   "detail": "Terminal.app login zsh: env -i, /bin/zsh -l -i"
+  },
+  {
+   "kind": "box",
+   "line": 358,
+   "heading": "5. Open a new terminal and confirm",
+   "window": "w3-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.5,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "OMP_VERSION omp/18.3.5",
+    "CHECKOUT /private/tmp/aihb-guide-lab/main/mac-20261004T074442Z/home/Documents/AIHB_OCT_2026",
+    "MISSING",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 424,
+   "heading": "6. Enter your OpenRouter key",
+   "window": "w3-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 1.9,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "scheduled input"
+   ],
+   "note": "",
+   "tail": [
+    "IFS= read -r -s OPENROUTER_API_KEY",
+    "IFS= read -r -s OPENROUTER_API_KEY",
+    "IFS= read -r -s OPENROUTER_API_KEY",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 440,
+   "heading": "7. Confirm the key is loaded",
+   "window": "w3-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "export OPENROUTER_API_KEYif [ -n \"${OPENROUTER_API_KEY:-}\" ]; then printf 'SET\\n'; else printf 'MISSING\\n'; fi",
+    "SET",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 457,
+   "heading": "8. Run the readiness check",
+   "window": "w3-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 8.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "one paid OpenRouter call",
+   "tail": [
+    "PASS: from-omp.txt \u2014 correct content, this run's token, receipted by course_write (exact path + hash)",
+    "READINESS CHECK PASS",
+    "VERIFY_EXIT 0",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 511,
+   "heading": "9. Save the setup report and read the result",
+   "window": "w3-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 1.1,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "FILE /private/tmp/aihb-guide-lab/main/mac-20261004T074442Z/home/course-evidence/setup-proof-20261004T074532Z-14317/proof/from-omp.txt",
+    "omp works d2367aff5baf2eaf88e5e01fdcb25540",
+    "END OF FILE",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 555,
+   "heading": "Install Obsidian if it is missing",
+   "window": "w3-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 3.4,
+   "verdict": "FAIL",
+   "expected_status": "failed",
+   "missing": [
+    "STOP: Obsidian is already at /Applications/Obsidian\\.app"
+   ],
+   "answered": [],
+   "note": "this Mac already has Obsidian; the box keeps it and downloads nothing",
+   "tail": [
+    "  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0",
+    "  0  217M    0 31890    0     0  76261      0  0:49:54 --:--:--  0:49:54 76261 46  217M   46  100M    0     0  71.0M      0  0:00:03  0:00:01  0:00:02  100M100  217M  100  217M    0     0  90.9M      0  0:00:02  0:00:02 --:--:--  110M",
+    "SHA256 VERIFIED Obsidian-1.13.7.dmg 05daa54f5e1a4458f75da29f8faaa17e8e37ae16998432537f674c626db99bce",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "host unchanged",
+   "what": "real ~/.zprofile, ~/.zshrc, ~/.local/bin/omp",
+   "detail": "{\"/Users/<owner>/.zprofile\": true, \"/Users/<owner>/.zshrc\": true, \"/Users/<owner>/.local/bin/omp\": true}"
+  },
+  {
+   "kind": "docker",
+   "what": "n8n-course containers created",
+   "detail": "0"
+  }
+ ]
+}

@@ -1,0 +1,31 @@
+{
+  "source_id": "INV-CS2",
+  "role": "inventory",
+  "movement": "CS-2",
+  "current_revision": 2,
+  "records": [
+    {
+      "revision": 1,
+      "supersedes": null,
+      "recorded_at": "2026-10-16T11:40:00-06:00",
+      "authority": "Basin Depot count team",
+      "facts": {
+        "quantity_scanned": 70,
+        "quantity_usable": 68,
+        "quantity_quarantined": 2
+      }
+    },
+    {
+      "revision": 2,
+      "supersedes": 1,
+      "recorded_at": "2026-10-16T12:10:00-06:00",
+      "authority": "Basin Depot count team",
+      "facts": {
+        "quantity_scanned": 72,
+        "quantity_usable": 68,
+        "quantity_quarantined": 4
+      }
+    }
+  ],
+  "class_only": true
+}

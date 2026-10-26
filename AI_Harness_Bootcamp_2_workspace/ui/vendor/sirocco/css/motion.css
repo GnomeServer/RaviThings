@@ -1,0 +1,43 @@
+/* Sirocco — motion. Loops run only on elements whose work is actually in progress.
+   Every animated state is also conveyed by text or shape; prefers-reduced-motion stops all motion,
+   and [data-sc-motion='off'] on any ancestor stops it for that subtree (paused runs). */
+
+.sc-live { animation: sc-breathe 2.2s var(--sc-ease-io) infinite; }
+.sc-flow { stroke-dasharray: 1.5 10; stroke-linecap: round; animation: sc-dash 1.2s linear infinite; }
+.sc-shimmer {
+  background-image: linear-gradient(100deg, transparent 25%, var(--sc-shimmer) 50%, transparent 75%);
+  background-size: 250% 100%;
+  animation: sc-shimmer 1.9s linear infinite;
+}
+.sc-scan { animation: sc-scan 2.4s var(--sc-ease-io) infinite; }
+.sc-orbit { transform-box: fill-box; transform-origin: center; animation: sc-orbit 3.6s linear infinite; }
+.sc-rise { animation: sc-rise .55s var(--sc-ease) both; }
+.sc-caret { animation: sc-caret 1s steps(1) infinite; }
+.sc-draw { transform-origin: left center; animation: sc-draw .7s var(--sc-ease) both; }
+.sc-hatch { background-image: repeating-linear-gradient(135deg, var(--sc-hatch-a) 0 3px, var(--sc-hatch-b) 3px 6px); }
+
+@keyframes sc-breathe {
+  0%, 100% { box-shadow: 0 0 3px 0 currentColor; opacity: .8; }
+  50% { box-shadow: 0 0 14px 2px currentColor; opacity: 1; }
+}
+@keyframes sc-dash { to { stroke-dashoffset: -23; } }
+@keyframes sc-shimmer { from { background-position: 130% 0; } to { background-position: -130% 0; } }
+@keyframes sc-scan { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
+@keyframes sc-orbit { to { transform: rotate(360deg); } }
+@keyframes sc-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes sc-caret { 50% { opacity: 0; } }
+@keyframes sc-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+[data-sc-motion='off'] *,
+[data-sc-motion='off'] *::before,
+[data-sc-motion='off'] *::after {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

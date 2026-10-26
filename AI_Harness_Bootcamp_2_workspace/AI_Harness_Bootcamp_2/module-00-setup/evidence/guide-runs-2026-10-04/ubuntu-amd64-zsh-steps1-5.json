@@ -1,0 +1,240 @@
+{
+ "platform": "ubuntu-amd64-zsh",
+ "guide": "ubuntu.md",
+ "machine": "aihb-lab-main-ubuntu-amd64-013302",
+ "outcome": "PASS",
+ "error": "",
+ "finished": "2026-10-04T01:34:01",
+ "boxes_passed": 9,
+ "boxes_failed": 0,
+ "rows": [
+  {
+   "kind": "environment",
+   "what": "display",
+   "detail": "Xvfb :99 stands in for the desktop session's display"
+  },
+  {
+   "kind": "environment",
+   "what": "zsh learner",
+   "detail": "zsh installed, chosen as the login shell, empty ~/.zshrc as a zsh user has"
+  },
+  {
+   "kind": "window",
+   "what": "w1-first",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin /usr/bin/zsh -i"
+  },
+  {
+   "kind": "box",
+   "line": 15,
+   "heading": "1. Check this computer",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.6,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "PACKAGES missing: git curl",
+    "PY /usr/bin/python3.12",
+    "Python 3.12.3",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 55,
+   "heading": "2. Install missing packages",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 9.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "password"
+   ],
+   "note": "",
+   "tail": [
+    "Setting up liberror-perl (0.17029-2) ...",
+    "Setting up git (1:2.43.0-1ubuntu7.3) ...",
+    "Processing triggers for libc-bin (2.39-0ubuntu8.9) ...",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 71,
+   "heading": "3. Install Oh My Pi",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 4.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "OMP_VERSION omp/18.3.5",
+    "PATH_LINE added to /home/learner/.zshrc",
+    "PATH_LINE added to /home/learner/.zprofile",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 156,
+   "heading": "4. Get the course files",
+   "window": "w1-first",
+   "status": "failed",
+   "exit": 128,
+   "seconds": 0.6,
+   "verdict": "PASS",
+   "expected_status": "failed",
+   "missing": [],
+   "answered": [],
+   "note": "expected: a new learner has no GitHub credentials yet",
+   "tail": [
+    "GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code https://github.com/TheHolofex/AIHB_OCT_2026.git HEAD",
+    "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_128__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 172,
+   "heading": "If GitHub access fails",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 6.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Setting up gh (2.45.0-1ubuntu0.3) ...",
+    "gh version 2.45.0 (2025-07-18 Ubuntu 2.45.0-1ubuntu0.3)",
+    "https://github.com/cli/cli/releases/tag/v2.45.0",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "stand-in",
+   "what": "GitHub browser sign-in",
+   "detail": "gh auth login --with-token (token from the host's gh login)"
+  },
+  {
+   "kind": "box",
+   "line": 199,
+   "heading": "If GitHub access fails",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.9,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  - Git operations protocol: https",
+    "  - Token: gho_************************************",
+    "  - Token scopes: 'gist', 'read:org', 'repo', 'workflow'",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 211,
+   "heading": "If GitHub access fails",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 1.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "gh auth setup-git --hostname github.com &&GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code https://github.com/TheHolofex/AIHB_OCT_2026.git HEAD",
+    "746ec5798db384db236940c8367d2a8804e95977\tHEAD",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 228,
+   "heading": "Create or reuse the checkout",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 6.5,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Resolving deltas:   0% (0/1203)Resolving deltas:   1% (13/1203)Resolving deltas:   2% (25/1203)Resolving deltas:   3% (37/1203)Resolving deltas:   4% (50/1203)Resolving deltas:   5% (61/1203)Resolving deltas:   6% (73/1203)Resolving deltas:   7% (85/1203)Resolving deltas:   8% (99/1203)Resolving deltas:   9% (111/1203)Resolving deltas:  10% (121/1203)Resolving deltas:  11% (133/1203)Resolving deltas:  12% (147/1203)Resolving deltas:  13% (157/1203)Resolving deltas:  14% (169/1203)Resolving deltas:  15% (181/1203)Resolving deltas:  16% (195/1203)Resolving deltas:  17% (205/1203)Resolving deltas:  18% (217/1203)Resolving deltas:  19% (229/1203)Resolving deltas:  20% (241/1203)Resolving deltas:  21% (253/1203)Resolving deltas:  22% (265/1203)Resolving deltas:  23% (277/1203)Resolving deltas:  24% (289/1203)Resolving deltas:  25% (301/1203)Resolving deltas:  26% (313/1203)Resolving deltas:  27% (325/1203)Resolving deltas:  28% (337/1203)Resolving deltas:  29% (349/1203)Resolving deltas:  30% (361/1203)Resolving deltas:  31% (373/1203)Resolving deltas:  32% (385/1203)Resolving deltas:  33% (399/1203)Resolving deltas:  34% (410/1203)Resolving deltas:  35% (422/1203)Resolving deltas:  36% (434/1203)Resolving deltas:  37% (446/1203)Resolving deltas:  38% (459/1203)Resolving deltas:  39% (470/1203)Resolving deltas:  40% (484/1203)Resolving deltas:  41% (494/1203)Resolving deltas:  42% (506/1203)Resolving deltas:  43% (518/1203)Resolving deltas:  44% (530/1203)Resolving deltas:  45% (542/1203)Resolving deltas:  46% (554/1203)Resolving deltas:  47% (566/1203)Resolving deltas:  48% (578/1203)Resolving deltas:  49% (590/1203)Resolving deltas:  50% (602/1203)Resolving deltas:  51% (614/1203)Resolving deltas:  52% (626/1203)Resolving deltas:  53% (638/1203)Resolving deltas:  54% (650/1203)Resolving deltas:  55% (662/1203)Resolving deltas:  56% (674/1203)Resolving deltas:  57% (687/1203)Resolving deltas:  58% (698/1203)Resolving deltas:  59% (710/1203)Resolving deltas:  60% (723/1203)Resolving deltas:  61% (734/1203)Resolving deltas:  62% (746/1203)Resolving deltas:  63% (758/1203)Resolving deltas:  64% (770/1203)Resolving deltas:  65% (782/1203)Resolving deltas:  66% (794/1203)Resolving deltas:  67% (807/1203)Resolving deltas:  68% (819/1203)Resolving deltas:  69% (831/1203)Resolving deltas:  70% (843/1203)Resolving deltas:  71% (855/1203)Resolving deltas:  72% (869/1203)Resolving deltas:  73% (879/1203)Resolving deltas:  74% (891/1203)Resolving deltas:  75% (905/1203)Resolving deltas:  76% (915/1203)Resolving deltas:  77% (927/1203)Resolving deltas:  78% (939/1203)Resolving deltas:  79% (951/1203)Resolving deltas:  80% (963/1203)Resolving deltas:  81% (975/1203)Resolving deltas:  82% (987/1203)Resolving deltas:  83% (999/1203)Resolving deltas:  84% (1011/1203)Resolving deltas:  85% (1023/1203)Resolving deltas:  86% (1035/1203)Resolving deltas:  87% (1047/1203)Resolving deltas:  88% (1059/1203)Resolving deltas:  89% (1076/1203)Resolving deltas:  90% (1083/1203)Resolving deltas:  91% (1095/1203)Resolving deltas:  92% (1107/1203)Resolving deltas:  93% (1119/1203)Resolving deltas:  94% (1132/1203)Resolving deltas:  95% (1143/1203)Resolving deltas:  96% (1155/1203)Resolving deltas:  97% (1167/1203)Resolving deltas:  98% (1179/1203)Resolving deltas:  99% (1191/1203)Resolving deltas: 100% (1203/1203)Resolving deltas: 100% (1203/1203), done.",
+    "R /home/learner/Documents/AIHB_OCT_2026",
+    "M /home/learner/Documents/AIHB_OCT_2026/AI_Harness_Bootcamp_2/module-00-setup",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "window",
+   "what": "w2-new-terminal",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin /usr/bin/zsh -i"
+  },
+  {
+   "kind": "box",
+   "line": 268,
+   "heading": "5. Open a new terminal and confirm",
+   "window": "w2-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 1.1,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "OMP_PATH /home/learner/.local/bin/omp",
+    "OMP_VERSION omp/18.3.5",
+    "MISSING",
+    "%                                                                                                                                                                                                                            ",
+    "__AIHB_DONE_0__",
+    "%"
+   ]
+  },
+  {
+   "kind": "scope",
+   "what": "zsh variant",
+   "detail": "steps 1 to 5 only"
+  }
+ ]
+}

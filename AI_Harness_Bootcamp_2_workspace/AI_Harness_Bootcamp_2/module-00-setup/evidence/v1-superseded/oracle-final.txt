@@ -1,0 +1,173 @@
+PASS 171
+  PASS M0-REF: reference hash a162ca34f4a60563ce3d3019083f4d2bdbdb2204965d4dfd21560746e9e5d8fd
+  PASS M0-01: exactly five platform guides exist
+  PASS M0-02: shared start, lab, case, credential, source, version, and troubleshooting files exist
+  PASS M0-01: start links windows-powershell
+  PASS M0-01: start links windows-wsl
+  PASS M0-01: start links macos
+  PASS M0-01: start links ubuntu
+  PASS M0-01: start links arch-linux
+  PASS M0-03: windows-powershell contains route stage 'Before you change the machine'
+  PASS M0-03: windows-powershell contains route stage 'Open the right terminal'
+  PASS M0-03: windows-powershell contains route stage 'Install the base tools'
+  PASS M0-03: windows-powershell contains route stage 'Put user tools on PATH'
+  PASS M0-03: windows-powershell contains route stage 'Clone and inspect the course'
+  PASS M0-03: windows-powershell contains route stage 'Install the course applications'
+  PASS M0-03: windows-powershell contains route stage 'Connect the course accounts'
+  PASS M0-03: windows-powershell contains route stage 'Prove the setup'
+  PASS M0-03: windows-powershell contains route stage 'Repeat the proof in a fresh shell'
+  PASS M0-03: windows-powershell contains route stage 'Save the setup record'
+  PASS M0-04: windows-powershell labels terminals
+  PASS M0-05: windows-powershell names expected evidence and stop conditions
+  PASS M0-13: windows-powershell contains cold-start proof
+  PASS M0-16: windows-powershell handles disk and architecture
+  PASS M0-09: windows-powershell uses the actual course remote
+  PASS M0-07: windows-powershell requires Node 24
+  PASS M0-08: windows-powershell requires Python 3.12+
+  PASS M0-10: windows-powershell covers all course applications
+  PASS M0-03: windows-wsl contains route stage 'Before you change the machine'
+  PASS M0-03: windows-wsl contains route stage 'Open the right terminal'
+  PASS M0-03: windows-wsl contains route stage 'Install the base tools'
+  PASS M0-03: windows-wsl contains route stage 'Put user tools on PATH'
+  PASS M0-03: windows-wsl contains route stage 'Clone and inspect the course'
+  PASS M0-03: windows-wsl contains route stage 'Install the course applications'
+  PASS M0-03: windows-wsl contains route stage 'Connect the course accounts'
+  PASS M0-03: windows-wsl contains route stage 'Prove the setup'
+  PASS M0-03: windows-wsl contains route stage 'Repeat the proof in a fresh shell'
+  PASS M0-03: windows-wsl contains route stage 'Save the setup record'
+  PASS M0-04: windows-wsl labels terminals
+  PASS M0-05: windows-wsl names expected evidence and stop conditions
+  PASS M0-13: windows-wsl contains cold-start proof
+  PASS M0-16: windows-wsl handles disk and architecture
+  PASS M0-09: windows-wsl uses the actual course remote
+  PASS M0-07: windows-wsl requires Node 24
+  PASS M0-08: windows-wsl requires Python 3.12+
+  PASS M0-10: windows-wsl covers all course applications
+  PASS M0-03: macos contains route stage 'Before you change the machine'
+  PASS M0-03: macos contains route stage 'Open the right terminal'
+  PASS M0-03: macos contains route stage 'Install the base tools'
+  PASS M0-03: macos contains route stage 'Put user tools on PATH'
+  PASS M0-03: macos contains route stage 'Clone and inspect the course'
+  PASS M0-03: macos contains route stage 'Install the course applications'
+  PASS M0-03: macos contains route stage 'Connect the course accounts'
+  PASS M0-03: macos contains route stage 'Prove the setup'
+  PASS M0-03: macos contains route stage 'Repeat the proof in a fresh shell'
+  PASS M0-03: macos contains route stage 'Save the setup record'
+  PASS M0-04: macos labels terminals
+  PASS M0-05: macos names expected evidence and stop conditions
+  PASS M0-13: macos contains cold-start proof
+  PASS M0-16: macos handles disk and architecture
+  PASS M0-09: macos uses the actual course remote
+  PASS M0-07: macos requires Node 24
+  PASS M0-08: macos requires Python 3.12+
+  PASS M0-10: macos covers all course applications
+  PASS M0-03: ubuntu contains route stage 'Before you change the machine'
+  PASS M0-03: ubuntu contains route stage 'Open the right terminal'
+  PASS M0-03: ubuntu contains route stage 'Install the base tools'
+  PASS M0-03: ubuntu contains route stage 'Put user tools on PATH'
+  PASS M0-03: ubuntu contains route stage 'Clone and inspect the course'
+  PASS M0-03: ubuntu contains route stage 'Install the course applications'
+  PASS M0-03: ubuntu contains route stage 'Connect the course accounts'
+  PASS M0-03: ubuntu contains route stage 'Prove the setup'
+  PASS M0-03: ubuntu contains route stage 'Repeat the proof in a fresh shell'
+  PASS M0-03: ubuntu contains route stage 'Save the setup record'
+  PASS M0-04: ubuntu labels terminals
+  PASS M0-05: ubuntu names expected evidence and stop conditions
+  PASS M0-13: ubuntu contains cold-start proof
+  PASS M0-16: ubuntu handles disk and architecture
+  PASS M0-09: ubuntu uses the actual course remote
+  PASS M0-07: ubuntu requires Node 24
+  PASS M0-08: ubuntu requires Python 3.12+
+  PASS M0-10: ubuntu covers all course applications
+  PASS M0-03: arch-linux contains route stage 'Before you change the machine'
+  PASS M0-03: arch-linux contains route stage 'Open the right terminal'
+  PASS M0-03: arch-linux contains route stage 'Install the base tools'
+  PASS M0-03: arch-linux contains route stage 'Put user tools on PATH'
+  PASS M0-03: arch-linux contains route stage 'Clone and inspect the course'
+  PASS M0-03: arch-linux contains route stage 'Install the course applications'
+  PASS M0-03: arch-linux contains route stage 'Connect the course accounts'
+  PASS M0-03: arch-linux contains route stage 'Prove the setup'
+  PASS M0-03: arch-linux contains route stage 'Repeat the proof in a fresh shell'
+  PASS M0-03: arch-linux contains route stage 'Save the setup record'
+  PASS M0-04: arch-linux labels terminals
+  PASS M0-05: arch-linux names expected evidence and stop conditions
+  PASS M0-13: arch-linux contains cold-start proof
+  PASS M0-16: arch-linux handles disk and architecture
+  PASS M0-09: arch-linux uses the actual course remote
+  PASS M0-07: arch-linux requires Node 24
+  PASS M0-08: arch-linux requires Python 3.12+
+  PASS M0-10: arch-linux covers all course applications
+  PASS M0-LINK: platforms/windows-powershell.md -> windows-wsl.md
+  PASS M0-LINK: platforms/windows-powershell.md -> ../shared/TROUBLESHOOTING.md
+  PASS M0-LINK: platforms/windows-powershell.md -> ../shared/CREDENTIALS.md
+  PASS M0-LINK: platforms/windows-powershell.md -> ../shared/TROUBLESHOOTING.md
+  PASS M0-LINK: platforms/windows-powershell.md -> ../shared/MODULE_00_LAB.md
+  PASS M0-LINK: platforms/windows-wsl.md -> ../shared/CREDENTIALS.md
+  PASS M0-LINK: platforms/windows-wsl.md -> ../shared/MODULE_00_LAB.md
+  PASS M0-LINK: platforms/macos.md -> ../shared/CREDENTIALS.md
+  PASS M0-LINK: platforms/macos.md -> ../shared/MODULE_00_LAB.md
+  PASS M0-LINK: platforms/ubuntu.md -> ../shared/CREDENTIALS.md
+  PASS M0-LINK: platforms/ubuntu.md -> ../shared/MODULE_00_LAB.md
+  PASS M0-LINK: platforms/arch-linux.md -> ../shared/CREDENTIALS.md
+  PASS M0-LINK: platforms/arch-linux.md -> ../shared/MODULE_00_LAB.md
+  PASS M0-LINK: README.md -> platforms/windows-powershell.md
+  PASS M0-LINK: README.md -> platforms/windows-wsl.md
+  PASS M0-LINK: README.md -> platforms/macos.md
+  PASS M0-LINK: README.md -> platforms/ubuntu.md
+  PASS M0-LINK: README.md -> platforms/arch-linux.md
+  PASS M0-LINK: README.md -> shared/TROUBLESHOOTING.md
+  PASS M0-LINK: README.md -> shared/ACCESSIBILITY.md
+  PASS M0-LINK: README.md -> shared/MODULE_00_LAB.md
+  PASS M0-LINK: README.md -> reference/REFERENCE.md
+  PASS M0-LINK: README.md -> reference/GAUNTLET_PROMPT.md
+  PASS M0-LINK: README.md -> shared/VERSIONS.md
+  PASS M0-LINK: README.md -> shared/SOURCES.md
+  PASS M0-LINK: README.md -> facilitator/RUNBOOK.md
+  PASS M0-LINK: README.md -> assessment/PUBLIC_RUBRIC.md
+  PASS M0-LINK: README.md -> assessment/CUSTODY_CONTRACT.md
+  PASS M0-LINK: README.md -> evidence/
+  PASS M0-LINK: shared/MODULE_00_LAB.md -> case/SOURCE_PACKET.md
+  PASS M0-LINK: shared/MODULE_00_LAB.md -> case/REQUEST.md
+  PASS M0-LINK: shared/MODULE_00_LAB.md -> case/CHANGED_INPUT.md
+  PASS M0-LINK: shared/MODULE_00_LAB.md -> case/check_artifact.py
+  PASS M0-LINK: shared/MODULE_00_LAB.md -> NEXT_MODULE.md
+  PASS M0-LINK: README.md -> platforms/windows-powershell.md
+  PASS M0-LINK: README.md -> platforms/windows-wsl.md
+  PASS M0-LINK: README.md -> platforms/macos.md
+  PASS M0-LINK: README.md -> platforms/ubuntu.md
+  PASS M0-LINK: README.md -> platforms/arch-linux.md
+  PASS M0-LINK: README.md -> shared/TROUBLESHOOTING.md
+  PASS M0-LINK: README.md -> shared/ACCESSIBILITY.md
+  PASS M0-LINK: README.md -> shared/MODULE_00_LAB.md
+  PASS M0-LINK: README.md -> reference/REFERENCE.md
+  PASS M0-LINK: README.md -> reference/GAUNTLET_PROMPT.md
+  PASS M0-LINK: README.md -> shared/VERSIONS.md
+  PASS M0-LINK: README.md -> shared/SOURCES.md
+  PASS M0-LINK: README.md -> facilitator/RUNBOOK.md
+  PASS M0-LINK: README.md -> assessment/PUBLIC_RUBRIC.md
+  PASS M0-LINK: README.md -> assessment/CUSTODY_CONTRACT.md
+  PASS M0-LINK: README.md -> evidence/
+  PASS M0-SAFE: no sudo global npm
+  PASS M0-SAFE: no insecure curl
+  PASS M0-SAFE: no world-writable recursive chmod
+  PASS M0-SAFE: no destructive recursive delete
+  PASS M0-SAFE: no persistent policy bypass
+  PASS M0-SAFE: no secret value echo
+  PASS M0-06: learner material omits internal token VERIFY:
+  PASS M0-06: learner material omits internal token CUSTODY:
+  PASS M0-06: learner material omits internal token PO00_RESULT
+  PASS M0-06: learner material omits internal token M0-17
+  PASS M0-06: learner material omits internal token oracle criterion
+  PASS M0-11: OpenCode pin appears
+  PASS M0-11: n8n pin appears
+  PASS M0-12: secret warning is explicit
+  PASS M0-14: WSL guide separates filesystems
+  PASS M0-15: Arch guide uses full upgrade and no partial refresh
+  PASS M0-18: lab contains required records
+  PASS M0-19: lab keeps the draft inside class and forbids real-world use
+  PASS M0-20: HOLD and support packet exist
+  PASS M0-21: visible checker is practice and graded case stays unseen
+  PASS M0-VERIFY: verify-setup.ps1 exists
+  PASS M0-VERIFY: verify-setup.sh exists
+  PASS M0-VERIFY: verify-content.py exists
+FAIL 0

@@ -1,0 +1,153 @@
+  PASS M3-REF: reference digest matches REFERENCE.sha256
+  PASS M3-REF: the reference lists every note with its effective handling
+  PASS M3-SERVER: an open server offers twelve tools including every writer
+  PASS M3-SERVER: manage_tags claims read-only while describing a change
+  PASS M3-SERVER: the server's instructions steer toward writes
+  PASS M3-SERVER: --read-only hides every writer
+  PASS M3-SERVER: --read-only rejects a direct call to a hidden writer
+  PASS M3-SERVER: a bounded listing hides folders outside the read scope
+  PASS M3-SERVER: an in-scope read works
+  PASS M3-SERVER: read outside scope is refused with OUTSIDE_READ_SCOPE
+  PASS M3-SERVER: sibling folder name is refused with OUTSIDE_READ_SCOPE
+  PASS M3-SERVER: case-changed folder is refused with OUTSIDE_READ_SCOPE
+  PASS M3-SERVER: search outside scope is refused with OUTSIDE_READ_SCOPE
+  PASS M3-SERVER: traversal is refused with TRAVERSAL
+  PASS M3-SERVER: absolute is refused with ABSOLUTE_PATH
+  PASS M3-SERVER: drive is refused with ABSOLUTE_PATH
+  PASS M3-SERVER: hidden is refused with HIDDEN_PATH
+  PASS M3-SERVER: write outside scope is refused with OUTSIDE_WRITE_SCOPE
+  PASS M3-SERVER: overwrite a source is refused with OUTSIDE_WRITE_SCOPE
+  PASS M3-SERVER: patch a source is refused with OUTSIDE_WRITE_SCOPE
+  PASS M3-SERVER: tag a source is refused with OUTSIDE_WRITE_SCOPE
+  PASS M3-SERVER: move a source is refused with OUTSIDE_WRITE_SCOPE
+  PASS M3-SERVER: delete a source is refused with OUTSIDE_WRITE_SCOPE
+  PASS M3-SERVER: not a note is refused with NOT_A_NOTE
+  PASS M3-SERVER: a new note inside the write scope is created
+  PASS M3-SERVER: --no-overwrite refuses to replace an existing note
+  PASS M3-SERVER: --no-overwrite refuses to append
+  PASS M3-SERVER: --no-overwrite refuses to delete
+  PASS M3-SERVER: a result flood is capped at --max-results
+  PASS M3-SERVER: a folder link out of the write scope is refused
+  PASS M3-SERVER: nothing was written through the link
+  PASS M3-SERVER: audit rows are ordered and bracketed
+  PASS M3-SERVER: the audit log holds fingerprints, never note text
+  PASS M3-SERVER: no source note changed during the bounded session
+  PASS M3-AUTH: a valid declaration parses
+  PASS M3-AUTH: duplicate key is rejected
+  PASS M3-AUTH: extra field is rejected
+  PASS M3-AUTH: tool beyond the ceiling is rejected
+  PASS M3-AUTH: write scope outside Drafts is rejected
+  PASS M3-AUTH: write scope without the tool is rejected
+  PASS M3-AUTH: tool without a write scope is rejected
+  PASS M3-AUTH: folder without a slash is rejected
+  PASS M3-AUTH: folder traversal is rejected
+  PASS M3-AUTH: revoked with tools is rejected
+  PASS M3-AUTH: empty read scope is rejected
+  PASS M3-AUTH: two declaration blocks are rejected
+  PASS M3-AUTH: wrong command is rejected
+  PASS M3-AUTH: other script is rejected
+  PASS M3-AUTH: other root is rejected
+  PASS M3-AUTH: unknown flag is rejected
+  PASS M3-AUTH: env smuggled in is rejected
+  PASS M3-AUTH: prefix without slash is rejected
+  PASS M3-AUTH: matching limits are consistent
+  PASS M3-AUTH: a different read scope is reported
+  PASS M3-AUTH: a different write scope is reported
+  PASS M3-AUTH: a different create only is reported
+  PASS M3-AUTH: a different empty write scope is reported
+  PASS M3-INSPECT: the inspector flags the mismatched read-only mark
+  PASS M3-INSPECT: the inspector flags the steering instructions
+  PASS M3-INSPECT: the inspector records all tools and the server's fingerprint
+  PASS M3-INSPECT: the table separates reading tools from changing tools
+  PASS M3-INSPECT: the inspector refuses to start a program other than the supplied server
+  PASS M3-PROBE: an unbounded server breaches the declaration: source overwrite, outside create, outside read
+  PASS M3-PROBE: the allow-list holds the tools it leaves out
+  PASS M3-PROBE: a bounded server holds every forbidden attempt and permitted work still works
+  PASS M3-PROBE: the server's limits hold even with the allow-list ignored
+  PASS M3-PROBE: a server looser than the declaration (no --no-overwrite) is caught
+  PASS M3-PROBE: probing never touches the real vault
+  PASS M3-PROBE: probe output fingerprints the connection and the declaration
+  PASS M3-CORPUS: the corpus satisfies every authoring rule
+  PASS M3-CORPUS: handling_key.json equals the key computed from the notes
+  PASS M3-CORPUS: the verifier embeds the key the notes produce
+  PASS M3-CORPUS: two hostile notes, a usable releasable set, and six calibration notes
+  PASS M3-CORPUS: effective handling is spread across all three levels: {'OPEN': 6, 'PARTNER': 6, 'STAFF': 28}
+  PASS M3-HANDLING: a register that follows the rules and corrects the AI passes
+  PASS M3-HANDLING: a STAFF note marked PARTNER is held: no note is marked less restricted
+  PASS M3-HANDLING: an AI proposal copied unreviewed is held: no note is marked less restricted
+  PASS M3-HANDLING: an edited AI proposed column is held: the AI proposed column matches
+  PASS M3-HANDLING: a register missing a note is held: the handling register covers all forty notes
+  PASS M3-HANDLING: an override with no rule or reason is held: every override of the AI names a rule and a reason
+  PASS M3-HANDLING: over-protection is reported but is not a hold
+  PASS M3-EXTRACT: a cited extract that repeats nothing protected passes
+  PASS M3-EXTRACT: an uncited line is held as citation
+  PASS M3-EXTRACT: a note outside the releasable folder is held as citation
+  PASS M3-EXTRACT: a fact that lives only in STAFF notes is held as protected
+  PASS M3-EXTRACT: three movement elements is held as aggregation
+  PASS M3-EXTRACT: two movement elements are reported but allowed
+  PASS M3-EXTRACT: the four element detectors are the single shared definition
+  PASS M3-STAGE: the staged set is exactly the notes marked OPEN or PARTNER
+  PASS M3-STAGE: staged copies are byte-identical and never include a STAFF note
+  PASS M3-STAGE: a stale copy is removed on the next stage
+  PASS M3-STAGE: a register with a blank Final is refused
+  PASS M3-STAGE: a finished calibration is frozen with six rows
+  PASS M3-STAGE: the first freeze is never overwritten
+  PASS M3-STAGE: an unfinished calibration is refused
+  PASS M3-STAGE: the seeder copies the AI's proposal into the AI proposed column
+  PASS M3-STAGE: the seeder never fills Final, Rule, or Reason
+  PASS M3-STAGE: a note without a usable proposal stays empty and is reported
+  PASS M3-LAB: every script the lab runs exists: authority_probe.py, freeze_calibration.py, mcp_inspect.py, scan_extract.py, seed_register.py, stage_releasable.py, verify_research.py
+  PASS M3-LAB: every prompt the lab runs exists
+  PASS M3-LAB: every figure the lab shows exists
+  PASS M3-LAB: every option the lab passes is one its script defines
+  PASS M3-LAB: the overview links the lab once
+  PASS M3-VERIFY: a complete, consistent attempt passes every claim
+  PASS M3-VERIFY: an inspection made after the first live run is held
+  PASS M3-VERIFY: a contract note that never names the traps is held
+  PASS M3-VERIFY: a probe made after the live run began is held
+  PASS M3-VERIFY: a probe of different files than the run used is held
+  PASS M3-VERIFY: a raw probe that found nothing is held
+  PASS M3-VERIFY: a bounded probe that breached is held
+  PASS M3-VERIFY: a missing partner probe is held
+  PASS M3-VERIFY: a research write that replaced a note is held
+  PASS M3-VERIFY: a research run that skipped notes is held
+  PASS M3-VERIFY: a partner run that read the sources is held
+  PASS M3-VERIFY: a partner write outside Drafts/partner/ is held
+  PASS M3-VERIFY: an extract that cites a STAFF note is held
+  PASS M3-VERIFY: an extract that repeats a protected fact is held
+  PASS M3-VERIFY: an extract with three movement elements is held
+  PASS M3-VERIFY: a calibration edited after the freeze is held
+  PASS M3-VERIFY: a calibration frozen after the research run is held
+  PASS M3-VERIFY: a connection file that still defines a server is held
+  PASS M3-VERIFY: a revoked run that offered a tool is held
+  PASS M3-VERIFY: a revoked run that started a server is held
+  PASS M3-VERIFY: a handoff without its residual-risk section is held
+  PASS M3-VERIFY: a receipt set the auditor rejects is held
+  PASS M3-INDEP: the overview and the lab page exist
+  PASS M3-INDEP: learner files carry no other module's names, no product tokens, no VERIFY: or PO ids
+  PASS M3-INDEP: every lab command appears for both Bash/zsh and PowerShell
+  PASS M3-BAN: no banned figure or identifier appears in a learner file
+  PASS M3-BAN: the key carries no banned figure
+130 checks passed, 0 failed across 13 criteria
+  killed M3-REF the reference digest no longer matches
+  killed M3-SERVER the server stops rejecting '..' as traversal
+  killed M3-SERVER --read-only no longer hides the writers
+  killed M3-SERVER --no-overwrite stops protecting existing notes
+  killed M3-AUTH the declaration and the server limits are never compared
+  killed M3-AUTH any command is accepted in a connection entry
+  killed M3-INSPECT the inspector stops flagging the mismatched read-only mark
+  killed M3-PROBE the probe reports every forbidden attempt as held
+  killed M3-CORPUS an OPEN note is re-marked STAFF so the key drifts
+  killed M3-CORPUS the contractor note loses its instruction to automation
+  killed M3-HANDLING the verifier stops checking for under-protected notes
+  killed M3-EXTRACT the scanner ignores aggregation
+  killed M3-EXTRACT the scanner stops deriving protected facts
+  killed M3-STAGE the stager also copies STAFF notes
+  killed M3-STAGE the seeder fills the AI proposed column with one fixed level
+  killed M3-LAB the lab runs a script that does not exist
+  killed M3-LAB the lab passes an option its script does not define
+  killed M3-VERIFY the verifier stops requiring probes to precede live runs
+  killed M3-VERIFY the verifier accepts a revoked run that was offered tools
+  killed M3-INDEP another module's case name leaks into the overview
+  killed M3-BAN a banned figure leaks into a prompt
+PASS: 21 mutations, 0 survivors

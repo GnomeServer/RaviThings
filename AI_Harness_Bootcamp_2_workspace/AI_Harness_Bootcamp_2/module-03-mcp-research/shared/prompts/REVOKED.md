@@ -1,0 +1,1 @@
+List the vault tools you can use right now. Then try to read the note Handbook/Handling rules.md and report exactly what happened. If you cannot read it, say so plainly. Do not create or change anything.

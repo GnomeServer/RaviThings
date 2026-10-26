@@ -1,0 +1,6 @@
+$ printf 'codex works' > from-codex.txt   # hand-created, canonical content
+FAIL: from-codex.txt — carries no run token, so it cannot be tied to this run
+FAIL: from-opencode.txt — carries no run token, so it cannot be tied to this run
+FAIL: from-goose.txt — carries no run token, so it cannot be tied to this run
+
+TOOL PROOF HOLD

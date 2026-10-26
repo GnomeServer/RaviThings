@@ -1,0 +1,15 @@
+word_count=162
+PASS: subject line
+PASS: word count 130–190
+PASS: Tuesday
+PASS: Wednesday
+PASS: 12:00 p.m.
+PASS: 8:00 p.m.
+PASS: 480 Harbor Street
+PASS: east entrance
+PASS: Pine Avenue
+PASS: free
+PASS: no identification requirement
+PASS: capacity 60
+PASS: 555-0148
+PASS: mechanical requirements passed; this is practice only

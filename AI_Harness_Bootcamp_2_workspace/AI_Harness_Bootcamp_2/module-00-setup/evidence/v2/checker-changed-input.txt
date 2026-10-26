@@ -1,0 +1,21 @@
+$ python3 shared/case/check_artifact.py <correct changed-input revision>
+PASS: word count 130-190 — the draft has 154 words
+PASS: subject line — present
+PASS: both days — stated
+PASS: both days (wednesday) — stated
+PASS: public hours — stated
+PASS: address — stated
+PASS: entrance — stated
+PASS: cost — stated
+PASS: identification — stated
+PASS: contact line — stated
+FAIL: capacity 60 — the draft attaches [45] to capacity, not 60
+PASS: no unconfirmed services: meals — not promised
+PASS: no unconfirmed services: medical care — not promised
+PASS: no unconfirmed services: overnight shelter — not promised
+PASS: no unconfirmed services: device chargers — not promised
+PASS: no unconfirmed services: childcare — not promised
+PASS: no unconfirmed services: a shuttle — not promised
+PASS: no prohibited distribution — stays inside the class
+
+HOLD: 1 mechanical requirement(s) failed; this is practice only

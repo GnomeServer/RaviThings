@@ -1,0 +1,1221 @@
+{
+  "schema_version": 1,
+  "course_id": "AI_Harness_Bootcamp_2",
+  "source_root": "AI_Harness_Bootcamp_2",
+  "site_dir": "site",
+  "index": {
+    "source": "README.md",
+    "dest": "index.html",
+    "kind": "home"
+  },
+  "ui_assets": [
+    {
+      "source": "ui/vendor/sirocco/css/fonts.css",
+      "dest": "assets/sirocco/css/fonts.css"
+    },
+    {
+      "source": "ui/vendor/sirocco/css/tokens.css",
+      "dest": "assets/sirocco/css/tokens.css"
+    },
+    {
+      "source": "ui/vendor/sirocco/css/base.css",
+      "dest": "assets/sirocco/css/base.css"
+    },
+    {
+      "source": "ui/vendor/sirocco/css/atmosphere.css",
+      "dest": "assets/sirocco/css/atmosphere.css"
+    },
+    {
+      "source": "ui/vendor/sirocco/css/motion.css",
+      "dest": "assets/sirocco/css/motion.css"
+    },
+    {
+      "source": "ui/vendor/sirocco/css/components.css",
+      "dest": "assets/sirocco/css/components.css"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/space-grotesk-latin-ext-wght-normal.woff2",
+      "dest": "assets/sirocco/fonts/space-grotesk-latin-ext-wght-normal.woff2"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/space-grotesk-latin-wght-normal.woff2",
+      "dest": "assets/sirocco/fonts/space-grotesk-latin-wght-normal.woff2"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/space-mono-latin-ext-400-normal.woff2",
+      "dest": "assets/sirocco/fonts/space-mono-latin-ext-400-normal.woff2"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/space-mono-latin-400-normal.woff2",
+      "dest": "assets/sirocco/fonts/space-mono-latin-400-normal.woff2"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/space-mono-latin-ext-700-normal.woff2",
+      "dest": "assets/sirocco/fonts/space-mono-latin-ext-700-normal.woff2"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/space-mono-latin-700-normal.woff2",
+      "dest": "assets/sirocco/fonts/space-mono-latin-700-normal.woff2"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/inter-latin-ext-wght-normal.woff2",
+      "dest": "assets/sirocco/fonts/inter-latin-ext-wght-normal.woff2"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/inter-latin-wght-normal.woff2",
+      "dest": "assets/sirocco/fonts/inter-latin-wght-normal.woff2"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/newsreader-latin-ext-standard-normal.woff2",
+      "dest": "assets/sirocco/fonts/newsreader-latin-ext-standard-normal.woff2"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/newsreader-latin-standard-normal.woff2",
+      "dest": "assets/sirocco/fonts/newsreader-latin-standard-normal.woff2"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/newsreader-latin-ext-standard-italic.woff2",
+      "dest": "assets/sirocco/fonts/newsreader-latin-ext-standard-italic.woff2"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/newsreader-latin-standard-italic.woff2",
+      "dest": "assets/sirocco/fonts/newsreader-latin-standard-italic.woff2"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/OFL-Inter.txt",
+      "dest": "assets/sirocco/fonts/OFL-Inter.txt"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/OFL-SpaceGrotesk.txt",
+      "dest": "assets/sirocco/fonts/OFL-SpaceGrotesk.txt"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/OFL-SpaceMono.txt",
+      "dest": "assets/sirocco/fonts/OFL-SpaceMono.txt"
+    },
+    {
+      "source": "ui/vendor/sirocco/fonts/OFL-Newsreader.txt",
+      "dest": "assets/sirocco/fonts/OFL-Newsreader.txt"
+    },
+    {
+      "source": "ui/vendor/sirocco/assets/grain.svg",
+      "dest": "assets/sirocco/assets/grain.svg"
+    },
+    {
+      "source": "ui/images/home-hero.webp",
+      "dest": "assets/images/home-hero.webp"
+    },
+    {
+      "source": "ui/images/home-band-custody.webp",
+      "dest": "assets/images/home-band-custody.webp"
+    },
+    {
+      "source": "ui/images/home-band-route.webp",
+      "dest": "assets/images/home-band-route.webp"
+    },
+    {
+      "source": "ui/vendor/sirocco/icons/menu.svg",
+      "dest": "assets/sirocco/icons/menu.svg"
+    },
+    {
+      "source": "ui/vendor/sirocco/icons/close.svg",
+      "dest": "assets/sirocco/icons/close.svg"
+    },
+    {
+      "source": "ui/vendor/sirocco/icons/search.svg",
+      "dest": "assets/sirocco/icons/search.svg"
+    },
+    {
+      "source": "ui/vendor/sirocco/icons/copy.svg",
+      "dest": "assets/sirocco/icons/copy.svg"
+    },
+    {
+      "source": "ui/vendor/sirocco/icons/arrow-right.svg",
+      "dest": "assets/sirocco/icons/arrow-right.svg"
+    },
+    {
+      "source": "ui/vendor/sirocco/icons/chevron-down.svg",
+      "dest": "assets/sirocco/icons/chevron-down.svg"
+    },
+    {
+      "source": "ui/vendor/sirocco/icons/moon.svg",
+      "dest": "assets/sirocco/icons/moon.svg"
+    },
+    {
+      "source": "ui/vendor/sirocco/icons/sun.svg",
+      "dest": "assets/sirocco/icons/sun.svg"
+    },
+    {
+      "source": "ui/vendor/sirocco/icons/eye.svg",
+      "dest": "assets/sirocco/icons/eye.svg"
+    },
+    {
+      "source": "ui/vendor/sirocco/icons/help.svg",
+      "dest": "assets/sirocco/icons/help.svg"
+    },
+    {
+      "source": "ui/course.css",
+      "dest": "assets/course.css"
+    },
+    {
+      "source": "ui/course.js",
+      "dest": "assets/course.js"
+    },
+    {
+      "source": "ui/theme-init.js",
+      "dest": "assets/theme-init.js"
+    }
+  ],
+  "home_bands": {
+    "custody": "assets/images/home-band-custody.webp",
+    "route": "assets/images/home-band-route.webp"
+  },
+  "modules": [
+    {
+      "id": "00",
+      "directory": "module-00-setup",
+      "title": "Module 0 · Set up the harness and get a long document you can trust",
+      "case_name": "North Shelf",
+      "summary": "Get Oh My Pi to plan, draft, check, and revise a long status brief, one section at a time, and decide whether you'd send it.",
+      "nav_summary": "Oh My Pi · a long document you can trust",
+      "outcomes": {
+        "can": "Get an AI tool to write a multi-section document from sources that stays true to them, and decide from evidence whether you'd send it.",
+        "will": [
+          "Write the brief, the tests, and the outline before any prose, then have the AI draft one section at a time within that plan.",
+          "Check the draft against things outside it: a checker you've made fail on purpose, a list of every number, and separate review sessions, then verify each finding yourself.",
+          "Revise only the sections a verified finding or a changed fact touches, and confirm that every other section stayed the same."
+        ]
+      },
+      "pages": [
+        {
+          "source": "README.md",
+          "dest": "README.html",
+          "kind": "overview"
+        },
+        {
+          "source": "shared/MODULE_00_LAB.md",
+          "dest": "shared/MODULE_00_LAB.html",
+          "kind": "lab",
+          "guide": {
+            "context_sections": [],
+            "optional_sections": []
+          }
+        },
+        {
+          "source": "platforms/arch-linux.md",
+          "dest": "platforms/arch-linux.html",
+          "kind": "setup",
+          "guide": {}
+        },
+        {
+          "source": "platforms/macos.md",
+          "dest": "platforms/macos.html",
+          "kind": "setup",
+          "guide": {}
+        },
+        {
+          "source": "platforms/ubuntu.md",
+          "dest": "platforms/ubuntu.html",
+          "kind": "setup",
+          "guide": {}
+        },
+        {
+          "source": "platforms/windows-powershell.md",
+          "dest": "platforms/windows-powershell.html",
+          "kind": "setup",
+          "guide": {}
+        },
+        {
+          "source": "platforms/windows-wsl.md",
+          "dest": "platforms/windows-wsl.html",
+          "kind": "setup",
+          "guide": {}
+        },
+        {
+          "source": "shared/CREDENTIALS.md",
+          "dest": "shared/CREDENTIALS.html",
+          "kind": "reference"
+        },
+        {
+          "source": "shared/TROUBLESHOOTING.md",
+          "dest": "shared/TROUBLESHOOTING.html",
+          "kind": "reference"
+        },
+        {
+          "source": "shared/VERSIONS.md",
+          "dest": "shared/VERSIONS.html",
+          "kind": "reference"
+        },
+        {
+          "source": "shared/SOURCES.md",
+          "dest": "shared/SOURCES.html",
+          "kind": "reference"
+        }
+      ],
+      "figures": [
+        {
+          "source": "shared/figures/m00-change-isolation.png",
+          "dest": "shared/figures/m00-change-isolation.png"
+        },
+        {
+          "source": "shared/figures/m00-claim-check.png",
+          "dest": "shared/figures/m00-claim-check.png"
+        },
+        {
+          "source": "shared/figures/m00-critique-passes.png",
+          "dest": "shared/figures/m00-critique-passes.png"
+        },
+        {
+          "source": "shared/figures/m00-falsifier.png",
+          "dest": "shared/figures/m00-falsifier.png"
+        },
+        {
+          "source": "shared/figures/m00-longform-loop.png",
+          "dest": "shared/figures/m00-longform-loop.png"
+        },
+        {
+          "source": "shared/figures/m00-plan-first.png",
+          "dest": "shared/figures/m00-plan-first.png"
+        },
+        {
+          "source": "shared/figures/m00-readiness-lanes.png",
+          "dest": "shared/figures/m00-readiness-lanes.png"
+        },
+        {
+          "source": "shared/figures/m00-recovery-loop.png",
+          "dest": "shared/figures/m00-recovery-loop.png"
+        },
+        {
+          "source": "shared/figures/m00-tool-layers.png",
+          "dest": "shared/figures/m00-tool-layers.png"
+        }
+      ],
+      "scripts": [
+        {
+          "source": "scripts/verify-setup.sh",
+          "dest": "scripts/verify-setup.sh"
+        },
+        {
+          "source": "scripts/verify-setup.ps1",
+          "dest": "scripts/verify-setup.ps1"
+        },
+        {
+          "source": "scripts/obsidian_readiness.py",
+          "dest": "scripts/obsidian_readiness.py"
+        },
+        {
+          "source": "scripts/n8n_local.py",
+          "dest": "scripts/n8n_local.py"
+        },
+        {
+          "source": "scripts/longform.py",
+          "dest": "scripts/longform.py"
+        }
+      ],
+      "download_dirs": [
+        "shared/case"
+      ],
+      "tests": [
+        "tests/test_module_00.py",
+        "tests/test_checker.py",
+        "tests/test_longform.py",
+        "tests/test_n8n_local.py"
+      ]
+    },
+    {
+      "id": "01",
+      "directory": "module-01-mission-thread",
+      "title": "Module 1 · Verify sources and outputs",
+      "case_name": "Cold Lantern",
+      "summary": "Check a polished brief against the right sources and your own calculations.",
+      "nav_summary": "Checking sources and claims",
+      "outcomes": {
+        "can": "Test a polished AI recommendation against its sources and your own arithmetic, and give a supported accept, revise, reject, or hold verdict.",
+        "will": [
+          "Sort each claim as a source fact, calculation, inference, or human decision, then trace the claim that drives the decision to its exact source line.",
+          "Set aside misleading or irrelevant sources and say what each one can and cannot prove.",
+          "Predict how one new source should change the result, then revise only the claims that depend on it."
+        ]
+      },
+      "pages": [
+        {
+          "source": "README.md",
+          "dest": "README.html",
+          "kind": "overview"
+        },
+        {
+          "source": "shared/MODULE_01_LAB.md",
+          "dest": "shared/MODULE_01_LAB.html",
+          "kind": "lab",
+          "guide": {
+            "context_sections": [
+              "pacing",
+              "before-you-stop"
+            ],
+            "optional_sections": []
+          }
+        },
+        {
+          "source": "shared/MISSION_THREAD.md",
+          "dest": "shared/MISSION_THREAD.html",
+          "kind": "reference"
+        },
+        {
+          "source": "shared/WHEN_EVIDENCE_BREAKS.md",
+          "dest": "shared/WHEN_EVIDENCE_BREAKS.html",
+          "kind": "reference"
+        }
+      ],
+      "figures": [
+        {
+          "source": "shared/figures/m01-atomic-ledger.png",
+          "dest": "shared/figures/m01-atomic-ledger.png"
+        },
+        {
+          "source": "shared/figures/m01-broken-handoff.png",
+          "dest": "shared/figures/m01-broken-handoff.png"
+        },
+        {
+          "source": "shared/figures/m01-byte-identity.png",
+          "dest": "shared/figures/m01-byte-identity.png"
+        },
+        {
+          "source": "shared/figures/m01-change-isolation.png",
+          "dest": "shared/figures/m01-change-isolation.png"
+        },
+        {
+          "source": "shared/figures/m01-recompute-feasibility.png",
+          "dest": "shared/figures/m01-recompute-feasibility.png"
+        },
+        {
+          "source": "shared/figures/m01-source-authority.png",
+          "dest": "shared/figures/m01-source-authority.png"
+        },
+        {
+          "source": "shared/figures/m01-statement-types.png",
+          "dest": "shared/figures/m01-statement-types.png"
+        },
+        {
+          "source": "shared/figures/m01-supported-verdict.png",
+          "dest": "shared/figures/m01-supported-verdict.png"
+        },
+        {
+          "source": "shared/figures/m01-thread-handoffs.png",
+          "dest": "shared/figures/m01-thread-handoffs.png"
+        }
+      ],
+      "scripts": [
+        {
+          "source": "scripts/start_work.py",
+          "dest": "scripts/start_work.py"
+        },
+        {
+          "source": "scripts/hash_inbox.py",
+          "dest": "scripts/hash_inbox.py"
+        },
+        {
+          "source": "scripts/check_work.py",
+          "dest": "scripts/check_work.py"
+        },
+        {
+          "source": "scripts/verify_content.py",
+          "dest": "scripts/verify_content.py"
+        },
+        {
+          "source": "scripts/compute_thread.py",
+          "dest": "scripts/compute_thread.py"
+        },
+        {
+          "source": "scripts/run_producer_rebuttal.py",
+          "dest": "scripts/run_producer_rebuttal.py"
+        },
+        {
+          "source": "scripts/run_handoff.py",
+          "dest": "scripts/run_handoff.py"
+        },
+        {
+          "source": "scripts/render_review.py",
+          "dest": "scripts/render_review.py"
+        },
+        {
+          "source": "scripts/freeze_baseline.py",
+          "dest": "scripts/freeze_baseline.py"
+        },
+        {
+          "source": "scripts/reveal_change.py",
+          "dest": "scripts/reveal_change.py"
+        }
+      ],
+      "download_dirs": [
+        "shared/case",
+        "shared/templates"
+      ],
+      "tests": [
+        "tests/test_module_01.py",
+        "tests/test_workflow.py",
+        "tests/test_adequacy.py"
+      ]
+    },
+    {
+      "id": "02",
+      "directory": "module-02-context-desk",
+      "title": "Module 2 · Build and control a reusable second brain",
+      "case_name": "Ledger Pike",
+      "summary": "Turn AI judgments into linked notes under a saved rule, check the answer-to-source trail, and use feedback to improve a new revision without overwriting the first.",
+      "nav_summary": "Obsidian · linked notes",
+      "outcomes": {
+        "can": "Direct AI judgments into reusable linked notes under a saved rule, check their source support, and use feedback to improve a new revision while preserving the first.",
+        "will": [
+          "Have AI judge individual claims and build linked notes that retain their evidence, limits, conflicts, and unknowns.",
+          "Verify that each AI session loaded the saved rule and that a fresh session answered using only the frozen notes.",
+          "Give source-backed feedback and compare the resulting notes and answers with the preserved first revision."
+        ]
+      },
+      "pages": [
+        {
+          "source": "README.md",
+          "dest": "README.html",
+          "kind": "overview"
+        },
+        {
+          "source": "shared/MODULE_02_LAB.md",
+          "dest": "shared/MODULE_02_LAB.html",
+          "kind": "lab",
+          "guide": {
+            "context_sections": [
+              "the-route"
+            ],
+            "optional_sections": []
+          }
+        }
+      ],
+      "figures": [
+        {
+          "source": "shared/figures/m02-obsidian-01-open-vault.png",
+          "dest": "shared/figures/m02-obsidian-01-open-vault.png"
+        },
+        {
+          "source": "shared/figures/m02-obsidian-03-restricted-mode.png",
+          "dest": "shared/figures/m02-obsidian-03-restricted-mode.png"
+        },
+        {
+          "source": "shared/figures/m02-obsidian-04-sync-off.png",
+          "dest": "shared/figures/m02-obsidian-04-sync-off.png"
+        },
+        {
+          "source": "shared/figures/m02-obsidian-05-open-source.png",
+          "dest": "shared/figures/m02-obsidian-05-open-source.png"
+        },
+        {
+          "source": "shared/figures/m02-obsidian-07-source-markdown.png",
+          "dest": "shared/figures/m02-obsidian-07-source-markdown.png"
+        }
+      ],
+      "scripts": [
+        {
+          "source": "scripts/second_brain.py",
+          "dest": "scripts/second_brain.py"
+        }
+      ],
+      "download_dirs": [
+        "shared/case",
+        "shared/controls"
+      ],
+      "tests": [
+        "tests/test_module_02.py",
+        "tests/test_adequacy.py"
+      ]
+    },
+    {
+      "id": "03",
+      "directory": "module-03-mcp-research",
+      "title": "Module 3 · Research the notes, then limit what the AI can touch",
+      "case_name": "Kiln Hold",
+      "summary": "Research a folder of notes with the assistant, check its markings against the rules, and show the limits you set.",
+      "nav_summary": "Notes · markings · limits",
+      "outcomes": {
+        "can": "Connect the assistant to a folder of notes only after you read what that connection claims, limit it to the folders and actions each part of the work needs, prove those limits, and remove the connection with proof that it is gone.",
+        "will": [
+          "Read what the connection claims and catch a tool whose read-only label is wrong.",
+          "Mark six notes yourself, then check the assistant’s markings against the written rules.",
+          "Tighten what the assistant can reach, and show that every forbidden action was stopped, including the ones it never tried."
+        ]
+      },
+      "pages": [
+        {
+          "source": "README.md",
+          "dest": "README.html",
+          "kind": "overview"
+        },
+        {
+          "source": "shared/MODULE_03_LAB.md",
+          "dest": "shared/MODULE_03_LAB.html",
+          "kind": "lab",
+          "guide": {
+            "context_sections": [
+              "class-only-boundary"
+            ],
+            "optional_sections": []
+          }
+        }
+      ],
+      "figures": [
+        {
+          "source": "shared/figures/m03-aggregation.png",
+          "dest": "shared/figures/m03-aggregation.png"
+        },
+        {
+          "source": "shared/figures/m03-authority-layers.png",
+          "dest": "shared/figures/m03-authority-layers.png"
+        },
+        {
+          "source": "shared/figures/m03-contract-authority.png",
+          "dest": "shared/figures/m03-contract-authority.png"
+        },
+        {
+          "source": "shared/figures/m03-effective-handling.png",
+          "dest": "shared/figures/m03-effective-handling.png"
+        },
+        {
+          "source": "shared/figures/m03-phase-scope-revoke.png",
+          "dest": "shared/figures/m03-phase-scope-revoke.png"
+        },
+        {
+          "source": "shared/figures/m03-probe-proof.png",
+          "dest": "shared/figures/m03-probe-proof.png"
+        }
+      ],
+      "scripts": [],
+      "download_dirs": [
+        "shared/vault",
+        "shared/mcp",
+        "shared/prompts"
+      ],
+      "verifier_download": "shared/verify/verify_research.py",
+      "tests": [
+        "tests/test_module_03.py",
+        "tests/test_adequacy.py"
+      ]
+    },
+    {
+      "id": "04",
+      "directory": "module-04-typed-decisions",
+      "title": "Module 4 · Decide with typed questions",
+      "case_name": "Chalk Line",
+      "summary": "Take one shift's messages, turn them into answers a script can sort, and check those answers against your own reading before you trust them.",
+      "nav_summary": "Typed questions · measured confidence · routing in code",
+      "outcomes": {
+        "can": "Ask one thing at a time, with answers a script can sort, add one question of your own, run the model once so it only answers, check those answers against labels you wrote first, and set the gates so the script and a named person decide what happens to each message.",
+        "will": [
+          "Build what the model will see, read questions that can only be answered with a probability, a listed choice, or a level, and add one question the set doesn't already ask.",
+          "Label ten messages before the run, freeze them, and see where the model's answers and its own confidence number held up.",
+          "Set the gates from what you measured, route all forty messages in code, and make the queue decisions that belong to a person."
+        ]
+      },
+      "pages": [
+        {
+          "source": "README.md",
+          "dest": "README.html",
+          "kind": "overview"
+        },
+        {
+          "source": "shared/MODULE_04_LAB.md",
+          "dest": "shared/MODULE_04_LAB.html",
+          "kind": "lab",
+          "guide": {
+            "context_sections": [
+              "before-you-stop",
+              "class-only-boundary"
+            ],
+            "optional_sections": [
+              "stretch-measure-stability-across-a-second-run"
+            ]
+          }
+        }
+      ],
+      "figures": [
+        {
+          "source": "shared/figures/m04-answer-types.png",
+          "dest": "shared/figures/m04-answer-types.png"
+        },
+        {
+          "source": "shared/figures/m04-final-confidence.png",
+          "dest": "shared/figures/m04-final-confidence.png"
+        },
+        {
+          "source": "shared/figures/m04-freeze-measure.png",
+          "dest": "shared/figures/m04-freeze-measure.png"
+        },
+        {
+          "source": "shared/figures/m04-routing-order.png",
+          "dest": "shared/figures/m04-routing-order.png"
+        },
+        {
+          "source": "shared/figures/m04-state-and-questions.png",
+          "dest": "shared/figures/m04-state-and-questions.png"
+        },
+        {
+          "source": "shared/figures/m04-supersession.png",
+          "dest": "shared/figures/m04-supersession.png"
+        }
+      ],
+      "scripts": [
+        {
+          "source": "scripts/chalk.py",
+          "dest": "scripts/chalk.py"
+        },
+        {
+          "source": "scripts/build_state.py",
+          "dest": "scripts/build_state.py"
+        },
+        {
+          "source": "scripts/check_questions.py",
+          "dest": "scripts/check_questions.py"
+        },
+        {
+          "source": "scripts/label_template.py",
+          "dest": "scripts/label_template.py"
+        },
+        {
+          "source": "scripts/freeze_labels.py",
+          "dest": "scripts/freeze_labels.py"
+        },
+        {
+          "source": "scripts/validate_answers.py",
+          "dest": "scripts/validate_answers.py"
+        },
+        {
+          "source": "scripts/compare_labels.py",
+          "dest": "scripts/compare_labels.py"
+        },
+        {
+          "source": "scripts/route.py",
+          "dest": "scripts/route.py"
+        },
+        {
+          "source": "scripts/compare_runs.py",
+          "dest": "scripts/compare_runs.py"
+        }
+      ],
+      "download_dirs": [
+        "shared/case",
+        "shared/controls",
+        "shared/prompts"
+      ],
+      "verifier_download": "shared/verify/verify_decisions.py",
+      "tests": [
+        "tests/test_module_04.py",
+        "tests/test_adequacy.py"
+      ]
+    },
+    {
+      "id": "05",
+      "directory": "module-05-diagnose-review",
+      "title": "Module 5 · Orchestrate an OMP agent team",
+      "case_name": "Copper Span",
+      "summary": "Delegate independent work, check each handoff, and recover a blocked agent before combining the results.",
+      "nav_summary": "OMP agent teams · controlled handoffs",
+      "outcomes": {
+        "can": "Direct an OMP agent team whose assignments fit together, check what each agent actually did, and recover a partial failure without throwing away valid work.",
+        "will": [
+          "Separate independent assignments from work that must wait, and give every child a complete brief, clear limits, and an acceptance check.",
+          "Run native OMP specialists, reconcile their findings against current sources, and give a separate reviewer the actual combined brief.",
+          "Preserve a blocked attempt, repair only the affected assignment, and recheck the results that depend on it."
+        ]
+      },
+      "pages": [
+        {
+          "source": "README.md",
+          "dest": "README.html",
+          "kind": "overview"
+        },
+        {
+          "source": "shared/MODULE_05_LAB.md",
+          "dest": "shared/MODULE_05_LAB.html",
+          "kind": "lab",
+          "guide": {
+            "context_sections": [
+              "before-the-first-wave",
+              "when-a-stage-holds",
+              "retain-the-handoff",
+              "recover-terminal-variables"
+            ],
+            "optional_sections": []
+          }
+        },
+        {
+          "source": "shared/ORCHESTRATION_GUIDE.md",
+          "dest": "shared/ORCHESTRATION_GUIDE.html",
+          "kind": "reference"
+        }
+      ],
+      "figures": [
+        {
+          "source": "shared/figures/m05-work-graph.png",
+          "dest": "shared/figures/m05-work-graph.png"
+        },
+        {
+          "source": "shared/figures/m05-partial-recovery.png",
+          "dest": "shared/figures/m05-partial-recovery.png"
+        }
+      ],
+      "scripts": [
+        {
+          "source": "scripts/orchestrate.py",
+          "dest": "scripts/orchestrate.py"
+        },
+        {
+          "source": "scripts/orchestration_evidence.py",
+          "dest": "scripts/orchestration_evidence.py"
+        }
+      ],
+      "download_dirs": [
+        "shared/case",
+        "shared/controls",
+        "shared/agents",
+        "shared/prompts"
+      ],
+      "tests": [
+        "tests/test_module_05.py",
+        "tests/test_orchestration_guard.mjs"
+      ]
+    },
+    {
+      "id": "06",
+      "directory": "module-06-decision-model",
+      "title": "Module 6 · Use Jev inside Oh My Pi",
+      "case_name": "Blue Gauge",
+      "summary": "Use Jev inside Oh My Pi to work a military airlift desk: ask questions together, defer uncertain messages, prioritize competing support needs, and select the right handler. Compare actual calls, routes, rankings, and results.",
+      "nav_summary": "Four Jev patterns · inside Oh My Pi",
+      "outcomes": {
+        "can": "Use Jev inside Oh My Pi to configure and compare four decision-model patterns, choosing how answers become routes, priorities, and calls to the right kind of help.",
+        "will": [
+          "Ask several questions about the same note in one request and inspect which answers matter.",
+          "Send uncertain notes to review and measure the effect of different gates.",
+          "Combine normalized scores and change priorities without another Jev call.",
+          "Route requests to record lookup, deterministic record comparison, or human queue and verify what actually ran."
+        ]
+      },
+      "pages": [
+        {
+          "source": "README.md",
+          "dest": "README.html",
+          "kind": "overview"
+        },
+        {
+          "source": "shared/MODULE_06_LAB.md",
+          "dest": "shared/MODULE_06_LAB.html",
+          "kind": "lab",
+          "guide": {
+            "context_sections": [
+              "blue-gauge-the-last-resupply-flight",
+              "start-oh-my-pi"
+            ],
+            "optional_sections": []
+          }
+        }
+      ],
+      "figures": [
+        {
+          "source": "shared/figures/m06-skill-path.png",
+          "dest": "shared/figures/m06-skill-path.png"
+        },
+        {
+          "source": "shared/figures/m06-jev-call.png",
+          "dest": "shared/figures/m06-jev-call.png"
+        },
+        {
+          "source": "shared/figures/m06-fan-out.png",
+          "dest": "shared/figures/m06-fan-out.png"
+        },
+        {
+          "source": "shared/figures/m06-confidence.png",
+          "dest": "shared/figures/m06-confidence.png"
+        },
+        {
+          "source": "shared/figures/m06-scoring.png",
+          "dest": "shared/figures/m06-scoring.png"
+        },
+        {
+          "source": "shared/figures/m06-intent.png",
+          "dest": "shared/figures/m06-intent.png"
+        },
+        {
+          "source": "shared/figures/m06-hallucination.png",
+          "dest": "shared/figures/m06-hallucination.png"
+        },
+        {
+          "source": "shared/figures/m06-tokens.png",
+          "dest": "shared/figures/m06-tokens.png"
+        }
+      ],
+      "scripts": [],
+      "download_dirs": [
+        "shared/case/notes",
+        "shared/case/requests"
+      ],
+      "raw_downloads": [
+        "shared/case/DESK_RULES.md",
+        "shared/case/MISSION.json",
+        "shared/case/scans.json",
+        "shared/case/flight_acceptances.json",
+        "shared/case/labels/tuning-labels.json"
+      ],
+      "tests": [
+        "tests/test_module_06.py",
+        "tests/test_adequacy.py"
+      ]
+    },
+    {
+      "id": "07",
+      "directory": "module-07-batch-workflow",
+      "title": "Module 7 · Automate a spreadsheet with an agent",
+      "case_name": "White Rack",
+      "summary": "Build one n8n workflow that asks a model for a spreadsheet and writes the file.",
+      "nav_summary": "One n8n workflow · local spreadsheet",
+      "outcomes": {
+        "can": "Build one local n8n workflow, connect it to OpenRouter with your own key, and download the spreadsheet that workflow writes from a batch you give it.",
+        "will": [
+          "Add one workflow that reads the batch, asks the model for a row per lot, and writes the spreadsheet.",
+          "Run the workflow from the editor and download the spreadsheet file to your computer.",
+          "Check that the file has every source lot once, and record any row the rules say is wrong."
+        ]
+      },
+      "pages": [
+        {
+          "source": "README.md",
+          "dest": "README.html",
+          "kind": "overview"
+        },
+        {
+          "source": "shared/MODULE_07_LAB.md",
+          "dest": "shared/MODULE_07_LAB.html",
+          "kind": "lab",
+          "guide": {
+            "context_sections": [
+              "how-the-workflow-runs",
+              "white-rack",
+              "open-n8n"
+            ],
+            "optional_sections": []
+          }
+        }
+      ],
+      "figures": [
+        {
+          "source": "shared/figures/m07-n8n-01-create-workflow.png",
+          "dest": "shared/figures/m07-n8n-01-create-workflow.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-02-canvas.png",
+          "dest": "shared/figures/m07-n8n-02-canvas.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-03-search-form.png",
+          "dest": "shared/figures/m07-n8n-03-search-form.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-04-form-trigger.png",
+          "dest": "shared/figures/m07-n8n-04-form-trigger.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-05-upload-wave.png",
+          "dest": "shared/figures/m07-n8n-05-upload-wave.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-06-extract.png",
+          "dest": "shared/figures/m07-n8n-06-extract.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-07-one-batch.png",
+          "dest": "shared/figures/m07-n8n-07-one-batch.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-08-search-chain.png",
+          "dest": "shared/figures/m07-n8n-08-search-chain.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-09-fill-rows.png",
+          "dest": "shared/figures/m07-n8n-09-fill-rows.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-10-credential.png",
+          "dest": "shared/figures/m07-n8n-10-credential.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-11-model.png",
+          "dest": "shared/figures/m07-n8n-11-model.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-12-parser.png",
+          "dest": "shared/figures/m07-n8n-12-parser.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-13-rows.png",
+          "dest": "shared/figures/m07-n8n-13-rows.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-14-convert.png",
+          "dest": "shared/figures/m07-n8n-14-convert.png"
+        },
+        {
+          "source": "shared/figures/m07-n8n-15-download.png",
+          "dest": "shared/figures/m07-n8n-15-download.png"
+        }
+      ],
+      "scripts": [
+        {
+          "source": "scripts/check_sheet.py",
+          "dest": "scripts/check_sheet.py"
+        }
+      ],
+      "download_dirs": [],
+      "raw_downloads": [
+        "shared/batch/wave1.csv",
+        "shared/SHEET_RULES.md"
+      ],
+      "tests": [
+        "tests/test_controls.mjs",
+        "tests/test_sheet.py"
+      ]
+    },
+    {
+      "id": "08",
+      "directory": "module-08-change-eval",
+      "title": "Module 8 · Control hallucinations",
+      "case_name": "Slope Brief",
+      "summary": "Check a brief that sounds ready: three typed Jev checks on every claim, then two reviewers who can agree and still be wrong.",
+      "nav_summary": "Jev checks · source checks · two reviewers",
+      "outcomes": {
+        "can": "Check a brief claim by claim with typed Jev checks and independent reviews, keep a correction from grading itself, and decide what the sources support.",
+        "will": [
+          "Find each value in its record in code, ask Jev whether the record supports the claim, and gate low confidence to yourself.",
+          "Ask four yes-means-wrong questions per claim, escalate only the flagged claims, and test whether each packet holds the answer at all.",
+          "Read the claims and freeze them before any review.",
+          "Run two separate reviews, a correction, and two fresh reviews.",
+          "Decide each claim from its source, and leave dispatch on hold."
+        ]
+      },
+      "pages": [
+        {
+          "source": "README.md",
+          "dest": "README.html",
+          "kind": "overview"
+        },
+        {
+          "source": "shared/MODULE_08_LAB.md",
+          "dest": "shared/MODULE_08_LAB.html",
+          "kind": "lab",
+          "guide": {
+            "context_sections": [
+              "how-the-check-works",
+              "slope-brief",
+              "three-jev-checks",
+              "start",
+              "three-patterns"
+            ],
+            "optional_sections": []
+          }
+        }
+      ],
+      "figures": [
+        {
+          "source": "shared/figures/m08-claim-check.png",
+          "dest": "shared/figures/m08-claim-check.png"
+        },
+        {
+          "source": "shared/figures/m08-verify-escalate.png",
+          "dest": "shared/figures/m08-verify-escalate.png"
+        },
+        {
+          "source": "shared/figures/m08-answer-in-packet.png",
+          "dest": "shared/figures/m08-answer-in-packet.png"
+        },
+        {
+          "source": "shared/figures/m08-fan-out.png",
+          "dest": "shared/figures/m08-fan-out.png"
+        },
+        {
+          "source": "shared/figures/m08-one-writer.png",
+          "dest": "shared/figures/m08-one-writer.png"
+        },
+        {
+          "source": "shared/figures/m08-fresh-review.png",
+          "dest": "shared/figures/m08-fresh-review.png"
+        }
+      ],
+      "scripts": [
+        {
+          "source": "scripts/hallucination.py",
+          "dest": "scripts/hallucination.py"
+        }
+      ],
+      "download_dirs": [
+        "shared/case",
+        "shared/controls"
+      ],
+      "tests": [
+        "tests/test_module_08.py",
+        "tests/test_adequacy.py"
+      ]
+    },
+    {
+      "id": "09",
+      "directory": "module-09-agent-safeguards",
+      "title": "Module 9 · Constrain agent behavior",
+      "case_name": "Night Desk",
+      "summary": "Use OMP prompts to test a declared tool policy, then inspect what the agent actually attempted and what stopped it.",
+      "nav_summary": "Agent tool policies · observed enforcement",
+      "outcomes": {
+        "can": "Show, from records rather than the agent's own words, what one AI agent actually tried to do and what stopped it.",
+        "will": [
+          "Freeze a written permission list before the agent runs and check that its real tool use matched it.",
+          "Tell apart an action blocked by the guard, one rejected by the agent program, and one the agent never tried.",
+          "State exactly which actions and folders your evidence covers and which risks remain with a named person."
+        ]
+      },
+      "pages": [
+        {
+          "source": "README.md",
+          "dest": "README.html",
+          "kind": "overview"
+        },
+        {
+          "source": "shared/MODULE_09_LAB.md",
+          "dest": "shared/MODULE_09_LAB.html",
+          "kind": "lab",
+          "guide": {
+            "context_sections": [
+              "read-the-declared-boundary"
+            ],
+            "optional_sections": []
+          }
+        }
+      ],
+      "figures": [
+        {
+          "source": "shared/figures/m09-declared-versus-observed.png",
+          "dest": "shared/figures/m09-declared-versus-observed.png"
+        },
+        {
+          "source": "shared/figures/m09-policy-declaration.png",
+          "dest": "shared/figures/m09-policy-declaration.png"
+        },
+        {
+          "source": "shared/figures/m09-probe-outcomes.png",
+          "dest": "shared/figures/m09-probe-outcomes.png"
+        },
+        {
+          "source": "shared/figures/m09-receipt-boundary.png",
+          "dest": "shared/figures/m09-receipt-boundary.png"
+        },
+        {
+          "source": "shared/figures/m09-source-as-data.png",
+          "dest": "shared/figures/m09-source-as-data.png"
+        }
+      ],
+      "scripts": [],
+      "download_dirs": [
+        "shared/case",
+        "shared/controls"
+      ],
+      "tests": [
+        "tests/test_module_09.py"
+      ],
+      "verifier_download": "shared/case/verify_safeguards.py"
+    },
+    {
+      "id": "10",
+      "directory": "module-10-capstone",
+      "title": "Module 10 · Stand up and package a local uncensored AI",
+      "case_name": "Cold Foundry",
+      "summary": "Use OMP prompts to run a local uncensored model, stop and restore it, and check a saved copy of its supporting files.",
+      "nav_summary": "Your own local model",
+      "outcomes": {
+        "can": "Run an uncensored model on your own laptop, stop it, bring it back, and keep the files so you can do that again without the chat.",
+        "will": [
+          "Download the named model file under your own account, check that it is the right file, and point OMP at a server only this laptop can reach.",
+          "Get one real reply, then stop the server and bring the saved settings back so the wiring matches.",
+          "Save the eleven files, copy them, and check that copy from a new terminal and OMP conversation using only those files."
+        ]
+      },
+      "pages": [
+        {
+          "source": "README.md",
+          "dest": "README.html",
+          "kind": "overview"
+        },
+        {
+          "source": "shared/MODULE_10_LAB.md",
+          "dest": "shared/MODULE_10_LAB.html",
+          "kind": "lab",
+          "guide": {
+            "context_sections": [
+              "resume-an-existing-attempt"
+            ],
+            "optional_sections": []
+          }
+        }
+      ],
+      "figures": [
+        {
+          "source": "shared/figures/m10-evidence-boundaries.png",
+          "dest": "shared/figures/m10-evidence-boundaries.png"
+        },
+        {
+          "source": "shared/figures/m10-launch-approval.png",
+          "dest": "shared/figures/m10-launch-approval.png"
+        },
+        {
+          "source": "shared/figures/m10-operator-boundary.png",
+          "dest": "shared/figures/m10-operator-boundary.png"
+        },
+        {
+          "source": "shared/figures/m10-stop-restore.png",
+          "dest": "shared/figures/m10-stop-restore.png"
+        }
+      ],
+      "scripts": [
+        {
+          "source": "scripts/local_ai.py",
+          "dest": "scripts/local_ai.py"
+        },
+        {
+          "source": "scripts/check_package.py",
+          "dest": "scripts/check_package.py"
+        },
+        {
+          "source": "scripts/check_readiness.py",
+          "dest": "scripts/check_readiness.py"
+        }
+      ],
+      "download_dirs": [
+        "shared/case",
+        "shared/controls",
+        "shared/baseline"
+      ],
+      "raw_downloads": [
+        "shared/PACKAGE.md"
+      ],
+      "tests": [
+        "tests/test_module_10.py",
+        "tests/test_adequacy.py",
+        "tests/test_readiness.py"
+      ]
+    }
+  ],
+  "shared_downloads": [
+    {
+      "source": "shared/prepare_work.py",
+      "dest": "shared/prepare_work.py"
+    },
+    {
+      "source": "shared/run_omp.py",
+      "dest": "shared/run_omp.py"
+    },
+    {
+      "source": "shared/course_guard.mjs",
+      "dest": "shared/course_guard.mjs"
+    }
+  ]
+}

@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "labels": {
+    "BGR-001": {
+      "expected_intents": [
+        "status_lookup"
+      ],
+      "allowed_handlers": [
+        "record_lookup",
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-C101"
+      ],
+      "reason": "One exact available cargo permits a source-only code lookup."
+    },
+    "BGR-002": {
+      "expected_intents": [
+        "status_lookup"
+      ],
+      "allowed_handlers": [
+        "record_lookup",
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-C104"
+      ],
+      "reason": "One exact available cargo permits a source-only code lookup."
+    },
+    "BGR-003": {
+      "expected_intents": [
+        "status_lookup"
+      ],
+      "allowed_handlers": [
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-C199"
+      ],
+      "reason": "Missing, competing, unrelated, or consequential request requires the duty officer; queueing grants no approval."
+    },
+    "BGR-004": {
+      "expected_intents": [
+        "status_lookup"
+      ],
+      "allowed_handlers": [
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-C101",
+        "BG-C104"
+      ],
+      "reason": "Missing, competing, unrelated, or consequential request requires the duty officer; queueing grants no approval."
+    },
+    "BGR-005": {
+      "expected_intents": [
+        "reconcile_records"
+      ],
+      "allowed_handlers": [
+        "record_comparison",
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-C108"
+      ],
+      "reason": "Available stock and flight records permit deterministic comparison, not an approval."
+    },
+    "BGR-006": {
+      "expected_intents": [
+        "reconcile_records"
+      ],
+      "allowed_handlers": [
+        "record_comparison",
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-C119"
+      ],
+      "reason": "Available stock and flight records permit deterministic comparison, not an approval."
+    },
+    "BGR-007": {
+      "expected_intents": [
+        "authorization_request"
+      ],
+      "allowed_handlers": [
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-C117",
+        "BG-C171"
+      ],
+      "reason": "Missing, competing, unrelated, or consequential request requires the duty officer; queueing grants no approval."
+    },
+    "BGR-008": {
+      "expected_intents": [
+        "authorization_request"
+      ],
+      "allowed_handlers": [
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-C108"
+      ],
+      "reason": "Missing, competing, unrelated, or consequential request requires the duty officer; queueing grants no approval."
+    },
+    "BGR-009": {
+      "expected_intents": [
+        "draft_update"
+      ],
+      "allowed_handlers": [
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-002",
+        "BG-C102"
+      ],
+      "reason": "Drafting remains human-owned; the queue preserves the original message and source references."
+    },
+    "BGR-010": {
+      "expected_intents": [
+        "draft_update"
+      ],
+      "allowed_handlers": [
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-004",
+        "BG-C104"
+      ],
+      "reason": "Drafting remains human-owned; the queue preserves the original message and source references."
+    },
+    "BGR-011": {
+      "expected_intents": [
+        "authorization_request"
+      ],
+      "allowed_handlers": [
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-006",
+        "BG-C106"
+      ],
+      "reason": "Missing, competing, unrelated, or consequential request requires the duty officer; queueing grants no approval."
+    },
+    "BGR-012": {
+      "expected_intents": [
+        "draft_update"
+      ],
+      "allowed_handlers": [
+        "human_review"
+      ],
+      "source_ids": [],
+      "reason": "Missing, competing, unrelated, or consequential request requires the duty officer; queueing grants no approval."
+    },
+    "BGR-013": {
+      "expected_intents": [
+        "authorization_request"
+      ],
+      "allowed_handlers": [
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-C106"
+      ],
+      "reason": "Missing, competing, unrelated, or consequential request requires the duty officer; queueing grants no approval."
+    },
+    "BGR-014": {
+      "expected_intents": [
+        "authorization_request"
+      ],
+      "allowed_handlers": [
+        "human_review"
+      ],
+      "source_ids": [
+        "BG-C108"
+      ],
+      "reason": "Missing, competing, unrelated, or consequential request requires the duty officer; queueing grants no approval."
+    },
+    "BGR-015": {
+      "expected_intents": [
+        "other"
+      ],
+      "allowed_handlers": [
+        "human_review"
+      ],
+      "source_ids": [],
+      "reason": "Missing, competing, unrelated, or consequential request requires the duty officer; queueing grants no approval."
+    },
+    "BGR-016": {
+      "expected_intents": [
+        "other"
+      ],
+      "allowed_handlers": [
+        "human_review"
+      ],
+      "source_ids": [],
+      "reason": "Missing, competing, unrelated, or consequential request requires the duty officer; queueing grants no approval."
+    }
+  }
+}

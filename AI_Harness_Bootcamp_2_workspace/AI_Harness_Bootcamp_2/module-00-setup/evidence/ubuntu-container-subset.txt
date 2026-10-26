@@ -1,0 +1,6 @@
+Ubuntu container execution — package/runtime subset only
+Ubuntu 24.04.4 LTS
+aarch64
+git version 2.43.0
+Python 3.12.3
+UBUNTU_BASE_PASS

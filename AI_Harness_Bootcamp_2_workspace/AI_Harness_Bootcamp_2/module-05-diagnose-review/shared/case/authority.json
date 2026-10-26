@@ -1,0 +1,30 @@
+{
+  "source_id": "REL-CS2",
+  "role": "authority",
+  "movement": "CS-2",
+  "current_revision": 2,
+  "recorded_at_meaning": "Archive receipt time is not an authority order. An old record can arrive after its replacement.",
+  "records": [
+    {
+      "revision": 1,
+      "supersedes": null,
+      "recorded_at": "2026-10-16T12:12:00-06:00",
+      "authority": "Basin Depot release officer",
+      "facts": {
+        "release_status": "RELEASED",
+        "authority_note": "Prior clearance; superseded by revision 2."
+      }
+    },
+    {
+      "revision": 2,
+      "supersedes": 1,
+      "recorded_at": "2026-10-16T12:05:00-06:00",
+      "authority": "Basin Depot release officer",
+      "facts": {
+        "release_status": "HOLD",
+        "authority_note": "QC inspection remains open."
+      }
+    }
+  ],
+  "class_only": true
+}

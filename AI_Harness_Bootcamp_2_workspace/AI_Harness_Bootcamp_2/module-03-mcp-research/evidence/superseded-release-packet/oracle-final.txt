@@ -1,0 +1,134 @@
+PASS 132
+  PASS M3-REF: reference hash 0a662381f5c74e61145315d88b357d3b4cddde182d362d28f279c5e39cc9e42b
+  PASS M3-01: start exists
+  PASS M3-01: lab exists
+  PASS M3-01: accessibility exists
+  PASS M3-01: handoff exists
+  PASS M3-01: runbook exists
+  PASS M3-01: rubric exists
+  PASS M3-01: custody exists
+  PASS M3-01: request exists
+  PASS M3-01: note exists
+  PASS M3-01: tool exists
+  PASS M3-01: negative exists
+  PASS M3-01: reference exists
+  PASS M3-01: gauntlet exists
+  PASS M3-01: verdict exists
+  PASS M3-LINK: start links lab
+  PASS M3-LINK: start links accessibility
+  PASS M3-LINK: start links rubric
+  PASS M3-LINK: README.md -> shared/MODULE_03_LAB.md
+  PASS M3-LINK: README.md -> assessment/PUBLIC_RUBRIC.md
+  PASS M3-LINK: README.md -> shared/ACCESSIBILITY.md
+  PASS M3-LINK: README.md -> facilitator/RUNBOOK.md
+  PASS M3-LINK: README.md -> assessment/CUSTODY_CONTRACT.md
+  PASS M3-LINK: README.md -> reference/REFERENCE.md
+  PASS M3-LINK: README.md -> reference/GAUNTLET_PROMPT.md
+  PASS M3-LINK: shared/MODULE_03_LAB.md -> case/REQUEST.md
+  PASS M3-LINK: shared/MODULE_03_LAB.md -> case/YARD_WINDOW_NOTE.md
+  PASS M3-LINK: shared/MODULE_03_LAB.md -> tools/hash_source.py
+  PASS M3-LINK: shared/MODULE_03_LAB.md -> tools/COMPOSED_NEGATIVE.md
+  PASS M3-LINK: shared/MODULE_03_LAB.md -> NEXT_MODULE.md
+  PASS M3-LINK: shared/case/REQUEST.md -> YARD_WINDOW_NOTE.md
+  PASS M3-NOTE: yard window note is 168 words
+  PASS M3-NOTE: note includes 12:00 p.m.
+  PASS M3-NOTE: note includes 8:00 p.m.
+  PASS M3-NOTE: note includes 12 Mesa Yard
+  PASS M3-NOTE: note includes Depot Road
+  PASS M3-NOTE: note includes named course coordinators
+  PASS M3-NOTE: note denies public movement order
+  PASS M3-POS: learner files contain no-release
+  PASS M3-SIX: rubric names privacy/security
+  PASS M3-SIX: rubric names copyright/IP
+  PASS M3-SIX: rubric names fairness/bias
+  PASS M3-SIX: rubric names transparency/disclosure
+  PASS M3-SIX: rubric names affected-person/recourse
+  PASS M3-SIX: rubric names human accountability
+  PASS M3-HASH: hash of supplied note is stable
+  PASS M3-ESC: path escape exits 1
+  PASS M3-ESC: path outside shared/case/ exits 1
+  PASS M3-INDEP: learner files omit S01_
+  PASS M3-INDEP: learner files omit S02_
+  PASS M3-INDEP: learner files omit S03_
+  PASS M3-INDEP: learner files omit S04_
+  PASS M3-INDEP: learner files omit S05_
+  PASS M3-INDEP: learner files omit S06_
+  PASS M3-INDEP: learner files omit S07_
+  PASS M3-INDEP: learner files omit S08_
+  PASS M3-INDEP: learner files omit S09_
+  PASS M3-INDEP: learner files omit FIRST_RESULT
+  PASS M3-INDEP: learner files omit MIN_SCREEN
+  PASS M3-INDEP: learner files omit INTERNAL_ARTIFACT
+  PASS M3-INDEP: learner files omit PO00_RESULT
+  PASS M3-INDEP: learner files omit SOURCE_EVIDENCE
+  PASS M3-INDEP: learner files omit DISCERNMENT_RESULT
+  PASS M3-INDEP: learner files omit STANDING_RULE
+  PASS M3-INDEP: learner files omit PO01_RESULT
+  PASS M3-INDEP: learner files omit CONTEXT_MAP
+  PASS M3-INDEP: learner files omit SOURCE_AS_DATA_CONTROL
+  PASS M3-INDEP: learner files omit RELOAD_RESULT
+  PASS M3-INDEP: learner files omit PO02_RESULT
+  PASS M3-INDEP: learner files omit LOCALIZATION_RESULT
+  PASS M3-INDEP: learner files omit RECOVERY_RESULT
+  PASS M3-INDEP: learner files omit PO04_RESULT
+  PASS M3-INDEP: learner files omit SAMPLE_MANIFEST
+  PASS M3-INDEP: learner files omit PREDICATE_SPEC
+  PASS M3-INDEP: learner files omit PROTECTED_CONTROL_RESULT
+  PASS M3-INDEP: learner files omit PO05_RESULT
+  PASS M3-INDEP: learner files omit FIXED_BASELINE
+  PASS M3-INDEP: learner files omit EXCEPTION_RULE
+  PASS M3-INDEP: learner files omit DETERMINISTIC_DELTA
+  PASS M3-INDEP: learner files omit CONFIG_ID
+  PASS M3-INDEP: learner files omit RESTORE_ACTION
+  PASS M3-INDEP: learner files omit PO06_RESULT
+  PASS M3-INDEP: learner files omit PRE_RESULT_POLICY
+  PASS M3-INDEP: learner files omit CHANGE_DECISION
+  PASS M3-INDEP: learner files omit COST_PROXY
+  PASS M3-INDEP: learner files omit RESTORED_BASELINE
+  PASS M3-INDEP: learner files omit PO07_RESULT
+  PASS M3-INDEP: learner files omit RUNNABLE_PACKAGE
+  PASS M3-INDEP: learner files omit PO08_RESULT
+  PASS M3-INDEP: learner files omit QUALIFICATION_RESULT
+  PASS M3-BAN: learner scan omits 246 kg
+  PASS M3-BAN: no protected conclusion leaked in README.md
+  PASS M3-BAN: no protected conclusion leaked in MODULE_03_LAB.md
+  PASS M3-BAN: no protected conclusion leaked in ACCESSIBILITY.md
+  PASS M3-BAN: no protected conclusion leaked in NEXT_MODULE.md
+  PASS M3-BAN: no protected conclusion leaked in PUBLIC_RUBRIC.md
+  PASS M3-BAN: no protected conclusion leaked in REQUEST.md
+  PASS M3-BAN: no protected conclusion leaked in YARD_WINDOW_NOTE.md
+  PASS M3-BAN: no protected conclusion leaked in COMPOSED_NEGATIVE.md
+  PASS M3-BAN: learner scan omits 1,404 kg
+  PASS M3-BAN: no protected conclusion leaked in README.md
+  PASS M3-BAN: no protected conclusion leaked in MODULE_03_LAB.md
+  PASS M3-BAN: no protected conclusion leaked in ACCESSIBILITY.md
+  PASS M3-BAN: no protected conclusion leaked in NEXT_MODULE.md
+  PASS M3-BAN: no protected conclusion leaked in PUBLIC_RUBRIC.md
+  PASS M3-BAN: no protected conclusion leaked in REQUEST.md
+  PASS M3-BAN: no protected conclusion leaked in YARD_WINDOW_NOTE.md
+  PASS M3-BAN: no protected conclusion leaked in COMPOSED_NEGATIVE.md
+  PASS M3-BAN: learner scan omits 3 minutes late
+  PASS M3-BAN: no protected conclusion leaked in README.md
+  PASS M3-BAN: no protected conclusion leaked in MODULE_03_LAB.md
+  PASS M3-BAN: no protected conclusion leaked in ACCESSIBILITY.md
+  PASS M3-BAN: no protected conclusion leaked in NEXT_MODULE.md
+  PASS M3-BAN: no protected conclusion leaked in PUBLIC_RUBRIC.md
+  PASS M3-BAN: no protected conclusion leaked in REQUEST.md
+  PASS M3-BAN: no protected conclusion leaked in YARD_WINDOW_NOTE.md
+  PASS M3-BAN: no protected conclusion leaked in COMPOSED_NEGATIVE.md
+  PASS M3-TOKEN: learner scan omits VERIFY:
+  PASS M3-TOKEN: learner scan omits CUSTODY:
+  PASS M3-TOKEN: learner scan omits PO0
+  PASS M3-SCOPE: fictional class-only boundary
+  PASS M3-SCOPE: no real dispatch language
+  PASS M3-LAB: lab includes read one file
+  PASS M3-LAB: lab includes write nothing
+  PASS M3-LAB: lab includes HOLD: path not allowed
+  PASS M3-LAB: lab includes rename or delete
+  PASS M3-18: material misses block passing
+  PASS M3-23: visible/protected separation
+  PASS M3-26: coaching limits
+  PASS M3-24: accessibility fails closed
+  PASS M3-28: handoff supports independent reconstruction
+  PASS M3-CODE: hash_source.py compiles
+FAIL 0

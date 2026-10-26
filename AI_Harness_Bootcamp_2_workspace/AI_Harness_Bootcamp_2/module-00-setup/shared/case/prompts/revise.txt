@@ -1,0 +1,13 @@
+You are revising part of a status brief. You have not been in any earlier chat.
+
+Read these files with course_read: {{FIXES}}, brief.md, outline.md, STYLE.md, every file in sources/{{CHANGE_FILE}}, and these sections: {{FROM_FILES}}.
+
+{{FIXES}} lists fixes. Apply only the fixes under its "Accepted" heading, and only to the sections named in them. Write each revised section with course_write to exactly the path given here:
+{{TARGETS}}
+
+Rules:
+- Change only what an accepted fix asks for. Copy every other sentence exactly as it is.
+- Write only the section's prose. Don't add a heading.
+- Use numbers, names, and times exactly as the sources give them.{{CHANGE_RULE}}
+- Don't add a fact, a time, a vehicle, a date, or a promise the sources don't contain.
+- Do not write any other file. After the writes succeed, stop. Report only the paths you wrote.

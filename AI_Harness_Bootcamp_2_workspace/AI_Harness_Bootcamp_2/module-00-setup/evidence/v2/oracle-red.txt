@@ -1,0 +1,37 @@
+[PASS] A1: 88 fences; every executed path resolves
+[FAIL] A2: tracked=0 on_disk=70; module is not published
+[FAIL] A3: 14 shell-terminating statements: ['arch-linux.md:74', 'arch-linux.md:81', 'arch-linux.md:97', 'arch-linux.md:218', 'macos.md:66', 'macos.md:130', 'macos.md:253', 'ubuntu.md:85']
+[FAIL] A4: fences using a relative path without cd: ['arch-linux.md:168 uses reformation/AI_Harness_Bootcamp_2/module-00-setup/scripts/verify-setup.sh', 'macos.md:201 uses reformation/AI_Harness_Bootcamp_2/module-00-setup/scripts/verify-setup.sh', 'ubuntu.md:194 uses reformation/AI_Harness_Bootcamp_2/module-00-setup/scripts/verify-setup.sh', 'windows-wsl.md:213 uses reformation/AI_Harness_Bootcamp_2/module-00-setup/scripts/verify-setup.sh']
+[FAIL] A5: the guides open the clone as an Obsidian vault but .obsidian/ is not ignored
+[PASS] A6: every shell fence parses in its declared shell
+[PASS] A7: no PATH assignment can contain an empty element
+[FAIL] A8: credential reads with following lines in the same paste: ['arch-linux.md:146', 'arch-linux.md:184', 'macos.md:179', 'macos.md:217', 'ubuntu.md:172', 'ubuntu.md:210', 'windows-powershell.md:174', 'windows-powershell.md:210', 'windows-wsl.md:191', 'windows-wsl.md:229']
+[FAIL] A9: slow steps with no duration annotation: ['arch-linux.md:43', 'arch-linux.md:116', 'macos.md:75', 'macos.md:147', 'ubuntu.md:43', 'ubuntu.md:118', 'ubuntu.md:142', 'windows-powershell.md:47']
+[FAIL] A10: execute-before-inspect: ['arch-linux.md:121 runs an installer that was never inspected', 'arch-linux.md:122 inspection guidance arrives after execution', 'macos.md:152 inspection guidance arrives after execution', 'macos.md:153 inspection guidance arrives after execution', 'macos.md:50 runs an installer that was never inspected', 'macos.md:52 inspection guidance arrives after execution']
+[PASS] B1-B6: practice checker adequacy: CHECKER ADEQUACY PASS
+[PASS] B7: no deciding control, answer key, or keyed digest on the learner's machine
+[PASS] B8: the tool proof requires this run's token and a write after it was issued
+[PASS] B9: the n8n check requires an n8n-shaped reply, not just an open port
+[PASS] B10: the correction budget is bounded at two attempts in the lab and the rubric
+[PASS] C1: scan set derived by glob: 43 files (>= 40 enumerated)
+[PASS] C2: 88 fences and 6 scripts scanned, no dangerous form
+[PASS] C3: pins {'OpenCode': '1.18.17', 'n8n': '2.34.5'} parsed from VERSIONS.md and asserted per file
+[PASS] C5: every platform section carries a terminal label, expectation and stop
+[FAIL] C7: leaks: ['GAUNTLET_PROMPT.md: personal path /Users/ravistarzl', 'ubuntu.md: personal path /home/...']
+[FAIL] D2: verdict reports panel scores with 0 reviewer files in reviews/
+[FAIL] D3: budgets disagree: lab=180 runbook=180 reference=120
+[PASS] D4: amendments to the Reference are recorded
+[PASS] D5: every platform has an explicit execution status
+[PASS] REF: Reference frozen at 49c5910af76e
+[FAIL] E1: capability-limit statement missing from the lab or the rubric
+[FAIL] E2: the falsifier is stated but never run
+[FAIL] E3: no protected acceptance control in the lab or rubric
+[FAIL] E4: the rubric makes setup a hard gate; a broken tool would hold PO-00
+[PASS] E5: 7 command blocks cover the lab's filesystem actions
+[FAIL] E6: a separate unseen graded case appears: different, unseen
+[FAIL] F1: PATH heads a section in all five guides and is never defined
+[FAIL] F2: making-of content: ["MODULE_00_LAB.md: curriculum structure — 'Module 1'", "MODULE_00_LAB.md: curriculum structure — 'The next session'", "MODULE_00_LAB.md: design rationale — 'your Module 0 files remain evidence'", "NEXT_MODULE.md: curriculum structure — 'Module 1'", "NEXT_MODULE.md: curriculum structure — 'the next session'", "macos.md: design rationale — 'which the guide reads from'"]
+[FAIL] F3: accessibility guidance names no assistive technology and gives no operation
+[PASS] F4: every stop condition names an observable state
+
+17 PASS / 18 FAIL

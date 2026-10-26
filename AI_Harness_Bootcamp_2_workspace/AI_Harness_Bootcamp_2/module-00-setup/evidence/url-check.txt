@@ -1,0 +1,35 @@
+ERR:URLError	http://localhost:5678	
+200	https://brew.sh/	https://brew.sh/
+308	https://developers.openai.com/codex/auth	
+308	https://developers.openai.com/codex/cli	
+308	https://developers.openai.com/codex/config-basic	
+200	https://docs.brew.sh/Installation	https://docs.brew.sh/Installation
+200	https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository	https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository
+200	https://docs.n8n.io/llms-full.txt	https://docs.n8n.io/llms-full.txt
+200	https://docs.npmjs.com/downloading-and-installing-node-js-and-npm	https://docs.npmjs.com/downloading-and-installing-node-js-and-npm/
+200	https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally	https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally/
+200	https://docs.python.org/3/using/windows.html	https://docs.python.org/3/using/windows.html
+200	https://documentation.ubuntu.com/server/how-to/software/package-management/	https://ubuntu.com/server/docs/how-to/software/package-management/
+200	https://git-scm.com/book/en/v2/Getting-Started-Installing-Git	https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
+200	https://git-scm.com/downloads/win	https://git-scm.com/downloads/win
+200	https://github.com/TheHolofex/AI_Harness_Bootcamp.git	https://github.com/TheHolofex/AI_Harness_Bootcamp
+200	https://github.com/aaif-goose/goose	https://github.com/aaif-goose/goose
+200	https://github.com/aaif-goose/goose/releases/download/stable/download_cli.sh	https://release-assets.githubusercontent.com/github-production-release-asset/846698999/768e95dd-1288-4134-950c-404111c66985?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-08-14T03%3A59%3A57Z&rscd=attachment%3B+filename%3Ddownload_cli.sh&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-08-14T02%3A59%3A11Z&ske=2026-08-14T03%3A59%3A57Z&sks=b&skv=2018-11-09&sig=GGKWLPYrFSv9XCE3rPfbnW9ftNWt5odE0jU0ruyw4wU%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc4NjY3NzUyMCwibmJmIjoxNzg2Njc3MjIwLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.o-DSXbn0LICtw3eU1kcPWtmhhpgmo2HC3kQv7EUMtOQ&response-content-disposition=attachment%3B%20filename%3Ddownload_cli.sh&response-content-type=application%2Foctet-stream
+200	https://goose-docs.ai/docs/getting-started/providers	https://goose-docs.ai/docs/getting-started/providers/
+200	https://help.obsidian.md/install	https://obsidian.md/help/install
+200	https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_environment_variables	https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_environment_variables
+200	https://learn.microsoft.com/en-us/windows/package-manager/winget/	https://learn.microsoft.com/en-us/windows/package-manager/winget/
+200	https://learn.microsoft.com/en-us/windows/wsl/install	https://learn.microsoft.com/en-us/windows/wsl/install
+200	https://learn.microsoft.com/en-us/windows/wsl/setup/environment	https://learn.microsoft.com/en-us/windows/wsl/setup/environment
+200	https://nodejs.org/en/download	https://nodejs.org/en/download
+200	https://obsidian.md/download	https://obsidian.md/download
+200	https://opencode.ai/docs/	https://opencode.ai/docs/
+200	https://opencode.ai/docs/providers/	https://opencode.ai/docs/providers/
+200	https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh	https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+200	https://raw.githubusercontent.com/aaif-goose/goose/main/download_cli.ps1	https://raw.githubusercontent.com/aaif-goose/goose/main/download_cli.ps1
+404	https://raw.githubusercontent.com/aaif-goose/goose/main/download_cli.ps1'	
+200	https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh	https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh
+200	https://support.apple.com/en-us/102445	https://support.apple.com/en-us/102445
+200	https://wiki.archlinux.org/title/Node.js	https://wiki.archlinux.org/title/Node.js
+200	https://wiki.archlinux.org/title/Pacman	https://wiki.archlinux.org/title/Pacman
+200	https://wiki.archlinux.org/title/Python	https://wiki.archlinux.org/title/Python

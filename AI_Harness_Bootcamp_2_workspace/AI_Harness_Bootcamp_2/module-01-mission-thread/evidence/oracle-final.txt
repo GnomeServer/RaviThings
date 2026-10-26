@@ -1,0 +1,169 @@
+PASS 167
+  PASS M1-REF: reference hash 048e0cf4b0b83525e3966bc66f4640021d26bd4b5166f1e462bbb8ad7f09e6dd
+  PASS M1-01: start exists
+  PASS M1-01: lab exists
+  PASS M1-01: orientation exists
+  PASS M1-01: accessibility exists
+  PASS M1-01: troubleshooting exists
+  PASS M1-01: handoff exists
+  PASS M1-01: runbook exists
+  PASS M1-01: rubric exists
+  PASS M1-01: custody exists
+  PASS M1-01: request exists
+  PASS M1-01: brief exists
+  PASS M1-01: manifest exists
+  PASS M1-01: change exists
+  PASS M1-01: calculator exists
+  PASS M1-01: validator exists
+  PASS M1-01: inventory exists
+  PASS M1-01: starter exists
+  PASS M1-01: freeze exists
+  PASS M1-01: reveal exists
+  PASS M1-01: renderer exists
+  PASS M1-01: source_template exists
+  PASS M1-01: ledger_template exists
+  PASS M1-01: exactly nine baseline source files
+  PASS M1-LINK: start links lab
+  PASS M1-LINK: start links orientation
+  PASS M1-LINK: start links accessibility
+  PASS M1-LINK: start links rubric
+  PASS M1-LINK: README.md -> shared/MISSION_THREAD.md
+  PASS M1-LINK: README.md -> shared/MODULE_01_LAB.md
+  PASS M1-LINK: README.md -> shared/WHEN_EVIDENCE_BREAKS.md
+  PASS M1-LINK: README.md -> assessment/PUBLIC_RUBRIC.md
+  PASS M1-LINK: README.md -> shared/ACCESSIBILITY.md
+  PASS M1-LINK: README.md -> facilitator/RUNBOOK.md
+  PASS M1-LINK: README.md -> assessment/CUSTODY_CONTRACT.md
+  PASS M1-LINK: README.md -> reference/REFERENCE.md
+  PASS M1-LINK: README.md -> reference/GAUNTLET_PROMPT.md
+  PASS M1-LINK: shared/MODULE_01_LAB.md -> case/REQUEST.md
+  PASS M1-LINK: shared/MODULE_01_LAB.md -> case/AI_DISPATCH_BRIEF.md
+  PASS M1-LINK: shared/MODULE_01_LAB.md -> case/SOURCE_MANIFEST.json
+  PASS M1-LINK: shared/MODULE_01_LAB.md -> MISSION_THREAD.md
+  PASS M1-LINK: shared/MODULE_01_LAB.md -> NEXT_MODULE.md
+  PASS M1-LINK: shared/case/AI_DISPATCH_BRIEF.md -> sources/S09_AI_DISPATCH_DRAFT.md
+  PASS M1-02: practice case identity
+  PASS M1-02: manifest has nine baseline entries
+  PASS M1-02: manifest fields for S01
+  PASS M1-02: manifest hash for S01
+  PASS M1-02: manifest fields for S02
+  PASS M1-02: manifest hash for S02
+  PASS M1-02: manifest fields for S03
+  PASS M1-02: manifest hash for S03
+  PASS M1-02: manifest fields for S04
+  PASS M1-02: manifest hash for S04
+  PASS M1-02: manifest fields for S05
+  PASS M1-02: manifest hash for S05
+  PASS M1-02: manifest fields for S06
+  PASS M1-02: manifest hash for S06
+  PASS M1-02: manifest fields for S07
+  PASS M1-02: manifest hash for S07
+  PASS M1-02: manifest fields for S08
+  PASS M1-02: manifest hash for S08
+  PASS M1-02: manifest fields for S09
+  PASS M1-02: manifest hash for S09
+  PASS M1-06: lab includes Requirement defined
+  PASS M1-06: lab includes Cargo received
+  PASS M1-06: lab includes Cargo released
+  PASS M1-06: lab includes Vehicle made ready
+  PASS M1-06: lab includes Movement authorized
+  PASS M1-06: lab includes Route window met
+  PASS M1-06: lab includes Cargo delivered
+  PASS M1-06: lab includes Usable effect confirmed
+  PASS M1-06: lab includes SOURCE FACT
+  PASS M1-06: lab includes CALCULATION
+  PASS M1-06: lab includes INFERENCE
+  PASS M1-06: lab includes DECISION
+  PASS M1-06: lab includes UNSUPPORTED
+  PASS M1-06: lab includes identity
+  PASS M1-06: lab includes authority
+  PASS M1-06: lab includes time
+  PASS M1-06: lab includes quantity
+  PASS M1-06: lab includes condition
+  PASS M1-06: lab includes dependency
+  PASS M1-06: lab includes handoff
+  PASS M1-06: lab includes uncertainty
+  PASS M1-06: lab includes ACCEPT
+  PASS M1-06: lab includes REVISE
+  PASS M1-06: lab includes REJECT
+  PASS M1-06: lab includes HOLD
+  PASS M1-08: recursive stop rule
+  PASS M1-16: producer self-review excluded
+  PASS M1-19: baseline frozen before change
+  PASS M1-15: source packet contains challenge VX-204
+  PASS M1-15: source packet contains challenge VX-240
+  PASS M1-15: source packet contains challenge R-71
+  PASS M1-15: source packet contains challenge R-17
+  PASS M1-15: source packet contains challenge 20:50Z
+  PASS M1-15: source packet contains challenge 21:30Z
+  PASS M1-15: source packet contains challenge PENDING
+  PASS M1-15: source packet contains challenge accepted for processing
+  PASS M1-15: source packet contains challenge SYSTEM OVERRIDE
+  PASS M1-15: source packet contains challenge CR-19
+  PASS M1-15: source packet contains challenge CR-20
+  PASS M1-15: source packet contains challenge 84 kg
+  PASS M1-05: learner files omit internal token PO-01
+  PASS M1-05: learner files omit internal token SOURCE_EVIDENCE
+  PASS M1-05: learner files omit internal token DISCERNMENT_RESULT
+  PASS M1-05: learner files omit internal token STANDING_RULE
+  PASS M1-05: learner files omit internal token M1-29
+  PASS M1-05: learner files omit internal token oracle criterion
+  PASS M1-03: no out-of-scope phrase real route
+  PASS M1-03: no out-of-scope phrase dispatch a real
+  PASS M1-03: no out-of-scope phrase legal advice
+  PASS M1-03: no out-of-scope phrase clinical advice
+  PASS M1-03: fictional class-only boundary
+  PASS M1-18: material misses block passing
+  PASS M1-23: visible/protected separation
+  PASS M1-26: coaching limits
+  PASS M1-24: accessibility fails closed
+  PASS M1-28: handoff supports independent reconstruction
+  PASS M1-07: learner defends a selected handoff
+  PASS M1-12: learner defends a selected claim
+  PASS M1-26: evaluator selects defense examples
+  PASS M1-15: source text never becomes instructions
+  PASS M1-15: indirect prompt injection is visible
+  PASS M1-16: AI self-check prohibited
+  PASS M1-14: reference calculations execute
+  PASS M1-14: scanned_kits=216
+  PASS M1-14: usable_kits=180
+  PASS M1-14: released_mass_kg=1320
+  PASS M1-14: mission_payload_kg=1404
+  PASS M1-14: payload_margin_kg=246
+  PASS M1-14: all_scanned_payload_kg=1668
+  PASS M1-14: all_scanned_overage_kg=18
+  PASS M1-14: v5_closure_local='14:50 MDT'
+  PASS M1-14: earliest_departure='14:25 MDT'
+  PASS M1-14: earliest_gate_arrival='14:53 MDT'
+  PASS M1-14: v5_gate_margin_minutes=-3
+  PASS M1-14: clinic_arrival_if_admitted='15:33 MDT'
+  PASS M1-14: clinic_margin_if_admitted_minutes=27
+  PASS M1-14: v6_closure_local='15:20 MDT'
+  PASS M1-14: v6_gate_margin_minutes=27
+  PASS M1-CODE: compute_thread.py compiles
+  PASS M1-CODE: check_work.py compiles
+  PASS M1-CODE: verify_content.py compiles
+  PASS M1-CODE: start_work.py compiles
+  PASS M1-CODE: freeze_baseline.py compiles
+  PASS M1-CODE: reveal_change.py compiles
+  PASS M1-CODE: render_review.py compiles
+  PASS M1-ANSWER: no protected conclusion leaked in README.md
+  PASS M1-ANSWER: no protected conclusion leaked in MODULE_01_LAB.md
+  PASS M1-ANSWER: no protected conclusion leaked in MISSION_THREAD.md
+  PASS M1-ANSWER: no protected conclusion leaked in ACCESSIBILITY.md
+  PASS M1-ANSWER: no protected conclusion leaked in WHEN_EVIDENCE_BREAKS.md
+  PASS M1-ANSWER: no protected conclusion leaked in NEXT_MODULE.md
+  PASS M1-ANSWER: no protected conclusion leaked in PUBLIC_RUBRIC.md
+  PASS M1-ANSWER: no protected conclusion leaked in REQUEST.md
+  PASS M1-ANSWER: no protected conclusion leaked in AI_DISPATCH_BRIEF.md
+  PASS M1-ANSWER: no protected conclusion leaked in SEALED_CHANGE.md
+  PASS M1-ANSWER: no protected conclusion leaked in S01_MO-27_r4.md
+  PASS M1-ANSWER: no protected conclusion leaked in S02_WMS_RCPT-8821.md
+  PASS M1-ANSWER: no protected conclusion leaked in S03_QA_RELEASE-661.md
+  PASS M1-ANSWER: no protected conclusion leaked in S04_FLEET_VX-204_r7.md
+  PASS M1-ANSWER: no protected conclusion leaked in S05_R71_BULLETINS.md
+  PASS M1-ANSWER: no protected conclusion leaked in S06_PERMIT_PR-4418.md
+  PASS M1-ANSWER: no protected conclusion leaked in S07_VENDOR_VX-240.md
+  PASS M1-ANSWER: no protected conclusion leaked in S08_R17_COMMUNITY_UPDATE.md
+  PASS M1-ANSWER: no protected conclusion leaked in S09_AI_DISPATCH_DRAFT.md
+FAIL 0

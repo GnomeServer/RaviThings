@@ -1,0 +1,22 @@
+[
+  {
+    "mode": "predicted-change",
+    "result": "HOLD",
+    "reason": "actual: unclosed CSV quote.",
+    "baseline_name": "white-rack-65.csv",
+    "actual_name": "malformed-receipt.csv",
+    "baseline_size": 1389,
+    "actual_size": 1426,
+    "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+    "actual_sha256": "abdd4d8e205cb2d5cc9847989d7ae9d771906188851d9201fadcb36784805fb0",
+    "expected_sha256": "",
+    "identity_check": "not_requested",
+    "raw_byte_equal": false,
+    "baseline_row_count": null,
+    "actual_row_count": null,
+    "row_count_checked": 0,
+    "changed_ids": "[]",
+    "changed_count": 0,
+    "unchanged_count": 0
+  }
+]

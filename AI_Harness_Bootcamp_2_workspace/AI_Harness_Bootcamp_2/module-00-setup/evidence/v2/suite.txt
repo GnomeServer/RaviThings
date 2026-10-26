@@ -1,0 +1,90 @@
+==============================================================================
+1. The module against the oracle
+==============================================================================
+  [PASS] A1: 205 fences; every executed path resolves
+  [PASS] A2: 80 files tracked, matching 80 on disk
+  [PASS] A3: no fence can exit the learner's shell
+  [PASS] A4: every relative-path fence sets its own directory
+  [PASS] A5: .obsidian/ is ignored, so opening the vault cannot dirty the clone
+  [PASS] A6: every shell fence parses in its declared shell
+  [PASS] A7: no PATH assignment can contain an empty element
+  [PASS] A8: hidden-input reads end their fence; no pasted line can be captured
+  [PASS] A9: every slow step states its expected duration
+  [PASS] A10: downloaded installers are inspected before they run
+  [PASS] B1-B6: practice checker adequacy: CHECKER ADEQUACY PASS
+  [PASS] B7: no deciding control, answer key, or keyed digest on the learner's machine
+  [PASS] B8: the tool proof requires this run's token and a write after it was issued
+  [PASS] B9: the n8n check requires an n8n-shaped reply, not just an open port
+  [PASS] B10: the correction budget is bounded at two attempts in the lab and the rubric
+  [PASS] C1: scan set derived by glob: 21 files, and every linked file is inside it
+  [PASS] C2: 205 fences and 5 scripts scanned, no dangerous form
+  [PASS] C3: pins {'OpenCode': '1.18.17', 'n8n': '2.34.5'} parsed from VERSIONS.md and asserted per file
+  [PASS] C5: every platform section carries a terminal label, expectation and stop
+  [PASS] C7: no internal token or personal path in reachable files
+  [PASS] D1: 8 evidence rows, each naming a command and a stored output
+  [PASS] D2: 3 reviews (0 human), each naming reviewer, kind, revision and rubric
+  [PASS] D3: lab 120 min == runbook 120 min == Reference 120 min
+  [PASS] D4: amendments to the Reference are recorded
+  [PASS] D5: every platform has an explicit execution status
+  [PASS] REF: Reference frozen at 49c5910af76e
+  [PASS] E1: capability-limit statement is a required record with a rubric gate
+  [PASS] E2: the learner runs the falsifier and records the observed failure
+  [PASS] E3: the protected acceptance control is confirmed and its result recorded
+  [PASS] E4: setup is an entry condition, not a module gate
+  [PASS] E5: every filesystem action the lab asks for is followed by an exact command
+  [PASS] E6: scored on the supplied case with a protected control, per the course skeleton
+  [PASS] F1: PATH is defined in ordinary language before it is used
+  [PASS] F2: no learner file explains how the course is built
+  [PASS] F3: accessibility guidance names real assistive technology: ['VoiceOver', 'NVDA', 'JAWS', 'Orca', 'Narrator']
+  [PASS] F-VOICE: the declarative-antithesis figure appears in 0 learner file(s)
+  [PASS] F4: every stop condition names an observable state
+
+  37 PASS / 0 FAIL
+
+==============================================================================
+2. The oracle against a broken module (each mutation must be caught)
+==============================================================================
+  killed A1      a guide runs a script that is not in the repository
+  killed A2      the module is no longer tracked by git
+  killed A3      a learner block can terminate the learner's shell
+  killed A4      a block runs a relative script without establishing its directory
+  killed A5      opening the vault would dirty the clone
+  killed A6      a fence does not parse in the shell it declares
+  killed A7      a block persists an empty PATH element
+  killed A8      a pasted line after the credential read would be captured as the key
+  killed A9      a slow step does not say how long it takes
+  killed A10     an installer runs without being inspected
+  killed B1-B6   the practice checker stops binding numbers to their subject
+  killed B7      a graded answer key ships inside the module
+  killed B8      the tool proof accepts any file with the right bytes
+  killed B9      the n8n check passes against any listener on the port
+  killed B10     the correction budget is removed from the rubric
+  killed C1      a file the learner is sent to read is parked where the scan does not look
+  killed C2      a dangerous command hides in a new learner file
+  killed C2      a dangerous command hides in a ```text fence
+  killed C3      one guide pins a version that disagrees with VERSIONS.md
+  killed C5      a platform guide loses its expected-value and stop lines
+  killed C7      an internal token reaches a learner file
+  killed D1      an evidence row claims a result with no command behind it
+  killed D2      a review stops declaring what kind of reviewer produced it
+  killed D2      a Class F pass is claimed without the human panel
+  killed D3      the lab timebox stops summing to the Reference budget
+  killed D4      the amendment record is deleted
+  killed D5      a platform loses its stated execution status
+  killed REF     the frozen Reference is edited without re-freezing
+  killed E1      the capability-limit statement is removed from the rubric
+  killed E2      the falsifier is stated but never run
+  killed E3      the protected acceptance control disappears from the lab
+  killed E4      setup becomes a hard gate of the module result
+  killed E5      filesystem actions go back to prose with no command
+  killed E6      a separate unseen graded case reappears
+  killed F1      PATH is used everywhere and defined nowhere
+  killed F2      making-of content returns to a learner page
+  killed F3      accessibility guidance stops naming assistive technology
+  killed F-VOICE the same instruction-free aphorism spreads across learner files
+  killed F4      a stop condition becomes a judgment call
+
+==============================================================================
+C6 PASS — all 39 mutations caught; every criterion is proven to fail
+
+MODULE PASS — every criterion passes, and every criterion is proven able to fail

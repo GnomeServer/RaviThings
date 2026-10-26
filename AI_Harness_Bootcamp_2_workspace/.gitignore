@@ -1,0 +1,15 @@
+site/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+.obsidian/
+node_modules/
+secrets/
+*.pem
+TODO.subagent-*.md

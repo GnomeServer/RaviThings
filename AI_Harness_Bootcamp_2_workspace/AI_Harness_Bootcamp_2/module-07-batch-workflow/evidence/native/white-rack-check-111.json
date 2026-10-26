@@ -1,0 +1,22 @@
+[
+  {
+    "mode": "predicted-change",
+    "result": "HOLD",
+    "reason": "Unpredicted serialized change for \"LW-41\".",
+    "baseline_name": "white-rack-65.csv",
+    "actual_name": "white-rack-68.csv",
+    "baseline_size": 1389,
+    "actual_size": 1425,
+    "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+    "actual_sha256": "f3553b758245f103d24d5e93269ee21c66126b4f61e0c29d71022c787e73ac65",
+    "expected_sha256": "",
+    "identity_check": "not_requested",
+    "raw_byte_equal": false,
+    "baseline_row_count": 80,
+    "actual_row_count": 80,
+    "row_count_checked": 80,
+    "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+    "changed_count": 3,
+    "unchanged_count": 77
+  }
+]

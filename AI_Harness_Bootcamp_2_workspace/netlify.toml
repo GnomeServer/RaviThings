@@ -1,0 +1,10 @@
+[build]
+  command = "bash scripts/bootstrap_parsers.sh bash -c 'python3 -m pip install -r requirements-dev.txt && python3 scripts/build_course.py && python3 scripts/check_course.py'"
+  publish = "site"
+
+[build.environment]
+  PYTHON_VERSION = "3.12"
+  NODE_VERSION = "22"
+
+[build.processing.html]
+  pretty_urls = false

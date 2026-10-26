@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "vault": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "{{WORK}}/shared/mcp/vault_mcp.py",
+        "--root",
+        "{{WORK}}/vault"
+      ],
+      "instructions": true
+    }
+  }
+}

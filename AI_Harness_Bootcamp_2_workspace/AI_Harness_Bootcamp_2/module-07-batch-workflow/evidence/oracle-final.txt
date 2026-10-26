@@ -1,0 +1,108 @@
+PASS 106
+  PASS M6-REF: reference hash e07af20dc2faf212379099cea591ee00048b55122e937ef1fbb50c0e977ce608
+  PASS M6-01: start exists
+  PASS M6-01: lab exists
+  PASS M6-01: accessibility exists
+  PASS M6-01: handoff exists
+  PASS M6-01: runbook exists
+  PASS M6-01: rubric exists
+  PASS M6-01: custody exists
+  PASS M6-01: wave1 exists
+  PASS M6-01: wave2 exists
+  PASS M6-01: rule exists
+  PASS M6-01: baseline_rule exists
+  PASS M6-01: changed_rule exists
+  PASS M6-01: router exists
+  PASS M6-01: repair exists
+  PASS M6-01: restore exists
+  PASS M6-01: exp_base exists
+  PASS M6-01: exp_changed exists
+  PASS M6-01: reference exists
+  PASS M6-01: gauntlet exists
+  PASS M6-01: verdict exists
+  PASS M6-LINK: start links lab
+  PASS M6-LINK: start links accessibility
+  PASS M6-LINK: start links rubric
+  PASS M6-LINK: README.md -> shared/MODULE_06_LAB.md
+  PASS M6-LINK: README.md -> assessment/PUBLIC_RUBRIC.md
+  PASS M6-LINK: README.md -> shared/ACCESSIBILITY.md
+  PASS M6-LINK: README.md -> facilitator/RUNBOOK.md
+  PASS M6-LINK: README.md -> assessment/CUSTODY_CONTRACT.md
+  PASS M6-LINK: README.md -> reference/REFERENCE.md
+  PASS M6-LINK: README.md -> reference/GAUNTLET_PROMPT.md
+  PASS M6-LINK: shared/MODULE_06_LAB.md -> batch/wave1.csv
+  PASS M6-LINK: shared/MODULE_06_LAB.md -> batch/wave2.csv
+  PASS M6-LINK: shared/MODULE_06_LAB.md -> workflow/RULE.md
+  PASS M6-LINK: shared/MODULE_06_LAB.md -> workflow/RULE.baseline.md
+  PASS M6-LINK: shared/MODULE_06_LAB.md -> workflow/MANUAL_REPAIR.md
+  PASS M6-LINK: shared/MODULE_06_LAB.md -> NEXT_MODULE.md
+  PASS M6-WAVE: wave1 L-11
+  PASS M6-WAVE: wave1 L-12
+  PASS M6-WAVE: wave2 L-14
+  PASS M6-REPAIR: manual repair count is 0
+  PASS M6-DELTA: L-11 and L-13 byte-identical across expected files
+  PASS M6-DELTA: L-12 OPEN to NOT_AUTHORIZED
+  PASS M6-BASE: baseline receipts match
+  PASS M6-WAVE2: wave 2 uses route.py
+  PASS M6-CHG: changed receipts match
+  PASS M6-RESTORE: restore returns baseline receipts
+  PASS M6-PEND: PENDING is allowed and present
+  PASS M6-INDEP: learner files omit S01_
+  PASS M6-INDEP: learner files omit S02_
+  PASS M6-INDEP: learner files omit S03_
+  PASS M6-INDEP: learner files omit S04_
+  PASS M6-INDEP: learner files omit S05_
+  PASS M6-INDEP: learner files omit S06_
+  PASS M6-INDEP: learner files omit S07_
+  PASS M6-INDEP: learner files omit S08_
+  PASS M6-INDEP: learner files omit S09_
+  PASS M6-INDEP: learner files omit FIRST_RESULT
+  PASS M6-INDEP: learner files omit MIN_SCREEN
+  PASS M6-INDEP: learner files omit INTERNAL_ARTIFACT
+  PASS M6-INDEP: learner files omit PO00_RESULT
+  PASS M6-INDEP: learner files omit SOURCE_EVIDENCE
+  PASS M6-INDEP: learner files omit DISCERNMENT_RESULT
+  PASS M6-INDEP: learner files omit STANDING_RULE
+  PASS M6-INDEP: learner files omit PO01_RESULT
+  PASS M6-INDEP: learner files omit CONTEXT_MAP
+  PASS M6-INDEP: learner files omit SOURCE_AS_DATA_CONTROL
+  PASS M6-INDEP: learner files omit RELOAD_RESULT
+  PASS M6-INDEP: learner files omit PO02_RESULT
+  PASS M6-INDEP: learner files omit RELEASE_DECISION
+  PASS M6-INDEP: learner files omit AUTHORITY_BOUNDARY
+  PASS M6-INDEP: learner files omit COMPOSED_NEGATIVE
+  PASS M6-INDEP: learner files omit REVOCATION_RESULT
+  PASS M6-INDEP: learner files omit PO03_RESULT
+  PASS M6-INDEP: learner files omit LOCALIZATION_RESULT
+  PASS M6-INDEP: learner files omit RECOVERY_RESULT
+  PASS M6-INDEP: learner files omit PO04_RESULT
+  PASS M6-INDEP: learner files omit SAMPLE_MANIFEST
+  PASS M6-INDEP: learner files omit PREDICATE_SPEC
+  PASS M6-INDEP: learner files omit PROTECTED_CONTROL_RESULT
+  PASS M6-INDEP: learner files omit PO05_RESULT
+  PASS M6-INDEP: learner files omit PRE_RESULT_POLICY
+  PASS M6-INDEP: learner files omit CHANGE_DECISION
+  PASS M6-INDEP: learner files omit COST_PROXY
+  PASS M6-INDEP: learner files omit RESTORED_BASELINE
+  PASS M6-INDEP: learner files omit PO07_RESULT
+  PASS M6-INDEP: learner files omit RUNNABLE_PACKAGE
+  PASS M6-INDEP: learner files omit PO08_RESULT
+  PASS M6-INDEP: learner files omit QUALIFICATION_RESULT
+  PASS M6-BAN: learner scan omits 246 kg
+  PASS M6-BAN: learner scan omits 1,404 kg
+  PASS M6-BAN: learner scan omits 3 minutes late
+  PASS M6-TOKEN: learner scan omits VERIFY:
+  PASS M6-TOKEN: learner scan omits CUSTODY:
+  PASS M6-TOKEN: learner scan omits PO0
+  PASS M6-SCOPE: fictional class-only boundary
+  PASS M6-SCOPE: no real dispatch language
+  PASS M6-LAB: lab includes same `route.py`
+  PASS M6-LAB: lab includes RULE.md
+  PASS M6-LAB: lab includes manual-repair
+  PASS M6-18: material misses block passing
+  PASS M6-23: visible/protected separation
+  PASS M6-26: coaching limits
+  PASS M6-24: accessibility fails closed
+  PASS M6-28: handoff supports independent reconstruction
+  PASS M6-CODE: route.py compiles
+FAIL 0

@@ -1,0 +1,125 @@
+PASS 9
+  PASS M0-REF: reference hash a162ca34f4a60563ce3d3019083f4d2bdbdb2204965d4dfd21560746e9e5d8fd
+  PASS M0-SAFE: no destructive recursive delete
+  PASS M0-SAFE: no persistent policy bypass
+  PASS M0-06: learner material omits internal token VERIFY:
+  PASS M0-06: learner material omits internal token CUSTODY:
+  PASS M0-06: learner material omits internal token PO00_RESULT
+  PASS M0-06: learner material omits internal token M0-17
+  PASS M0-06: learner material omits internal token oracle criterion
+  PASS M0-12: secret warning is explicit
+FAIL 112
+  FAIL M0-01: exactly five platform guides exist
+  FAIL M0-02: shared start, lab, case, credential, source, version, and troubleshooting files exist
+  FAIL M0-01: start links windows-powershell
+  FAIL M0-01: start links windows-wsl
+  FAIL M0-01: start links macos
+  FAIL M0-01: start links ubuntu
+  FAIL M0-01: start links arch-linux
+  FAIL M0-03: windows-powershell contains route stage 'Before you change the machine'
+  FAIL M0-03: windows-powershell contains route stage 'Open the right terminal'
+  FAIL M0-03: windows-powershell contains route stage 'Install the base tools'
+  FAIL M0-03: windows-powershell contains route stage 'Put user tools on PATH'
+  FAIL M0-03: windows-powershell contains route stage 'Clone and inspect the course'
+  FAIL M0-03: windows-powershell contains route stage 'Install the course applications'
+  FAIL M0-03: windows-powershell contains route stage 'Connect the course accounts'
+  FAIL M0-03: windows-powershell contains route stage 'Prove the setup'
+  FAIL M0-03: windows-powershell contains route stage 'Repeat the proof in a fresh shell'
+  FAIL M0-03: windows-powershell contains route stage 'Save the setup record'
+  FAIL M0-04: windows-powershell labels terminals
+  FAIL M0-05: windows-powershell names expected evidence and stop conditions
+  FAIL M0-13: windows-powershell contains cold-start proof
+  FAIL M0-16: windows-powershell handles disk and architecture
+  FAIL M0-09: windows-powershell uses the actual course remote
+  FAIL M0-07: windows-powershell requires Node 24
+  FAIL M0-08: windows-powershell requires Python 3.12+
+  FAIL M0-10: windows-powershell covers all course applications
+  FAIL M0-03: windows-wsl contains route stage 'Before you change the machine'
+  FAIL M0-03: windows-wsl contains route stage 'Open the right terminal'
+  FAIL M0-03: windows-wsl contains route stage 'Install the base tools'
+  FAIL M0-03: windows-wsl contains route stage 'Put user tools on PATH'
+  FAIL M0-03: windows-wsl contains route stage 'Clone and inspect the course'
+  FAIL M0-03: windows-wsl contains route stage 'Install the course applications'
+  FAIL M0-03: windows-wsl contains route stage 'Connect the course accounts'
+  FAIL M0-03: windows-wsl contains route stage 'Prove the setup'
+  FAIL M0-03: windows-wsl contains route stage 'Repeat the proof in a fresh shell'
+  FAIL M0-03: windows-wsl contains route stage 'Save the setup record'
+  FAIL M0-04: windows-wsl labels terminals
+  FAIL M0-05: windows-wsl names expected evidence and stop conditions
+  FAIL M0-13: windows-wsl contains cold-start proof
+  FAIL M0-16: windows-wsl handles disk and architecture
+  FAIL M0-09: windows-wsl uses the actual course remote
+  FAIL M0-07: windows-wsl requires Node 24
+  FAIL M0-08: windows-wsl requires Python 3.12+
+  FAIL M0-10: windows-wsl covers all course applications
+  FAIL M0-03: macos contains route stage 'Before you change the machine'
+  FAIL M0-03: macos contains route stage 'Open the right terminal'
+  FAIL M0-03: macos contains route stage 'Install the base tools'
+  FAIL M0-03: macos contains route stage 'Put user tools on PATH'
+  FAIL M0-03: macos contains route stage 'Clone and inspect the course'
+  FAIL M0-03: macos contains route stage 'Install the course applications'
+  FAIL M0-03: macos contains route stage 'Connect the course accounts'
+  FAIL M0-03: macos contains route stage 'Prove the setup'
+  FAIL M0-03: macos contains route stage 'Repeat the proof in a fresh shell'
+  FAIL M0-03: macos contains route stage 'Save the setup record'
+  FAIL M0-04: macos labels terminals
+  FAIL M0-05: macos names expected evidence and stop conditions
+  FAIL M0-13: macos contains cold-start proof
+  FAIL M0-16: macos handles disk and architecture
+  FAIL M0-09: macos uses the actual course remote
+  FAIL M0-07: macos requires Node 24
+  FAIL M0-08: macos requires Python 3.12+
+  FAIL M0-10: macos covers all course applications
+  FAIL M0-03: ubuntu contains route stage 'Before you change the machine'
+  FAIL M0-03: ubuntu contains route stage 'Open the right terminal'
+  FAIL M0-03: ubuntu contains route stage 'Install the base tools'
+  FAIL M0-03: ubuntu contains route stage 'Put user tools on PATH'
+  FAIL M0-03: ubuntu contains route stage 'Clone and inspect the course'
+  FAIL M0-03: ubuntu contains route stage 'Install the course applications'
+  FAIL M0-03: ubuntu contains route stage 'Connect the course accounts'
+  FAIL M0-03: ubuntu contains route stage 'Prove the setup'
+  FAIL M0-03: ubuntu contains route stage 'Repeat the proof in a fresh shell'
+  FAIL M0-03: ubuntu contains route stage 'Save the setup record'
+  FAIL M0-04: ubuntu labels terminals
+  FAIL M0-05: ubuntu names expected evidence and stop conditions
+  FAIL M0-13: ubuntu contains cold-start proof
+  FAIL M0-16: ubuntu handles disk and architecture
+  FAIL M0-09: ubuntu uses the actual course remote
+  FAIL M0-07: ubuntu requires Node 24
+  FAIL M0-08: ubuntu requires Python 3.12+
+  FAIL M0-10: ubuntu covers all course applications
+  FAIL M0-03: arch-linux contains route stage 'Before you change the machine'
+  FAIL M0-03: arch-linux contains route stage 'Open the right terminal'
+  FAIL M0-03: arch-linux contains route stage 'Install the base tools'
+  FAIL M0-03: arch-linux contains route stage 'Put user tools on PATH'
+  FAIL M0-03: arch-linux contains route stage 'Clone and inspect the course'
+  FAIL M0-03: arch-linux contains route stage 'Install the course applications'
+  FAIL M0-03: arch-linux contains route stage 'Connect the course accounts'
+  FAIL M0-03: arch-linux contains route stage 'Prove the setup'
+  FAIL M0-03: arch-linux contains route stage 'Repeat the proof in a fresh shell'
+  FAIL M0-03: arch-linux contains route stage 'Save the setup record'
+  FAIL M0-04: arch-linux labels terminals
+  FAIL M0-05: arch-linux names expected evidence and stop conditions
+  FAIL M0-13: arch-linux contains cold-start proof
+  FAIL M0-16: arch-linux handles disk and architecture
+  FAIL M0-09: arch-linux uses the actual course remote
+  FAIL M0-07: arch-linux requires Node 24
+  FAIL M0-08: arch-linux requires Python 3.12+
+  FAIL M0-10: arch-linux covers all course applications
+  FAIL M0-SAFE: no sudo global npm
+  FAIL M0-SAFE: no insecure curl
+  FAIL M0-SAFE: no world-writable recursive chmod
+  FAIL M0-SAFE: no secret echo
+  FAIL M0-11: OpenCode pin appears
+  FAIL M0-11: n8n pin appears
+  FAIL M0-14: WSL guide separates filesystems
+  FAIL M0-15: Arch guide uses full upgrade and no partial refresh
+  FAIL M0-18: lab contains required records
+  FAIL M0-19: lab bounds release
+  FAIL M0-20: HOLD and support packet exist
+  FAIL M0-21: practice checker is not called qualification evidence
+  FAIL M0-VERIFY: verify-setup.ps1 exists
+  FAIL M0-VERIFY: verify-setup.sh exists
+  FAIL M0-VERIFY: verify-content.py exists
+
+EXIT=1

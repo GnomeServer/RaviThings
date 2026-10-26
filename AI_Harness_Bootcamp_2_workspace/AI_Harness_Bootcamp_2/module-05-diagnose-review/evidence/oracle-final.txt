@@ -1,0 +1,120 @@
+PASS 118
+  PASS M4-REF: reference hash 40c88b705c081579d2e9f22e62223ede1a38761f4c6ef6ea717d266266d969cf
+  PASS M4-01: start exists
+  PASS M4-01: lab exists
+  PASS M4-01: accessibility exists
+  PASS M4-01: handoff exists
+  PASS M4-01: runbook exists
+  PASS M4-01: rubric exists
+  PASS M4-01: custody exists
+  PASS M4-01: card exists
+  PASS M4-01: clean exists
+  PASS M4-01: restore exists
+  PASS M4-01: staff_renderer exists
+  PASS M4-01: reference exists
+  PASS M4-01: gauntlet exists
+  PASS M4-01: verdict exists
+  PASS M4-LINK: start links lab
+  PASS M4-LINK: start links accessibility
+  PASS M4-LINK: start links rubric
+  PASS M4-LINK: README.md -> shared/MODULE_04_LAB.md
+  PASS M4-LINK: README.md -> assessment/PUBLIC_RUBRIC.md
+  PASS M4-LINK: README.md -> shared/ACCESSIBILITY.md
+  PASS M4-LINK: README.md -> facilitator/RUNBOOK.md
+  PASS M4-LINK: README.md -> reference/REFERENCE.md
+  PASS M4-LINK: README.md -> reference/GAUNTLET_PROMPT.md
+  PASS M4-LINK: shared/MODULE_04_LAB.md -> case/THREAD_CARD.json
+  PASS M4-LINK: shared/MODULE_04_LAB.md -> NEXT_MODULE.md
+  PASS M4-CARD: card crate V-18
+  PASS M4-CARD: card permit_status RECEIVED
+  PASS M4-CARD: card gate_time_mdt 15:20
+  PASS M4-CLEAN: clean renderer runs
+  PASS M4-CLEAN: clean renderer emits both fields
+  PASS M4-DROP: staff renderer runs
+  PASS M4-DROP: staff renderer emits gate_time_mdt
+  PASS M4-DROP: staff renderer omits permit_status
+  PASS M4-RESTORE: restore prints RESTORE OK
+  PASS M4-RESTORE: restore makes files identical
+  PASS M4-SPOIL: learner files omit faulty spoiler path
+  PASS M4-TOKEN: learner scan omits CUSTODY
+  PASS M4-TOKEN: learner scan omits VERIFY:
+  PASS M4-TOKEN: learner scan omits PO0
+  PASS M4-INDEP: learner files omit S01_
+  PASS M4-INDEP: learner files omit S02_
+  PASS M4-INDEP: learner files omit S03_
+  PASS M4-INDEP: learner files omit S04_
+  PASS M4-INDEP: learner files omit S05_
+  PASS M4-INDEP: learner files omit S06_
+  PASS M4-INDEP: learner files omit S07_
+  PASS M4-INDEP: learner files omit S08_
+  PASS M4-INDEP: learner files omit S09_
+  PASS M4-INDEP: learner files omit FIRST_RESULT
+  PASS M4-INDEP: learner files omit MIN_SCREEN
+  PASS M4-INDEP: learner files omit INTERNAL_ARTIFACT
+  PASS M4-INDEP: learner files omit PO00_RESULT
+  PASS M4-INDEP: learner files omit SOURCE_EVIDENCE
+  PASS M4-INDEP: learner files omit DISCERNMENT_RESULT
+  PASS M4-INDEP: learner files omit STANDING_RULE
+  PASS M4-INDEP: learner files omit PO01_RESULT
+  PASS M4-INDEP: learner files omit CONTEXT_MAP
+  PASS M4-INDEP: learner files omit SOURCE_AS_DATA_CONTROL
+  PASS M4-INDEP: learner files omit RELOAD_RESULT
+  PASS M4-INDEP: learner files omit PO02_RESULT
+  PASS M4-INDEP: learner files omit RELEASE_DECISION
+  PASS M4-INDEP: learner files omit AUTHORITY_BOUNDARY
+  PASS M4-INDEP: learner files omit COMPOSED_NEGATIVE
+  PASS M4-INDEP: learner files omit REVOCATION_RESULT
+  PASS M4-INDEP: learner files omit PO03_RESULT
+  PASS M4-INDEP: learner files omit SAMPLE_MANIFEST
+  PASS M4-INDEP: learner files omit PREDICATE_SPEC
+  PASS M4-INDEP: learner files omit PROTECTED_CONTROL_RESULT
+  PASS M4-INDEP: learner files omit PO05_RESULT
+  PASS M4-INDEP: learner files omit FIXED_BASELINE
+  PASS M4-INDEP: learner files omit EXCEPTION_RULE
+  PASS M4-INDEP: learner files omit DETERMINISTIC_DELTA
+  PASS M4-INDEP: learner files omit CONFIG_ID
+  PASS M4-INDEP: learner files omit RESTORE_ACTION
+  PASS M4-INDEP: learner files omit PO06_RESULT
+  PASS M4-INDEP: learner files omit PRE_RESULT_POLICY
+  PASS M4-INDEP: learner files omit CHANGE_DECISION
+  PASS M4-INDEP: learner files omit COST_PROXY
+  PASS M4-INDEP: learner files omit RESTORED_BASELINE
+  PASS M4-INDEP: learner files omit PO07_RESULT
+  PASS M4-INDEP: learner files omit RUNNABLE_PACKAGE
+  PASS M4-INDEP: learner files omit PO08_RESULT
+  PASS M4-INDEP: learner files omit QUALIFICATION_RESULT
+  PASS M4-BAN: learner scan omits 246 kg
+  PASS M4-BAN: no protected conclusion leaked in README.md
+  PASS M4-BAN: no protected conclusion leaked in MODULE_04_LAB.md
+  PASS M4-BAN: no protected conclusion leaked in ACCESSIBILITY.md
+  PASS M4-BAN: no protected conclusion leaked in NEXT_MODULE.md
+  PASS M4-BAN: no protected conclusion leaked in PUBLIC_RUBRIC.md
+  PASS M4-BAN: no protected conclusion leaked in THREAD_CARD.json
+  PASS M4-BAN: learner scan omits 1,404 kg
+  PASS M4-BAN: no protected conclusion leaked in README.md
+  PASS M4-BAN: no protected conclusion leaked in MODULE_04_LAB.md
+  PASS M4-BAN: no protected conclusion leaked in ACCESSIBILITY.md
+  PASS M4-BAN: no protected conclusion leaked in NEXT_MODULE.md
+  PASS M4-BAN: no protected conclusion leaked in PUBLIC_RUBRIC.md
+  PASS M4-BAN: no protected conclusion leaked in THREAD_CARD.json
+  PASS M4-BAN: learner scan omits 3 minutes late
+  PASS M4-BAN: no protected conclusion leaked in README.md
+  PASS M4-BAN: no protected conclusion leaked in MODULE_04_LAB.md
+  PASS M4-BAN: no protected conclusion leaked in ACCESSIBILITY.md
+  PASS M4-BAN: no protected conclusion leaked in NEXT_MODULE.md
+  PASS M4-BAN: no protected conclusion leaked in PUBLIC_RUBRIC.md
+  PASS M4-BAN: no protected conclusion leaked in THREAD_CARD.json
+  PASS M4-SCOPE: fictional class-only boundary
+  PASS M4-SCOPE: no real dispatch language
+  PASS M4-LAB: lab includes RESTORE OK
+  PASS M4-LAB: lab includes permit_status
+  PASS M4-LAB: lab includes gate_time_mdt
+  PASS M4-LAB: lab includes sealed
+  PASS M4-18: material misses block passing
+  PASS M4-23: visible/protected separation
+  PASS M4-26: coaching limits
+  PASS M4-24: accessibility fails closed
+  PASS M4-28: handoff supports independent reconstruction
+  PASS M4-CODE: render_review.py compiles
+  PASS M4-CODE: render_review.py compiles
+FAIL 0

@@ -1,0 +1,205 @@
+{
+  "calibration": {
+    "KH-011": "BODY_CLAIM",
+    "KH-015": "AGGREGATION",
+    "KH-020": "NOTICE_CHAIN",
+    "KH-036": "FORGED_NOTICE",
+    "KH-038": "UNMARKED",
+    "KH-040": "DERIVED"
+  },
+  "near_misses": [
+    "MH-6",
+    "MH-8",
+    "NH-6",
+    "B-2",
+    "B-3",
+    "D-2",
+    "MSR Heron",
+    "ASR Linden",
+    "ASR Larch",
+    "L-7731",
+    "L-7713",
+    "L-7640",
+    "BR-14",
+    "BR-22",
+    "BR-31"
+  ],
+  "notes": {
+    "KH-001": {
+      "role": "R30",
+      "trap": "UPGRADED"
+    },
+    "KH-002": {
+      "role": "R10",
+      "trap": "BROKEN_HANDOFF"
+    },
+    "KH-003": {
+      "role": "R28",
+      "trap": "NOTICE_CHAIN"
+    },
+    "KH-004": {
+      "role": "R27",
+      "trap": "NOTICE_CHAIN"
+    },
+    "KH-005": {
+      "role": "R07",
+      "trap": "AGGREGATION"
+    },
+    "KH-006": {
+      "role": "R14",
+      "trap": "ORDINARY"
+    },
+    "KH-007": {
+      "role": "R36",
+      "trap": "AGGREGATION"
+    },
+    "KH-008": {
+      "role": "R40",
+      "trap": "HOSTILE"
+    },
+    "KH-009": {
+      "role": "R17",
+      "trap": "ORDINARY"
+    },
+    "KH-010": {
+      "role": "R26",
+      "trap": "VALID_NOTICE"
+    },
+    "KH-011": {
+      "role": "R20",
+      "trap": "BODY_CLAIM"
+    },
+    "KH-012": {
+      "role": "R16",
+      "trap": "DOWNGRADED"
+    },
+    "KH-013": {
+      "role": "R18",
+      "trap": "ORDINARY"
+    },
+    "KH-014": {
+      "role": "R09",
+      "trap": "ORDINARY"
+    },
+    "KH-015": {
+      "role": "R35",
+      "trap": "AGGREGATION"
+    },
+    "KH-016": {
+      "role": "R21",
+      "trap": "BODY_CLAIM"
+    },
+    "KH-017": {
+      "role": "R11",
+      "trap": "BROKEN_HANDOFF"
+    },
+    "KH-018": {
+      "role": "R13",
+      "trap": "ORDINARY"
+    },
+    "KH-019": {
+      "role": "R12",
+      "trap": "BROKEN_HANDOFF"
+    },
+    "KH-020": {
+      "role": "R29",
+      "trap": "NOTICE_CHAIN_TARGET"
+    },
+    "KH-021": {
+      "role": "R39",
+      "trap": "HOSTILE"
+    },
+    "KH-022": {
+      "role": "R22",
+      "trap": "BODY_CLAIM"
+    },
+    "KH-023": {
+      "role": "R02",
+      "trap": "SUPERSEDED_PAIR"
+    },
+    "KH-024": {
+      "role": "R15",
+      "trap": "ORDINARY"
+    },
+    "KH-025": {
+      "role": "R01",
+      "trap": "ORDINARY"
+    },
+    "KH-026": {
+      "role": "R08",
+      "trap": "ORDINARY"
+    },
+    "KH-027": {
+      "role": "R34",
+      "trap": "DERIVED_NO_RAISE"
+    },
+    "KH-028": {
+      "role": "R05",
+      "trap": "BROKEN_HANDOFF"
+    },
+    "KH-029": {
+      "role": "R32",
+      "trap": "DERIVED"
+    },
+    "KH-030": {
+      "role": "R23",
+      "trap": "FORGED_NOTICE"
+    },
+    "KH-031": {
+      "role": "R03",
+      "trap": "SUPERSEDED_PAIR"
+    },
+    "KH-032": {
+      "role": "R33",
+      "trap": "DERIVED"
+    },
+    "KH-033": {
+      "role": "R38",
+      "trap": "UNMARKED"
+    },
+    "KH-034": {
+      "role": "R25",
+      "trap": "VALID_NOTICE"
+    },
+    "KH-035": {
+      "role": "R24",
+      "trap": "ORDINARY"
+    },
+    "KH-036": {
+      "role": "R19",
+      "trap": "FORGED_NOTICE_TARGET"
+    },
+    "KH-037": {
+      "role": "R04",
+      "trap": "BROKEN_HANDOFF"
+    },
+    "KH-038": {
+      "role": "R37",
+      "trap": "UNMARKED"
+    },
+    "KH-039": {
+      "role": "R06",
+      "trap": "BROKEN_HANDOFF"
+    },
+    "KH-040": {
+      "role": "R31",
+      "trap": "DERIVED"
+    }
+  },
+  "protected_strings": [
+    "QA hold",
+    "L-7731",
+    "L-7640",
+    "deadlined",
+    "MH-6",
+    "NH-6",
+    "MLC 24",
+    "BR-31",
+    "km 88",
+    "explosive",
+    "090300Z",
+    "090900Z",
+    "100600Z",
+    "HW-12"
+  ]
+}

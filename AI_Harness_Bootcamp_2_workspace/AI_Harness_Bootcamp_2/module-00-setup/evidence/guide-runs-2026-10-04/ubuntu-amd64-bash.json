@@ -1,0 +1,904 @@
+{
+ "platform": "ubuntu-amd64",
+ "guide": "ubuntu.md",
+ "machine": "aihb-lab-main-ubuntu-amd64-012753",
+ "outcome": "PASS",
+ "error": "",
+ "finished": "2026-10-04T01:32:24",
+ "boxes_passed": 36,
+ "boxes_failed": 0,
+ "rows": [
+  {
+   "kind": "environment",
+   "what": "display",
+   "detail": "Xvfb :99 stands in for the desktop session's display"
+  },
+  {
+   "kind": "window",
+   "what": "w1-first",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin /bin/bash -i"
+  },
+  {
+   "kind": "box",
+   "line": 15,
+   "heading": "1. Check this computer",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.5,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "overlay         1.8T   53G  1.7T   4% /",
+    "PACKAGES missing: git curl",
+    "PY /usr/bin/python3.12",
+    "Python 3.12.3",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 55,
+   "heading": "2. Install missing packages",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 11.1,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "password"
+   ],
+   "note": "",
+   "tail": [
+    "Setting up curl (8.5.0-2ubuntu10.15) ...",
+    "Setting up liberror-perl (0.17029-2) ...",
+    "Setting up git (1:2.43.0-1ubuntu7.3) ...",
+    "Processing triggers for libc-bin (2.39-0ubuntu8.9) ...",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 71,
+   "heading": "3. Install Oh My Pi",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 4.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "INSTALLED /home/learner/.local/bin/omp",
+    "OMP_VERSION omp/18.3.5",
+    "PATH_LINE added to /home/learner/.bashrc",
+    "PATH_LINE added to /home/learner/.profile",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 156,
+   "heading": "4. Get the course files",
+   "window": "w1-first",
+   "status": "failed",
+   "exit": 128,
+   "seconds": 0.7,
+   "verdict": "PASS",
+   "expected_status": "failed",
+   "missing": [],
+   "answered": [],
+   "note": "expected: a new learner has no GitHub credentials yet",
+   "tail": [
+    "$ GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code https://github.com/TheHolofex/AIHB_OCT_2026.git HEAD",
+    "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
+    "__AIHB_DONE_128__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 172,
+   "heading": "If GitHub access fails",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 5.8,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Unpacking gh (2.45.0-1ubuntu0.3) ...",
+    "Setting up gh (2.45.0-1ubuntu0.3) ...",
+    "gh version 2.45.0 (2025-07-18 Ubuntu 2.45.0-1ubuntu0.3)",
+    "https://github.com/cli/cli/releases/tag/v2.45.0",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "stand-in",
+   "what": "GitHub browser sign-in",
+   "detail": "gh auth login --with-token (token from the host's gh login)"
+  },
+  {
+   "kind": "box",
+   "line": 199,
+   "heading": "If GitHub access fails",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.8,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  - Active account: true",
+    "  - Git operations protocol: https",
+    "  - Token: gho_************************************",
+    "  - Token scopes: 'gist', 'read:org', 'repo', 'workflow'",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 211,
+   "heading": "If GitHub access fails",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 1.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "gh auth setup-git --hostname github.com &&",
+    "GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code https://github.com/TheHolofex/AIHB_OCT_2026.git HEAD",
+    "746ec5798db384db236940c8367d2a8804e95977\tHEAD",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 228,
+   "heading": "Create or reuse the checkout",
+   "window": "w1-first",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 4.6,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Receiving objects:  99% (2756/2783), 102.89 MiB | 40.83 MiB/sReceiving objects: 100% (2783/2783), 102.89 MiB | 40.83 MiB/sReceiving objects: 100% (2783/2783), 124.42 MiB | 42.87 MiB/s, done.",
+    "Resolving deltas:   0% (0/1203)Resolving deltas:   1% (13/1203)Resolving deltas:   2% (25/1203)Resolving deltas:   3% (38/1203)Resolving deltas:   4% (49/1203)Resolving deltas:   5% (61/1203)Resolving deltas:   6% (73/1203)Resolving deltas:   7% (85/1203)Resolving deltas:   8% (98/1203)Resolving deltas:   9% (110/1203)Resolving deltas:  10% (121/1203)Resolving deltas:  11% (135/1203)Resolving deltas:  12% (145/1203)Resolving deltas:  13% (157/1203)Resolving deltas:  14% (169/1203)Resolving deltas:  15% (183/1203)Resolving deltas:  16% (193/1203)Resolving deltas:  17% (205/1203)Resolving deltas:  18% (217/1203)Resolving deltas:  19% (229/1203)Resolving deltas:  20% (242/1203)Resolving deltas:  21% (253/1203)Resolving deltas:  22% (265/1203)Resolving deltas:  23% (277/1203)Resolving deltas:  24% (289/1203)Resolving deltas:  25% (301/1203)Resolving deltas:  26% (313/1203)Resolving deltas:  27% (325/1203)Resolving deltas:  28% (338/1203)Resolving deltas:  29% (349/1203)Resolving deltas:  30% (361/1203)Resolving deltas:  31% (373/1203)Resolving deltas:  32% (385/1203)Resolving deltas:  33% (397/1203)Resolving deltas:  34% (412/1203)Resolving deltas:  35% (422/1203)Resolving deltas:  36% (434/1203)Resolving deltas:  37% (447/1203)Resolving deltas:  38% (458/1203)Resolving deltas:  39% (470/1203)Resolving deltas:  40% (483/1203)Resolving deltas:  41% (494/1203)Resolving deltas:  42% (506/1203)Resolving deltas:  43% (519/1203)Resolving deltas:  44% (530/1203)Resolving deltas:  45% (542/1203)Resolving deltas:  46% (554/1203)Resolving deltas:  47% (567/1203)Resolving deltas:  48% (579/1203)Resolving deltas:  49% (590/1203)Resolving deltas:  50% (602/1203)Resolving deltas:  51% (615/1203)Resolving deltas:  52% (626/1203)Resolving deltas:  53% (638/1203)Resolving deltas:  54% (650/1203)Resolving deltas:  55% (662/1203)Resolving deltas:  56% (674/1203)Resolving deltas:  57% (686/1203)Resolving deltas:  58% (698/1203)Resolving deltas:  59% (711/1203)Resolving deltas:  60% (722/1203)Resolving deltas:  61% (735/1203)Resolving deltas:  62% (746/1203)Resolving deltas:  63% (759/1203)Resolving deltas:  64% (770/1203)Resolving deltas:  65% (782/1203)Resolving deltas:  66% (794/1203)Resolving deltas:  67% (808/1203)Resolving deltas:  68% (819/1203)Resolving deltas:  69% (831/1203)Resolving deltas:  70% (843/1203)Resolving deltas:  71% (855/1203)Resolving deltas:  72% (867/1203)Resolving deltas:  73% (879/1203)Resolving deltas:  74% (891/1203)Resolving deltas:  75% (903/1203)Resolving deltas:  76% (915/1203)Resolving deltas:  77% (927/1203)Resolving deltas:  78% (939/1203)Resolving deltas:  79% (951/1203)Resolving deltas:  80% (963/1203)Resolving deltas:  81% (975/1203)Resolving deltas:  82% (987/1203)Resolving deltas:  83% (999/1203)Resolving deltas:  84% (1011/1203)Resolving deltas:  85% (1024/1203)Resolving deltas:  86% (1035/1203)Resolving deltas:  87% (1047/1203)Resolving deltas:  88% (1059/1203)Resolving deltas:  89% (1072/1203)Resolving deltas:  90% (1083/1203)Resolving deltas:  91% (1095/1203)Resolving deltas:  92% (1107/1203)Resolving deltas:  93% (1119/1203)Resolving deltas:  94% (1131/1203)Resolving deltas:  95% (1143/1203)Resolving deltas:  96% (1155/1203)Resolving deltas:  97% (1167/1203)Resolving deltas:  98% (1179/1203)Resolving deltas:  99% (1191/1203)Resolving deltas: 100% (1203/1203)Resolving deltas: 100% (1203/1203), done.",
+    "R /home/learner/Documents/AIHB_OCT_2026",
+    "M /home/learner/Documents/AIHB_OCT_2026/AI_Harness_Bootcamp_2/module-00-setup",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "window",
+   "what": "w2-new-terminal",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin /bin/bash -i"
+  },
+  {
+   "kind": "box",
+   "line": 268,
+   "heading": "5. Open a new terminal and confirm",
+   "window": "w2-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.9,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "PY /usr/bin/python3.12",
+    "OMP_PATH /home/learner/.local/bin/omp",
+    "OMP_VERSION omp/18.3.5",
+    "MISSING",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 308,
+   "heading": "6. Enter your OpenRouter key",
+   "window": "w2-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 1.9,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "scheduled input"
+   ],
+   "note": "",
+   "tail": [
+    "$ IFS= read -r -s OPENROUTER_API_KEY",
+    "$ IFS= read -r -s OPENROUTER_API_KEY",
+    "$ IFS= read -r -s OPENROUTER_API_KEY",
+    "$ IFS= read -r -s OPENROUTER_API_KEY",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 324,
+   "heading": "7. Confirm the key is loaded",
+   "window": "w2-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "$ export OPENROUTER_API_KEY",
+    "if [ -n \"${OPENROUTER_API_KEY:-}\" ]; then printf 'SET\\n'; else printf 'MISSING\\n'; fi",
+    "SET",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 341,
+   "heading": "8. Run the readiness check",
+   "window": "w2-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 9.5,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "one paid OpenRouter call",
+   "tail": [
+    "LAUNCH_EXIT 0",
+    "PASS: from-omp.txt \u2014 correct content, this run's token, receipted by course_write (exact path + hash)",
+    "READINESS CHECK PASS",
+    "VERIFY_EXIT 0",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 386,
+   "heading": "9. Save the setup report and read the result",
+   "window": "w2-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 1.9,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "REPORT_EXIT 0",
+    "FILE /home/learner/course-evidence/reformation-qa/module-00-20261004T072847Z-913/proof/from-omp.txt",
+    "omp works 380a87e9001a3779b075b6f7335f3b91",
+    "END OF FILE",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 423,
+   "heading": "Download and verify",
+   "window": "w2-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 2.0,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0",
+    "  0  102M    0  9616    0     0  23824      0  1:14:52 --:--:--  1:14:52 23824100  102M  100  102M    0     0  78.2M      0  0:00:01  0:00:01 --:--:--  113M",
+    "obsidian_1.13.7_amd64.deb: OK",
+    "SHA256 VERIFIED: /home/learner/course-evidence/obsidian-download-20261004T072900Z-913/obsidian_1.13.7_amd64.deb",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 465,
+   "heading": "x86-64: install and launch",
+   "window": "w2-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 8.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "password",
+    "default answer [Y/n]"
+   ],
+   "note": "",
+   "tail": [
+    "\u001b7Progress: [ 93%] [########################################################################################################################################################################################..............] \u001b8update-alternatives: using /opt/Obsidian/obsidian to provide /usr/bin/obsidian (obsidian) in auto mode",
+    "\u001b7Progress: [ 97%] [###############################################################################################################################################################################################.......] \u001b8Processing triggers for hicolor-icon-theme (0.17-2) ...",
+    "Processing triggers for libc-bin (2.39-0ubuntu8.9) ...",
+    "\u001b7\u001b8N: Download is performed unsandboxed as root as file '/home/learner/course-evidence/obsidian-download-20261004T072900Z-913/obsidian_1.13.7_amd64.deb' couldn't be accessed by user '_apt'. - pkgAcquire::Run (13: Permission denied)",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 488,
+   "heading": "x86-64: install and launch",
+   "window": "w2-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "$ obsidian &",
+    "[1] 1192",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "observed",
+   "what": "Obsidian process under Xvfb",
+   "detail": "7 learner processes after 15 s; the window itself was not inspected"
+  },
+  {
+   "kind": "box",
+   "line": 538,
+   "heading": "Open the practice vault and follow its links",
+   "window": "w2-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Created practice vault: /home/learner/course-evidence/obsidian-ubuntu-20261004T072929Z-913/vault",
+    "Open that folder as a vault in Obsidian, with Sync off and community plugins restricted.",
+    "Open Start, follow Token, enter the observed token in Reply, save, then run check.",
+    "OPEN EXACT VAULT: /home/learner/course-evidence/obsidian-ubuntu-20261004T072929Z-913/vault",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "Obsidian: read Token, type it into Reply, save",
+   "detail": "Reply.md <- token ending 2bb9"
+  },
+  {
+   "kind": "box",
+   "line": 573,
+   "heading": "Open the practice vault and follow its links",
+   "window": "w2-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.5,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "This does not prove GUI use, link navigation, external refresh visibility, or reopening.",
+    "Source token rotated outside Obsidian; your saved reply was preserved.",
+    "Observe Token in Obsidian, replace Reply with the new token, and save.",
+    "Close and reopen the vault, then run check. Record actual GUI observations separately.",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "Obsidian: read Token, type it into Reply, save",
+   "detail": "Reply.md <- token ending 08a9"
+  },
+  {
+   "kind": "box",
+   "line": 599,
+   "heading": "Open the practice vault and follow its links",
+   "window": "w2-new-terminal",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Token generation 2: refreshed token; GUI observation still required",
+    "PASS: Obsidian file round-trip; GUI observation still required",
+    "Disk observation saved: /home/learner/course-evidence/obsidian-ubuntu-20261004T072929Z-913/observations/check-77ad44c4adb2932c65f2daf2c521ead7.json",
+    "This does not prove GUI use, link navigation, external refresh visibility, or reopening.",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "window",
+   "what": "w3-n8n-check",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin /bin/bash -i"
+  },
+  {
+   "kind": "box",
+   "line": 621,
+   "heading": "10. Check Docker and the n8n destination",
+   "window": "w3-n8n-check",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.6,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "podman-docker absent",
+    "containerd absent",
+    "containerd.io absent",
+    "runc absent",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 645,
+   "heading": "10. Check Docker and the n8n destination",
+   "window": "w3-n8n-check",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "$ if command -v docker >/dev/null 2>&1; then",
+    "  docker info && docker compose version && docker ps -a && docker volume ls && docker compose ls --all",
+    "fi",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 663,
+   "heading": "11. Install Docker",
+   "window": "w3-n8n-check",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 19.0,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "password",
+    "default answer [Y/n]"
+   ],
+   "note": "",
+   "tail": [
+    "Created symlink /etc/systemd/system/multi-user.target.wants/docker.service \u2192 /usr/lib/systemd/system/docker.service.",
+    "Created symlink /etc/systemd/system/sockets.target.wants/docker.socket \u2192 /usr/lib/systemd/system/docker.socket.",
+    "/usr/sbin/policy-rc.d returned 101, not running 'start docker.service docker.socket'",
+    "Processing triggers for libc-bin (2.39-0ubuntu8.9) ...",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 710,
+   "heading": "12. Give your account Docker access",
+   "window": "w3-n8n-check",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  getent group docker >/dev/null || sudo groupadd docker || return 1",
+    "  sudo usermod -aG docker \"$(id -un)\"",
+    "}",
+    "course_docker_access",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "relogin",
+   "what": "sign out and back in",
+   "detail": "fresh session: groups re-read from /etc/group"
+  },
+  {
+   "kind": "window",
+   "what": "w4-fresh-login",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin /bin/bash -i"
+  },
+  {
+   "kind": "box",
+   "line": 729,
+   "heading": "12. Give your account Docker access",
+   "window": "w4-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 3.5,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "password"
+   ],
+   "note": "",
+   "tail": [
+    "sudo systemctl start docker.service",
+    "[sudo] password for learner: ",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 741,
+   "heading": "12. Give your account Docker access",
+   "window": "w4-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 1.2,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  UserlandProxyPath: /usr/bin/docker-proxy",
+    "Docker Compose version v5.6.0",
+    "CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES",
+    "DRIVER    VOLUME NAME",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 757,
+   "heading": "13. Generate the n8n configuration",
+   "window": "w4-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  printf 'REVIEW %s\\n' \"$N8N_REVIEW_SCRIPT\"",
+    "}",
+    "course_download_n8n",
+    "REVIEW /home/learner/n8n-installer-review.hUhmTi/get-n8n.sh",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 780,
+   "heading": "13. Generate the n8n configuration",
+   "window": "w4-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 3.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "scheduled input"
+   ],
+   "note": "",
+   "tail": [
+    "# user's environment (no docker, port taken, ...) leave it empty and no",
+    "# report is offered.",
+    "STEP=\"\"",
+    "/home/learner/n8n-installer-review.hUhmTi/get-n8n.sh",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 792,
+   "heading": "13. Generate the n8n configuration",
+   "window": "w4-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 1.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "\u2714 Created /home/learner/n8n-course/searxng-settings.yml",
+    "\u2714 Created /home/learner/n8n-course/.env (unique secrets generated)",
+    "Not starting (--no-start). When ready:",
+    "  docker compose -f /home/learner/n8n-course/compose.yml up -d",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 813,
+   "heading": "13. Generate the n8n configuration",
+   "window": "w4-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "}",
+    "course_bind_and_record",
+    "PORT bound to 127.0.0.1:5678",
+    "PROJECT recorded: n8n-course",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 848,
+   "heading": "13. Generate the n8n configuration",
+   "window": "w4-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  project=\"$(cat \"$HOME/n8n-course/.course-project\")\" || { printf 'HOLD: project record could not be read\\n' >&2; return 1; }",
+    "  case \"$project\" in ''|[!a-z0-9]*|*[!a-z0-9_-]*) printf 'HOLD: invalid recorded project name\\n' >&2; return 1 ;; esac",
+    "  docker compose -p \"$project\" --env-file \"$HOME/n8n-course/.env\" -f \"$HOME/n8n-course/compose.yml\" \"$@\"",
+    "}",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "lock",
+   "what": "n8n turn acquired",
+   "detail": ""
+  },
+  {
+   "kind": "box",
+   "line": 877,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w4-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 37.2,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    " \u280f Container n8n-course-runners-1                             Starting                                                                                                                                                 10.9s",
+    " \u280b Container n8n-course-runners-1                             Starting                                                                                                                                                 11.0s",
+    "[+] up 74/74",
+    " \u2714 Container n8n-course-runners-1                             Started                                                                                                                                                  11.0s",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 893,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w4-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 2.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "n8n-course-sandbox-runner-1-1   ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:1.3.4   \"/sbin/tini -- /usr/\u2026\"   sandbox-runner-1   13 seconds ago   Up 3 seconds                2375-2376/tcp, 8080/tcp",
+    "n8n-course-searxng-1            ghcr.io/searxng/searxng:latest                         \"/usr/local/searxng/\u2026\"   searxng            14 seconds ago   Up 12 seconds               8080/tcp",
+    "127.0.0.1:5678",
+    "2.41.5",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "n8n editor in a browser: create",
+   "detail": "{\"mode\": \"create\", \"waited_s\": 4, \"setup_screen\": true, \"owner_setup\": 200, \"create\": 200, \"list\": 200, \"names\": [\"Module 7 readiness\"], \"active\": [false], \"ok\": true}"
+  },
+  {
+   "kind": "box",
+   "line": 923,
+   "heading": "15. Save a blank workflow and confirm it persists",
+   "window": "w4-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 25.0,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "n8n-course-sandbox-runner-1-1   ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:1.3.4   \"/sbin/tini -- /usr/\u2026\"   sandbox-runner-1   11 seconds ago   Up 2 seconds               2375-2376/tcp, 8080/tcp",
+    "n8n-course-searxng-1            ghcr.io/searxng/searxng:latest                         \"/usr/local/searxng/\u2026\"   searxng            11 seconds ago   Up 10 seconds              8080/tcp",
+    "127.0.0.1:5678",
+    "2.41.5",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "n8n editor in a browser: verify",
+   "detail": "{\"mode\": \"verify\", \"waited_s\": 4, \"setup_screen\": false, \"login\": 200, \"list\": 200, \"names\": [\"Module 7 readiness\"], \"active\": [false], \"ok\": true}"
+  },
+  {
+   "kind": "reboot",
+   "what": "docker restart",
+   "detail": "systemd boots again; nothing in the stack restarts by itself"
+  },
+  {
+   "kind": "window",
+   "what": "w5-later-session",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin /bin/bash -i"
+  },
+  {
+   "kind": "observed",
+   "what": "docker.service after the restart",
+   "detail": "active"
+  },
+  {
+   "kind": "guide",
+   "what": "Later sessions",
+   "detail": "paste the step 13 helper box, then the step 14 start and check boxes"
+  },
+  {
+   "kind": "box",
+   "line": 848,
+   "heading": "13. Generate the n8n configuration",
+   "window": "w5-later-session",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  project=\"$(cat \"$HOME/n8n-course/.course-project\")\" || { printf 'HOLD: project record could not be read\\n' >&2; return 1; }",
+    "  case \"$project\" in ''|[!a-z0-9]*|*[!a-z0-9_-]*) printf 'HOLD: invalid recorded project name\\n' >&2; return 1 ;; esac",
+    "  docker compose -p \"$project\" --env-file \"$HOME/n8n-course/.env\" -f \"$HOME/n8n-course/compose.yml\" \"$@\"",
+    "}",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 877,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w5-later-session",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 9.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    " \u280f Container n8n-course-runners-1          Starting                                                                                                                                                                     0.9s",
+    " \u280b Container n8n-course-runners-1          Starting                                                                                                                                                                     1.0s",
+    "[+] up 6/6",
+    " \u2714 Container n8n-course-runners-1          Started                                                                                                                                                                      1.1s",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 893,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w5-later-session",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 2.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "n8n-course-sandbox-runner-1-1   ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:1.3.4   \"/sbin/tini -- /usr/\u2026\"   sandbox-runner-1   45 seconds ago   Up 2 seconds                2375-2376/tcp, 8080/tcp",
+    "n8n-course-searxng-1            ghcr.io/searxng/searxng:latest                         \"/usr/local/searxng/\u2026\"   searxng            45 seconds ago   Up 10 seconds               8080/tcp",
+    "127.0.0.1:5678",
+    "2.41.5",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "n8n editor in a browser: verify",
+   "detail": "{\"mode\": \"verify\", \"waited_s\": 4, \"setup_screen\": false, \"login\": 200, \"list\": 200, \"names\": [\"Module 7 readiness\"], \"active\": [false], \"ok\": true}"
+  },
+  {
+   "kind": "cleanup",
+   "what": "n8n stack stopped (volumes kept until the machine is removed)",
+   "detail": ""
+  }
+ ]
+}

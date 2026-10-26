@@ -1,0 +1,5 @@
+PASS: 2 faithful drafts clear every check
+PASS: 18 corrupted drafts are each rejected on the named check
+PASS: all 18 checks have at least one killing fixture
+
+CHECKER ADEQUACY PASS

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "scenario_id": "BG-AIRLIFT-01",
+  "flight_id": "BG-F17",
+  "origin": "Aster Airhead",
+  "destination": "Forward Support Base Kestrel",
+  "decision_at": "2026-10-15T05:00:00+02:00",
+  "manifest_closes_at": "2026-10-15T05:30:00+02:00",
+  "departs_at": "2026-10-15T06:00:00+02:00",
+  "next_confirmed_flight": null
+}

@@ -1,0 +1,559 @@
+{
+ "platform": "arch-arm64-substitute",
+ "guide": "arch-linux.md",
+ "machine": "aihb-lab-main-arch-arm-014100",
+ "outcome": "PASS",
+ "error": "",
+ "finished": "2026-10-04T01:43:09",
+ "boxes_passed": 22,
+ "boxes_failed": 0,
+ "rows": [
+  {
+   "kind": "substitute",
+   "what": "Arch Linux ARM (aarch64) with systemd",
+   "detail": "steps 10 to 15 and later sessions; git, python, curl, less, diffutils preinstalled as step 2 leaves them"
+  },
+  {
+   "kind": "window",
+   "what": "w1-n8n-check",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl /bin/bash -i"
+  },
+  {
+   "kind": "box",
+   "line": 570,
+   "heading": "10. Check Docker and the n8n destination",
+   "window": "w1-n8n-check",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "DESTINATION absent: /home/learner/n8n-course",
+    "DOCKER missing",
+    "DOCKER_HOST unset",
+    "DOCKER_CONTEXT unset",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 600,
+   "heading": "10. Check Docker and the n8n destination",
+   "window": "w1-n8n-check",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "else",
+    "  printf 'DOCKER missing\\n'",
+    "fi",
+    "DOCKER missing",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 620,
+   "heading": "11. Install Docker",
+   "window": "w1-n8n-check",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "docker-compose absent",
+    "containerd absent",
+    "runc absent",
+    "podman-docker absent",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 636,
+   "heading": "11. Install Docker",
+   "window": "w1-n8n-check",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 4.6,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "password",
+    "default answer [Y/n]"
+   ],
+   "note": "",
+   "tail": [
+    "(1/3) Creating system user accounts...",
+    "Creating group 'docker' with GID 968.",
+    "(2/3) Reloading system manager configuration...",
+    "(3/3) Arming ConditionNeedsUpdate...",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 654,
+   "heading": "12. Give your account Docker access",
+   "window": "w1-n8n-check",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  getent group docker >/dev/null || { sudo groupadd docker || return 1; }",
+    "  sudo usermod -aG docker \"$(id -un)\"",
+    "}",
+    "course_docker_access",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "relogin",
+   "what": "sign out and back in",
+   "detail": "fresh session: groups re-read from /etc/group"
+  },
+  {
+   "kind": "window",
+   "what": "w2-fresh-login",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl /bin/bash -i"
+  },
+  {
+   "kind": "box",
+   "line": 673,
+   "heading": "12. Give your account Docker access",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "password"
+   ],
+   "note": "",
+   "tail": [
+    "$ sudo systemctl start docker.service",
+    "[sudo] password for learner: ",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 687,
+   "heading": "12. Give your account Docker access",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Docker Compose version 5.5.1",
+    "CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES",
+    "DRIVER    VOLUME NAME",
+    "NAME                STATUS              CONFIG FILES",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 703,
+   "heading": "13. Generate the n8n configuration",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.6,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  printf 'REVIEW %s\\n' \"$N8N_REVIEW_SCRIPT\"",
+    "}",
+    "course_download_n8n",
+    "REVIEW /home/learner/n8n-installer-review.MX5XZk/get-n8n.sh",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 726,
+   "heading": "13. Generate the n8n configuration",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 3.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "scheduled input"
+   ],
+   "note": "",
+   "tail": [
+    "# user's environment (no docker, port taken, ...) leave it empty and no",
+    "# report is offered.",
+    "STEP=\"\"",
+    "/home/learner/n8n-installer-review.MX5XZk/get-n8n.sh",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 740,
+   "heading": "13. Generate the n8n configuration",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.6,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "\u2714 Created /home/learner/n8n-course/searxng-settings.yml",
+    "\u2714 Created /home/learner/n8n-course/.env (unique secrets generated)",
+    "Not starting (--no-start). When ready:",
+    "  docker compose -f /home/learner/n8n-course/compose.yml up -d",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 763,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  printf 'PORT_BOUND 127.0.0.1:5678:5678\\n'",
+    "}",
+    "course_bind_loopback",
+    "PORT_BOUND 127.0.0.1:5678:5678",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 794,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  printf 'PROJECT recorded: %s\\n' \"$project\"",
+    "}",
+    "course_n8n_identify",
+    "PROJECT recorded: n8n-course",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 829,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  project=\"$(cat \"$HOME/n8n-course/.course-project\")\" || { printf 'HOLD: could not read project record\\n' >&2; return 1; }",
+    "  case \"$project\" in ''|[!a-z0-9]*|*[!a-z0-9_-]*) printf 'HOLD: invalid recorded project name\\n' >&2; return 1 ;; esac",
+    "  docker compose -p \"$project\" --env-file \"$HOME/n8n-course/.env\" -f \"$HOME/n8n-course/compose.yml\" \"$@\"",
+    "}",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 856,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "$ ss -ltn 'sport = :5678'",
+    "State                        Recv-Q                        Send-Q                                               Local Address:Port                                                 Peer Address:Port                        ",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "lock",
+   "what": "n8n turn acquired",
+   "detail": ""
+  },
+  {
+   "kind": "box",
+   "line": 870,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 27.1,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    " \u2714 Container n8n-course-sandbox-api-1                         Healthy                                                                                                                                                   6.2s",
+    " \u2714 Container n8n-course-n8n-1                                 Started                                                                                                                                                   6.3s",
+    " \u2714 Container n8n-course-sandbox-runner-1-1                    Started                                                                                                                                                   6.2s",
+    " \u2714 Container n8n-course-runners-1                             Started                                                                                                                                                   6.3s",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 884,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.5,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "n8n-course-sandbox-runner-1-1   ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:1.3.4   \"/sbin/tini -- /usr/\u2026\"   sandbox-runner-1   8 seconds ago   Up 1 second                2375-2376/tcp, 8080/tcp",
+    "n8n-course-searxng-1            ghcr.io/searxng/searxng:latest                         \"/usr/local/searxng/\u2026\"   searxng            8 seconds ago   Up 7 seconds               8080/tcp",
+    "127.0.0.1:5678",
+    "2.41.5",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "n8n editor in a browser: create",
+   "detail": "{\"mode\": \"create\", \"waited_s\": 4, \"setup_screen\": true, \"owner_setup\": 200, \"create\": 200, \"list\": 200, \"names\": [\"Module 7 readiness\"], \"active\": [false], \"ok\": true}"
+  },
+  {
+   "kind": "box",
+   "line": 912,
+   "heading": "15. Save a blank workflow and confirm it persists",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 11.0,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    " \u2714 Container n8n-course-n8n-1              Removed                                                                                                                                                                      0.3s",
+    " \u2714 Container n8n-course-sandbox-api-1      Removed                                                                                                                                                                      0.1s",
+    " \u2714 Container n8n-course-sandbox-certs-1    Removed                                                                                                                                                                      0.0s",
+    " \u2714 Network n8n-course_default              Removed                                                                                                                                                                      0.1s",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 926,
+   "heading": "15. Save a blank workflow and confirm it persists",
+   "window": "w2-fresh-login",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 7.0,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "n8n-course-sandbox-runner-1-1   ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:1.3.4   \"/sbin/tini -- /usr/\u2026\"   sandbox-runner-1   6 seconds ago   Up Less than a second      2375-2376/tcp, 8080/tcp",
+    "n8n-course-searxng-1            ghcr.io/searxng/searxng:latest                         \"/usr/local/searxng/\u2026\"   searxng            6 seconds ago   Up 6 seconds               8080/tcp",
+    "127.0.0.1:5678",
+    "2.41.5",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "n8n editor in a browser: verify",
+   "detail": "{\"mode\": \"verify\", \"waited_s\": 4, \"setup_screen\": false, \"login\": 200, \"list\": 200, \"names\": [\"Module 7 readiness\"], \"active\": [false], \"ok\": true}"
+  },
+  {
+   "kind": "reboot",
+   "what": "docker restart",
+   "detail": "systemd boots again"
+  },
+  {
+   "kind": "observed",
+   "what": "docker.service after the restart",
+   "detail": "inactive"
+  },
+  {
+   "kind": "window",
+   "what": "w3-later-session",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl /bin/bash -i"
+  },
+  {
+   "kind": "guide",
+   "what": "Later sessions",
+   "detail": "start docker.service (step 12), then the step 14 helper, up -d, and inspect boxes"
+  },
+  {
+   "kind": "box",
+   "line": 673,
+   "heading": "12. Give your account Docker access",
+   "window": "w3-later-session",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.9,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "password"
+   ],
+   "note": "",
+   "tail": [
+    "$ sudo systemctl start docker.service",
+    "[sudo] password for learner: ",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 829,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w3-later-session",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  project=\"$(cat \"$HOME/n8n-course/.course-project\")\" || { printf 'HOLD: could not read project record\\n' >&2; return 1; }",
+    "  case \"$project\" in ''|[!a-z0-9]*|*[!a-z0-9_-]*) printf 'HOLD: invalid recorded project name\\n' >&2; return 1 ;; esac",
+    "  docker compose -p \"$project\" --env-file \"$HOME/n8n-course/.env\" -f \"$HOME/n8n-course/compose.yml\" \"$@\"",
+    "}",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 870,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w3-later-session",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 6.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    " \u2714 Container n8n-course-sandbox-api-1      Healthy                                                                                                                                                                      5.6s",
+    " \u2714 Container n8n-course-n8n-1              Started                                                                                                                                                                      0.1s",
+    " \u2714 Container n8n-course-sandbox-runner-1-1 Started                                                                                                                                                                      0.1s",
+    " \u2714 Container n8n-course-runners-1          Started                                                                                                                                                                      0.1s",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 884,
+   "heading": "14. Start n8n on this computer only",
+   "window": "w3-later-session",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.5,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "after restart; ",
+   "tail": [
+    "n8n-course-sandbox-runner-1-1   ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:1.3.4   \"/sbin/tini -- /usr/\u2026\"   sandbox-runner-1   31 seconds ago   Up 1 second                2375-2376/tcp, 8080/tcp",
+    "n8n-course-searxng-1            ghcr.io/searxng/searxng:latest                         \"/usr/local/searxng/\u2026\"   searxng            31 seconds ago   Up 7 seconds               8080/tcp",
+    "127.0.0.1:5678",
+    "2.41.5",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "n8n editor in a browser: verify",
+   "detail": "{\"mode\": \"verify\", \"waited_s\": 4, \"setup_screen\": false, \"login\": 200, \"list\": 200, \"names\": [\"Module 7 readiness\"], \"active\": [false], \"ok\": true}"
+  }
+ ]
+}

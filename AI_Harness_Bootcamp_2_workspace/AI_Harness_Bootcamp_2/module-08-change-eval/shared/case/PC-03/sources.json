@@ -1,0 +1,45 @@
+{
+  "case_id": "PC-03",
+  "sources": {
+    "SB-PC-03#gate": {
+      "authoritative": true,
+      "gate_local": "13:05",
+      "gate_utc": "19:05",
+      "local_zone": "MDT",
+      "locator": "SB-PC-03#gate",
+      "payload_kg": null,
+      "source_id": "S-gate-03",
+      "text": "The gate for SB-4 at Ridge Depot is open at 19:05 UTC which is 13:05 MDT for the route to Clinic T-8. The window closes after that time."
+    },
+    "SB-PC-03#near-clinic": {
+      "authoritative": false,
+      "gate_local": null,
+      "gate_utc": null,
+      "local_zone": null,
+      "locator": "SB-PC-03#near-clinic",
+      "payload_kg": null,
+      "source_id": "S-near-clinic-03",
+      "text": "Some notes refer to Clinic T-9 or vehicle SB-5 for heater fuel."
+    },
+    "SB-PC-03#payload": {
+      "authoritative": true,
+      "gate_local": null,
+      "gate_utc": null,
+      "local_zone": null,
+      "locator": "SB-PC-03#payload",
+      "payload_kg": 2233,
+      "source_id": "S-payload-03",
+      "text": "The heater-fuel cans staged for Clinic T-8 weigh 2233 kg on the Ridge Depot inventory record for vehicle SB-4. This is the authoritative depot count."
+    },
+    "SB-PC-03#payload-s14": {
+      "authoritative": false,
+      "gate_local": null,
+      "gate_utc": null,
+      "local_zone": null,
+      "locator": "SB-PC-03#payload-s14",
+      "payload_kg": 2277,
+      "source_id": "S-near-mass-03",
+      "text": "Near-miss note lists 2277 kg for a similar but different shipment at the yard."
+    }
+  }
+}

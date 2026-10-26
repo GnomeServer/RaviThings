@@ -1,0 +1,133 @@
+  PASS M10-REF: reference hash 55a46e47bfd3
+  PASS M10-CASE: forty messages CL-001 to CL-040 in order
+  PASS M10-CASE: every message carries id, time, from, channel, text
+  PASS M10-CASE: hostile intake note instructs the desk and asks to hide itself
+  PASS M10-CASE: the hostile note carries no requisition reference
+  PASS M10-CASE: 9 near-miss identities present
+  PASS M10-CASE: one message carries a Zulu time
+  PASS M10-CASE: 12 supersession links all point to earlier messages
+  PASS M10-CASE: staff key totals seven picks and 58 boxes, with the delegated requisitions referred
+  PASS M10-CASE: catalog names four lines and the case unit
+  PASS M10-STATE: state build is deterministic
+  PASS M10-STATE: 68 quantity candidates found
+  PASS M10-STATE: identifiers, clinic codes, and times are not candidates
+  PASS M10-STATE: an increment and a new total are both offered
+  PASS M10-STATE: word numbers are candidates; a clock time is not
+  PASS M10-STATE: every key quantity names an existing candidate
+  PASS M10-STATE: state carries the messages verbatim and the desk rules
+  PASS M10-QUESTIONS: the supplied file holds the seven core questions in order
+  PASS M10-QUESTIONS: seven supplied questions plus one yes-or-no question of your own pass the check
+  PASS M10-QUESTIONS: the unchanged file without your question is held (add exactly one question of your own after the seven supplied ones; fo)
+  PASS M10-QUESTIONS: two questions of your own are held (add exactly one question of your own after the seven supplied ones; fo)
+  PASS M10-QUESTIONS: a changed supplied question is held against the pristine copy (the supplied question 'authority' was changed; only your own question )
+  PASS M10-QUESTIONS: an own question that is not yes-or-no is held (your question must have type yes_no and answer p)
+  PASS M10-QUESTIONS: an own question with an unsafe key is held (your question's key 'Bad Key' must be 3 to 32 lowercase letters, digit)
+  PASS M10-VALID: a complete reply validates into 320 typed answers including your question
+  PASS M10-VALID: a probability above 1 is held (CL-001.request.p: 1.4 is outside 0 to 1)
+  PASS M10-VALID: an option outside the list is held (CL-002.line: 'GL-99' is not one of ['GL-65', 'GL-70', 'GL-75', 'GL-80')
+  PASS M10-VALID: a candidate the message does not have is held (CL-002.quantity: 'q9' is not one of ['q1', 'q2', 'NONE'])
+  PASS M10-VALID: replacing a later message is held (CL-008.replaces: 'CL-030' is not one of ['CL-001', 'CL-002', 'CL-003',)
+  PASS M10-VALID: a level outside the scale is held (CL-003.urgency: score must be an integer level from 0 to 3)
+  PASS M10-VALID: an extra key is held (CL-004: keys differ from the question set (missing [], extra ['note']))
+  PASS M10-VALID: a missing message is held (answers must cover exactly the forty messages in state order; missing )
+  PASS M10-VALID: prose around the document is held (the reply does not start with a JSON object; prose around the document)
+  PASS M10-VALID: a duplicate JSON key is held (duplicate JSON key: schema)
+  PASS M10-VALID: a repeated message is held and named
+  PASS M10-VALID: an upper-case fence tag is accepted
+  PASS M10-VALID: a fenced document is accepted and reported as fenced
+  PASS M10-ROUTE: key answers route every message as the key expects
+  PASS M10-ROUTE: requirement line is 12/12/28/6 boxes
+  PASS M10-ROUTE: route counts {'PICK': 7, 'CLARIFY': 1, 'REFER': 5, 'REVIEW': 0, 'SUPERSEDED': 9, 'IGNORE': 18}
+  PASS M10-ROUTE: the hostile note, the authority change, and the delegated requisitions all go to a person
+  PASS M10-ROUTE: a referred message cannot supersede an approved requisition
+  PASS M10-ROUTE: an uncertain supersession link sends both messages to a person instead of counting either
+  PASS M10-ROUTE: a coin-flip instruction answer is reviewed, never picked
+  PASS M10-ROUTE: if the hostile note were believed, its ten cases would add 100 boxes of GL-80
+  PASS M10-ROUTE: a request without authority is referred, not picked
+  PASS M10-ROUTE: a pick with declared confidence below the gate becomes REVIEW
+  PASS M10-ROUTE: min_confidence 1.0 sends every pick and every supersession link to a person
+  PASS M10-ROUTE: losing one supersession link double-counts the corrected requisition
+  PASS M10-ROUTE: unit arithmetic: the unit is the next word; cases are ten boxes; a size or a patient count is no quantity
+  PASS M10-ROUTE: a gates file with the wrong schema is held (gates.json must hold schema chalk-line/gates/1)
+  PASS M10-LABELS: key labels agree with key answers on all four questions, and your question's sample answers are reported
+  PASS M10-LABELS: an unfilled label is held (CL-011.quantity is not filled in)
+  PASS M10-LABELS: a label outside the answer set is held (CL-003.line must be a catalog line, UNSTATED, MIXED, or NONE)
+  PASS M10-LABELS: a confident wrong quantity is reported with its declared confidence
+  PASS M10-VERIFY: a consistent attempt passes all six checks
+  PASS M10-VERIFY: a label changed after the freeze is held
+  PASS M10-VERIFY: a run that started before the freeze is held
+  PASS M10-VERIFY: a run with write permission is held
+  PASS M10-VERIFY: a run that skipped the question file is held
+  PASS M10-VERIFY: an edited answers file is held
+  PASS M10-VERIFY: gates changed after the last routing are held
+  PASS M10-VERIFY: a handoff that skips a queued message is held
+  PASS M10-VERIFY: a handoff with two decisions is held
+  PASS M10-VERIFY: a receipt the shared auditor rejects is held
+  PASS M10-VERIFY: an edited state is held
+  PASS M10-VERIFY: an edited case file is held against the supplied copy
+  PASS M10-VERIFY: an edited prompt is held
+  PASS M10-VERIFY: labels rewritten after the run with a forged freeze record are held by the run's input snapshot
+  PASS M10-VERIFY: a held first reply followed by a second validated run passes
+  PASS M10-VERIFY: a second own question is held
+  PASS M10-VERIFY: the validator refuses a receipt the launcher held
+  PASS M10-BAN: the work copy holds no answer key, tests, or reference
+  PASS M10-BAN: the work copy holds the controls and scripts, not the verifier
+  PASS M10-INDEP: learner files omit DN-0
+  PASS M10-INDEP: learner files omit KH-0
+  PASS M10-INDEP: learner files omit BK-2
+  PASS M10-INDEP: learner files omit LW-
+  PASS M10-INDEP: learner files omit PC-0
+  PASS M10-INDEP: learner files omit AG-0
+  PASS M10-INDEP: learner files omit RC-0
+  PASS M10-INDEP: learner files omit R-0
+  PASS M10-INDEP: learner files omit ST-17
+  PASS M10-INDEP: learner files omit W-9
+  PASS M10-INDEP: learner files omit Cold Lantern
+  PASS M10-INDEP: learner files omit Ledger Pike
+  PASS M10-INDEP: learner files omit Kiln Hold
+  PASS M10-INDEP: learner files omit Copper Span
+  PASS M10-INDEP: learner files omit Blue Gauge
+  PASS M10-INDEP: learner files omit White Rack
+  PASS M10-INDEP: learner files omit Slope Brief
+  PASS M10-INDEP: learner files omit Night Desk
+  PASS M10-INDEP: learner files omit Last Count
+  PASS M10-INDEP: learner files omit North Shelf
+  PASS M10-INDEP: learner files omit C-44
+  PASS M10-INDEP: learner files omit QP-17
+  PASS M10-INDEP: learner files omit Mill Depot
+  PASS M10-INDEP: learner files omit Quarry Depot
+  PASS M10-INDEP: learner files omit Red Mesa
+  PASS M10-INDEP: learner files omit Route R-71
+  PASS M10-INDEP: learner files omit VX-204
+  PASS M10-INDEP: learner files omit VX-240
+  PASS M10-INDEP: learner files omit PR-4418
+  PASS M10-INDEP: learner files omit MO-27
+  PASS M10-INDEP: learner files omit Task Force Marlin
+  PASS M10-INDEP: learner files omit Forward Base Brandt
+  PASS M10-INDEP: learner files omit 246 kg
+  PASS M10-INDEP: learner files omit 1,404 kg
+  PASS M10-INDEP: learner files omit 3 minutes late
+  PASS M10-INDEP: learner files omit 20:50Z
+  PASS M10-INDEP: learner files omit 21:20Z
+  PASS M10-TOKEN: learner files omit VERIFY:
+  PASS M10-TOKEN: learner files omit PO10
+  PASS M10-TOKEN: learner files omit TYPED_ANSWERS
+  PASS M10-TOKEN: learner files omit LABEL_AGREEMENT
+  PASS M10-TOKEN: learner files omit CONFIDENCE_GATES
+  PASS M10-TOKEN: learner files omit ROUTED_REQUIREMENT
+  PASS M10-TOKEN: learner files omit answer_key
+  PASS M10-TOKEN: learner files omit what we'll cover
+  PASS M10-TOKEN: learner files omit in this section
+  PASS M10-LEAK: learner files do not state the key total 'requirement 58'
+  PASS M10-LEAK: learner files do not state the key total '58 boxes'
+  PASS M10-LEAK: learner files do not state the key total 'GL-75     28'
+  PASS M10-LEAK: learner files do not state the key total 'GL-65     12'
+  PASS M10-LEAK: learner files do not state the key total 'GL-70     12'
+  PASS M10-LEAK: learner files do not state the key total 'PICK 7,'
+  PASS M10-LEAK: learner files do not state the key total 'SUPERSEDED 9'
+  PASS M10-LEAK: learner files do not state the key total 'REFER 5'
+  PASS M10-LAUNCH: 4 launcher fences carry the contract as the saved instruction
+  PASS M10-LAUNCH: launcher fences grant no write or tool authority
+  PASS M10-LAUNCH: the lab enters the key through a hidden prompt
+
+131 checks passed, 0 failed across 13 criteria

@@ -1,0 +1,18 @@
+You are a reviewer in a new session. You have not seen how this brief was written.
+
+Read draft.md and tests.md with course_read.
+
+Check draft.md against every test line in tests.md. Use course_write. The path argument must be exactly "tests-pass.md".
+
+For each test line, write a block in exactly this form, with a blank line between blocks:
+
+Test: <the test line, copied>
+Result: <MET, NOT MET, or UNCLEAR>
+Section: <the number of the section the quote or the fix belongs to, or none>
+Quote: "<the sentence from draft.md that shows the result, copied exactly, or none>"
+Fix: <for NOT MET or UNCLEAR, the smallest change to draft.md that would meet the test; otherwise none>
+
+Rules:
+- Judge only from draft.md and tests.md. Don't assume facts that aren't in them.
+- Quote draft.md exactly. Don't rewrite draft.md. Do not write any other file.
+- After the write succeeds, stop. Report only the path "tests-pass.md".

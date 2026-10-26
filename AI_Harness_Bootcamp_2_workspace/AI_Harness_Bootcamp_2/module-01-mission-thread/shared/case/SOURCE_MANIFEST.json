@@ -1,0 +1,88 @@
+{
+  "case_id": "COLD-LANTERN-PRACTICE",
+  "as_of": "2026-10-06 14:05 MDT",
+  "fictional": true,
+  "sources": [
+    {
+      "id": "S01",
+      "file": "S01_MO-27_r4.md",
+      "issuer": "North Basin Mission Control",
+      "version": "r4",
+      "effective": "2026-10-06 13:50 MDT",
+      "authorized_use": "mission requirement, route, deadline, step durations, readiness conditions",
+      "sha256": "053d417ec0f7af34e86aeda8a2b9c533ad7e17488f4c184a56d07ddfec113773"
+    },
+    {
+      "id": "S02",
+      "file": "S02_WMS_RCPT-8821.md",
+      "issuer": "Red Mesa Warehouse Management",
+      "version": "RCPT-8821",
+      "effective": "2026-10-06 13:42 MDT",
+      "authorized_use": "custody, scanned tote and lot identity, kit count, gross mass",
+      "sha256": "afcf4beac462c4b897b5bb1fd3a7f5d992f5e60b6da29b7286ad25fb1f8307ea"
+    },
+    {
+      "id": "S03",
+      "file": "S03_QA_RELEASE-661.md",
+      "issuer": "North Basin Quality Office",
+      "version": "QA-661",
+      "effective": "2026-10-06 13:48 MDT",
+      "authorized_use": "quality release and quarantine status",
+      "sha256": "706ecb5213f307769536a49ca82bee5e011148e29c1c842b6c9a8d005e8c03d2"
+    },
+    {
+      "id": "S04",
+      "file": "S04_FLEET_VX-204_r7.md",
+      "issuer": "North Basin Fleet Engineering",
+      "version": "r7",
+      "effective": "2026-10-01 00:00 MDT",
+      "authorized_use": "VX-204 payload and required rack",
+      "sha256": "89bedc3e41ec2f459a9d9d2411053fdf436e818f26a21f7ea9e0eb72aadf59db"
+    },
+    {
+      "id": "S05",
+      "file": "S05_R71_BULLETINS.md",
+      "issuer": "North Basin Road Authority",
+      "version": "v5 current",
+      "effective": "2026-10-06 19:55Z",
+      "authorized_use": "R-71 North Gate closure and supersession",
+      "sha256": "3bc88cd0ef99852f3c204bf10ddcfc066c437aae44131d67a999464f7fef5f0a"
+    },
+    {
+      "id": "S06",
+      "file": "S06_PERMIT_PR-4418.md",
+      "issuer": "North Basin Movement Registry",
+      "version": "snapshot 14:02",
+      "effective": "2026-10-06 14:02 MDT",
+      "authorized_use": "permit intake and current registry status",
+      "sha256": "4db39cbb62252bc9efed7c5003e8b37deb36b4266e1c400682b7a6a3e270c43f"
+    },
+    {
+      "id": "S07",
+      "file": "S07_VENDOR_VX-240.md",
+      "issuer": "Alpine Bodyworks",
+      "version": "2026-09-12",
+      "effective": "2026-09-12",
+      "authorized_use": "VX-240 packing dimensions only",
+      "sha256": "f45e4effca93ccf821af69f17b82bbab9dc45957f86ce48639c07a897728032d"
+    },
+    {
+      "id": "S08",
+      "file": "S08_R17_COMMUNITY_UPDATE.md",
+      "issuer": "Pine County Community Desk",
+      "version": "2026-10-06 14:00",
+      "effective": "2026-10-06 14:00 MDT",
+      "authorized_use": "R-17 community status only; no authority for R-71",
+      "sha256": "9236d0b9ca90979ced0c236c693bb21fd16a67524685ee09798ae48bdecca862"
+    },
+    {
+      "id": "S09",
+      "file": "S09_AI_DISPATCH_DRAFT.md",
+      "issuer": "AI producer",
+      "version": "draft 14:05",
+      "effective": "2026-10-06 14:05 MDT",
+      "authorized_use": "none; output under inspection",
+      "sha256": "cf866721a1134e0f9afdb653128451b187b81368d6ff8627bddf1cc2efb760a9"
+    }
+  ]
+}

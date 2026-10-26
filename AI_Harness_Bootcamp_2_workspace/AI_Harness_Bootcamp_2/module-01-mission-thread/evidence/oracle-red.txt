@@ -1,0 +1,92 @@
+PASS 21
+  PASS M1-REF: reference hash 048e0cf4b0b83525e3966bc66f4640021d26bd4b5166f1e462bbb8ad7f09e6dd
+  PASS M1-05: learner files omit internal token PO-01
+  PASS M1-05: learner files omit internal token SOURCE_EVIDENCE
+  PASS M1-05: learner files omit internal token DISCERNMENT_RESULT
+  PASS M1-05: learner files omit internal token STANDING_RULE
+  PASS M1-05: learner files omit internal token M1-29
+  PASS M1-05: learner files omit internal token oracle criterion
+  PASS M1-03: no out-of-scope phrase real route
+  PASS M1-03: no out-of-scope phrase dispatch a real
+  PASS M1-03: no out-of-scope phrase legal advice
+  PASS M1-03: no out-of-scope phrase clinical advice
+  PASS M1-ANSWER: no protected conclusion leaked in README.md
+  PASS M1-ANSWER: no protected conclusion leaked in MODULE_01_LAB.md
+  PASS M1-ANSWER: no protected conclusion leaked in MISSION_THREAD.md
+  PASS M1-ANSWER: no protected conclusion leaked in ACCESSIBILITY.md
+  PASS M1-ANSWER: no protected conclusion leaked in WHEN_EVIDENCE_BREAKS.md
+  PASS M1-ANSWER: no protected conclusion leaked in NEXT_MODULE.md
+  PASS M1-ANSWER: no protected conclusion leaked in PUBLIC_RUBRIC.md
+  PASS M1-ANSWER: no protected conclusion leaked in REQUEST.md
+  PASS M1-ANSWER: no protected conclusion leaked in AI_DISPATCH_BRIEF.md
+  PASS M1-ANSWER: no protected conclusion leaked in SEALED_CHANGE.md
+FAIL 68
+  FAIL M1-01: start exists
+  FAIL M1-01: lab exists
+  FAIL M1-01: orientation exists
+  FAIL M1-01: accessibility exists
+  FAIL M1-01: troubleshooting exists
+  FAIL M1-01: handoff exists
+  FAIL M1-01: runbook exists
+  FAIL M1-01: rubric exists
+  FAIL M1-01: custody exists
+  FAIL M1-01: request exists
+  FAIL M1-01: brief exists
+  FAIL M1-01: manifest exists
+  FAIL M1-01: change exists
+  FAIL M1-01: calculator exists
+  FAIL M1-01: validator exists
+  FAIL M1-01: inventory exists
+  FAIL M1-01: exactly nine baseline source files
+  FAIL M1-02: practice case identity
+  FAIL M1-02: manifest has nine baseline entries
+  FAIL M1-06: lab includes Requirement defined
+  FAIL M1-06: lab includes Cargo received
+  FAIL M1-06: lab includes Cargo released
+  FAIL M1-06: lab includes Vehicle made ready
+  FAIL M1-06: lab includes Movement authorized
+  FAIL M1-06: lab includes Route window met
+  FAIL M1-06: lab includes Cargo delivered
+  FAIL M1-06: lab includes Usable effect confirmed
+  FAIL M1-06: lab includes SOURCE FACT
+  FAIL M1-06: lab includes CALCULATION
+  FAIL M1-06: lab includes INFERENCE
+  FAIL M1-06: lab includes DECISION
+  FAIL M1-06: lab includes UNSUPPORTED
+  FAIL M1-06: lab includes identity
+  FAIL M1-06: lab includes authority
+  FAIL M1-06: lab includes time
+  FAIL M1-06: lab includes quantity
+  FAIL M1-06: lab includes condition
+  FAIL M1-06: lab includes dependency
+  FAIL M1-06: lab includes handoff
+  FAIL M1-06: lab includes uncertainty
+  FAIL M1-06: lab includes ACCEPT
+  FAIL M1-06: lab includes REVISE
+  FAIL M1-06: lab includes REJECT
+  FAIL M1-06: lab includes HOLD
+  FAIL M1-08: recursive stop rule
+  FAIL M1-16: producer self-review excluded
+  FAIL M1-19: baseline frozen before change
+  FAIL M1-15: source packet contains challenge VX-204
+  FAIL M1-15: source packet contains challenge VX-240
+  FAIL M1-15: source packet contains challenge R-71
+  FAIL M1-15: source packet contains challenge R-17
+  FAIL M1-15: source packet contains challenge 20:50Z
+  FAIL M1-15: source packet contains challenge 21:30Z
+  FAIL M1-15: source packet contains challenge PENDING
+  FAIL M1-15: source packet contains challenge accepted for processing
+  FAIL M1-15: source packet contains challenge SYSTEM OVERRIDE
+  FAIL M1-15: source packet contains challenge CR-19
+  FAIL M1-15: source packet contains challenge CR-20
+  FAIL M1-15: source packet contains challenge 84 kg
+  FAIL M1-03: fictional class-only boundary
+  FAIL M1-18: material misses block passing
+  FAIL M1-23: visible/protected separation
+  FAIL M1-26: coaching limits
+  FAIL M1-24: accessibility fails closed
+  FAIL M1-28: handoff supports independent reconstruction
+  FAIL M1-15: source text never becomes instructions
+  FAIL M1-15: indirect prompt injection is visible
+  FAIL M1-16: AI self-check prohibited
+EXIT=1

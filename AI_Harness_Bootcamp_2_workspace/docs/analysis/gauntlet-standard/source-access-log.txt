@@ -1,0 +1,17 @@
+Anthropic	200	https://anthropic.skilljar.com/ai-fluency-framework-foundations
+Google Professional	200	https://grow.google/ai-professional/
+Google Essentials	200	https://grow.google/ai-essentials/
+Microsoft workplace	200	https://learn.microsoft.com/en-us/training/paths/draft-analyze-present-microsoft-365-copilot/
+Microsoft Agent Day	200	https://learn.microsoft.com/en-us/training/paths/agents-online-workshop/
+Microsoft Architect	200	https://learn.microsoft.com/en-us/training/paths/architect-agentic-ai-business-solutions/
+Salesforce	200	https://trailhead.salesforce.com/content/learn/trails/become-an-agentblazer-champion-2026
+Hugging Face	200	https://huggingface.co/learn/agents-course/unit0/introduction
+DLAI	ERROR	HTTPError: HTTP Error 308: Permanent Redirect
+OpenAI	200	https://developers.openai.com/api/docs/guides/evals
+NIST RMF	200	https://www.nist.gov/itl/ai-risk-management-framework
+EU	200	https://digital-strategy.ec.europa.eu/en/faqs/ai-literacy-questions-answers
+DigComp	200	https://joint-research-centre.ec.europa.eu/projects-and-activities/education-and-training/digital-transformation-education/digital-competence-framework-digcomp/digcomp-30_en
+UNESCO	200	https://www.unesco.org/en/articles/ai-competency-framework-teachers
+NICE	200	https://www.nist.gov/itl/applied-cybersecurity/nice/nice-framework-resource-center
+FAA	200	https://www.faa.gov/training_testing/testing/acs
+LTEM	200	https://www.worklearning.com/ltem/

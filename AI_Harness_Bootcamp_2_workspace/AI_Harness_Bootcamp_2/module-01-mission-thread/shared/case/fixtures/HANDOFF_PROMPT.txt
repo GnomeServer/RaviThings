@@ -1,0 +1,36 @@
+You are writing a class handoff. You have not been in any earlier chat.
+
+Read these files with course_read before you write:
+- changed-verdict.md
+- changed-brief.md
+- changed-thread-ledger.csv
+- challenge-matrix.md
+- baseline-verdict.md
+- REVEALED_CHANGE.md
+- every file under inbox/
+
+Use course_write. The path argument must be exactly "handoff.md".
+
+Fill these labels from the files you read. Put each label on its own line. Do not invent a verdict. The current verdict must match changed-verdict.md.
+
+# Module 1 handoff
+
+Question reviewed:
+Exact entities and as-of time:
+Current verdict:
+Eight-step thread location:
+Material traced claim:
+Sources of record:
+Rejected sources and reasons:
+Baseline-to-change delta:
+Current unresolved condition:
+Standing rule:
+What the next person should inspect first:
+
+Rules:
+- After "Current verdict:", write exactly one of ACCEPT, REVISE, REJECT, or HOLD, the same word as in changed-verdict.md.
+- Do not add a route, a permit decision, or a delivery that those files do not record.
+- Do not treat an expected arrival as a completed delivery.
+- This is a fictional class case. Do not plan, authorize, or describe a real movement.
+- Do not write any other file.
+- After the write succeeds, stop. Report only the path "handoff.md".

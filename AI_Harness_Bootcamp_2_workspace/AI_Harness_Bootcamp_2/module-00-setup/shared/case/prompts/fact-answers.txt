@@ -1,0 +1,16 @@
+You are answering questions in a new session. You have not seen the document these questions came from.
+
+Read questions.md and every file in sources/ with course_read.{{CHANGE}}
+
+Answer each question from the source files alone. Use course_write. The path argument must be exactly "fact-answers.md".
+
+For each question, write a block in exactly this form, with a blank line between blocks:
+
+Q<number>
+Answer: <the answer the sources give, or NOT IN SOURCES>
+Source: <the file name and the line you used, copied exactly, or none>
+
+Rules:
+- Use only the files you were told to read. If they don't answer a question, write NOT IN SOURCES. Don't guess.
+- Keep the same Q numbers. Do not write any other file.
+- After the write succeeds, stop. Report only the path "fact-answers.md".

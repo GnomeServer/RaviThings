@@ -1,0 +1,22 @@
+You are planning a status brief. You have not been in any earlier chat.
+
+Read these files with course_read: REQUEST.md, brief.md, tests.md, STYLE.md, and every file in sources/.
+
+Propose an outline. Use course_write. The path argument must be exactly "outline-proposed.md".
+
+Write the outline in exactly this form:
+
+# <title of the brief>
+
+## 1. <section title>
+Job: <what this section must do for the reader, in one sentence>
+Facts: <the source facts this section may use, each followed by its file, for example "27 water-treatment kits on hand in pen 4 (S2)">
+Words: <a whole number>
+
+Rules:
+- Plan 5 or 6 sections, numbered 1, 2, 3, and so on. Their Words must add up to between 600 and 900.
+- Size each section's Words to the facts it has: about 20 words for each fact, plus room to explain any fact the reader could misread. A section with few facts gets few words.
+- List only facts that appear in sources/. Don't add a fact, a time, a vehicle, a date, or a promise the sources don't contain.
+- Give one section the job of saying what the clinic must not do yet. End with a section for paperwork questions and the contact.
+- Do not write the brief itself. Do not write any other file.
+- After the write succeeds, stop. Report only the path "outline-proposed.md".

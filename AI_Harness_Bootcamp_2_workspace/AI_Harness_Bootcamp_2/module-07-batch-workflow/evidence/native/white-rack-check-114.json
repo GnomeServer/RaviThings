@@ -1,0 +1,22 @@
+[
+  {
+    "mode": "file-identity",
+    "result": "HOLD",
+    "reason": "Files do not match the retained original expected_sha256.",
+    "baseline_name": "tampered-baseline-v3.json",
+    "actual_name": "tampered-baseline-v3.json",
+    "baseline_size": 15367,
+    "actual_size": 15367,
+    "baseline_sha256": "7afdc2896ff4df5eb418739494df0ae636da63d17f6f6f9a9f54210c43788e7e",
+    "actual_sha256": "7afdc2896ff4df5eb418739494df0ae636da63d17f6f6f9a9f54210c43788e7e",
+    "expected_sha256": "3d02aef9cb8da98a61e992609375fd91b0fc5d8b7d9e903e9f681f354ccc67df",
+    "identity_check": "mismatch",
+    "raw_byte_equal": true,
+    "baseline_row_count": null,
+    "actual_row_count": null,
+    "row_count_checked": 0,
+    "changed_ids": "[]",
+    "changed_count": 0,
+    "unchanged_count": 0
+  }
+]

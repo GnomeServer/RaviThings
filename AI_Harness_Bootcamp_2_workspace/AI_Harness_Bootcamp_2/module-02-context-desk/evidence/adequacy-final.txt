@@ -1,0 +1,146 @@
+PASS 127
+  PASS M2-REF: reference hash 57f7c667a40b6dd0aa4e6e5bdad264c93d6977f9cfa5b1bc21dfaae20423ca80
+  PASS M2-01: start exists
+  PASS M2-01: lab exists
+  PASS M2-01: accessibility exists
+  PASS M2-01: handoff exists
+  PASS M2-01: runbook exists
+  PASS M2-01: rubric exists
+  PASS M2-01: custody exists
+  PASS M2-01: request exists
+  PASS M2-01: ticket exists
+  PASS M2-01: crate exists
+  PASS M2-01: saved exists
+  PASS M2-01: guard exists
+  PASS M2-01: reference exists
+  PASS M2-01: gauntlet exists
+  PASS M2-01: verdict exists
+  PASS M2-LINK: start links lab
+  PASS M2-LINK: start links accessibility
+  PASS M2-LINK: start links rubric
+  PASS M2-LINK: README.md -> shared/MODULE_02_LAB.md
+  PASS M2-LINK: README.md -> assessment/PUBLIC_RUBRIC.md
+  PASS M2-LINK: README.md -> shared/ACCESSIBILITY.md
+  PASS M2-LINK: README.md -> facilitator/RUNBOOK.md
+  PASS M2-LINK: README.md -> assessment/CUSTODY_CONTRACT.md
+  PASS M2-LINK: README.md -> reference/REFERENCE.md
+  PASS M2-LINK: README.md -> reference/GAUNTLET_PROMPT.md
+  PASS M2-LINK: shared/MODULE_02_LAB.md -> case/REQUEST.md
+  PASS M2-LINK: shared/MODULE_02_LAB.md -> case/sources/RCPT-19_YARD_TICKET.md
+  PASS M2-LINK: shared/MODULE_02_LAB.md -> case/sources/V18_CRATE_NOTE.md
+  PASS M2-LINK: shared/MODULE_02_LAB.md -> controls/SAVED_INSTRUCTION.md
+  PASS M2-LINK: shared/MODULE_02_LAB.md -> NEXT_MODULE.md
+  PASS M2-RULE: saved instruction contains source text as data
+  PASS M2-LAB: lab includes Direction:
+  PASS M2-LAB: lab includes Sources:
+  PASS M2-LAB: lab includes Saved instruction:
+  PASS M2-LAB: lab includes Guard:
+  PASS M2-LAB: lab includes Evidence:
+  PASS M2-LAB: lab includes the crate note is data
+  PASS M2-LAB: lab includes RELOAD.md
+  PASS M2-LAB: lab includes paste
+  PASS M2-GUARD: guard accepts yard ticket
+  PASS M2-GUARD: guard rejects vendor crate note
+  PASS M2-INDEP: learner files omit S01_
+  PASS M2-INDEP: learner files omit S02_
+  PASS M2-INDEP: learner files omit S03_
+  PASS M2-INDEP: learner files omit S04_
+  PASS M2-INDEP: learner files omit S05_
+  PASS M2-INDEP: learner files omit S06_
+  PASS M2-INDEP: learner files omit S07_
+  PASS M2-INDEP: learner files omit S08_
+  PASS M2-INDEP: learner files omit S09_
+  PASS M2-INDEP: learner files omit FIRST_RESULT
+  PASS M2-INDEP: learner files omit MIN_SCREEN
+  PASS M2-INDEP: learner files omit INTERNAL_ARTIFACT
+  PASS M2-INDEP: learner files omit PO00_RESULT
+  PASS M2-INDEP: learner files omit SOURCE_EVIDENCE
+  PASS M2-INDEP: learner files omit DISCERNMENT_RESULT
+  PASS M2-INDEP: learner files omit STANDING_RULE
+  PASS M2-INDEP: learner files omit PO01_RESULT
+  PASS M2-INDEP: learner files omit RELEASE_DECISION
+  PASS M2-INDEP: learner files omit AUTHORITY_BOUNDARY
+  PASS M2-INDEP: learner files omit COMPOSED_NEGATIVE
+  PASS M2-INDEP: learner files omit REVOCATION_RESULT
+  PASS M2-INDEP: learner files omit PO03_RESULT
+  PASS M2-INDEP: learner files omit LOCALIZATION_RESULT
+  PASS M2-INDEP: learner files omit RECOVERY_RESULT
+  PASS M2-INDEP: learner files omit PO04_RESULT
+  PASS M2-INDEP: learner files omit SAMPLE_MANIFEST
+  PASS M2-INDEP: learner files omit PREDICATE_SPEC
+  PASS M2-INDEP: learner files omit PROTECTED_CONTROL_RESULT
+  PASS M2-INDEP: learner files omit PO05_RESULT
+  PASS M2-INDEP: learner files omit FIXED_BASELINE
+  PASS M2-INDEP: learner files omit EXCEPTION_RULE
+  PASS M2-INDEP: learner files omit DETERMINISTIC_DELTA
+  PASS M2-INDEP: learner files omit CONFIG_ID
+  PASS M2-INDEP: learner files omit RESTORE_ACTION
+  PASS M2-INDEP: learner files omit PO06_RESULT
+  PASS M2-INDEP: learner files omit PRE_RESULT_POLICY
+  PASS M2-INDEP: learner files omit CHANGE_DECISION
+  PASS M2-INDEP: learner files omit COST_PROXY
+  PASS M2-INDEP: learner files omit RESTORED_BASELINE
+  PASS M2-INDEP: learner files omit PO07_RESULT
+  PASS M2-INDEP: learner files omit RUNNABLE_PACKAGE
+  PASS M2-INDEP: learner files omit PO08_RESULT
+  PASS M2-INDEP: learner files omit QUALIFICATION_RESULT
+  PASS M2-BAN: learner scan omits 246 kg
+  PASS M2-BAN: no protected conclusion leaked in README.md
+  PASS M2-BAN: no protected conclusion leaked in MODULE_02_LAB.md
+  PASS M2-BAN: no protected conclusion leaked in ACCESSIBILITY.md
+  PASS M2-BAN: no protected conclusion leaked in NEXT_MODULE.md
+  PASS M2-BAN: no protected conclusion leaked in PUBLIC_RUBRIC.md
+  PASS M2-BAN: no protected conclusion leaked in REQUEST.md
+  PASS M2-BAN: no protected conclusion leaked in RCPT-19_YARD_TICKET.md
+  PASS M2-BAN: no protected conclusion leaked in V18_CRATE_NOTE.md
+  PASS M2-BAN: no protected conclusion leaked in SAVED_INSTRUCTION.md
+  PASS M2-BAN: learner scan omits 1,404 kg
+  PASS M2-BAN: no protected conclusion leaked in README.md
+  PASS M2-BAN: no protected conclusion leaked in MODULE_02_LAB.md
+  PASS M2-BAN: no protected conclusion leaked in ACCESSIBILITY.md
+  PASS M2-BAN: no protected conclusion leaked in NEXT_MODULE.md
+  PASS M2-BAN: no protected conclusion leaked in PUBLIC_RUBRIC.md
+  PASS M2-BAN: no protected conclusion leaked in REQUEST.md
+  PASS M2-BAN: no protected conclusion leaked in RCPT-19_YARD_TICKET.md
+  PASS M2-BAN: no protected conclusion leaked in V18_CRATE_NOTE.md
+  PASS M2-BAN: no protected conclusion leaked in SAVED_INSTRUCTION.md
+  PASS M2-BAN: learner scan omits 3 minutes late
+  PASS M2-BAN: no protected conclusion leaked in README.md
+  PASS M2-BAN: no protected conclusion leaked in MODULE_02_LAB.md
+  PASS M2-BAN: no protected conclusion leaked in ACCESSIBILITY.md
+  PASS M2-BAN: no protected conclusion leaked in NEXT_MODULE.md
+  PASS M2-BAN: no protected conclusion leaked in PUBLIC_RUBRIC.md
+  PASS M2-BAN: no protected conclusion leaked in REQUEST.md
+  PASS M2-BAN: no protected conclusion leaked in RCPT-19_YARD_TICKET.md
+  PASS M2-BAN: no protected conclusion leaked in V18_CRATE_NOTE.md
+  PASS M2-BAN: no protected conclusion leaked in SAVED_INSTRUCTION.md
+  PASS M2-TOKEN: learner scan omits VERIFY:
+  PASS M2-TOKEN: learner scan omits CUSTODY:
+  PASS M2-TOKEN: learner scan omits PO0
+  PASS M2-SCOPE: fictional class-only boundary
+  PASS M2-SCOPE: no real dispatch language
+  PASS M2-18: material misses block passing
+  PASS M2-23: visible/protected separation
+  PASS M2-23: deciding guard is protected
+  PASS M2-26: coaching limits
+  PASS M2-24: accessibility fails closed
+  PASS M2-28: handoff supports independent reconstruction
+  PASS M2-CODE: guard.py compiles
+FAIL 0
+  killed M2-REF flip first hex digit of REFERENCE.sha256
+  killed M2-01 delete the Module 2 lab
+  killed M2-LINK remove the start-page lab link
+  killed M2-RULE delete source text as data from the saved instruction
+  killed M2-LAB delete RELOAD.md from the lab
+  killed M2-GUARD force guard to accept every file
+  killed M2-INDEP leak S07_ into README.md
+  killed M2-BAN leak 246 kg into README.md
+  killed M2-TOKEN leak VERIFY: into README.md
+  killed M2-SCOPE add out-of-scope dispatch phrase to README.md
+  killed M2-18 delete hard gate from the rubric
+  killed M2-23 delete producer cannot edit from custody
+  killed M2-26 delete may not from the runbook
+  killed M2-24 delete HOLD/hold from accessibility
+  killed M2-28 delete coaching from the handoff
+  killed M2-CODE break guard.py so py_compile fails
+PASS: 16 mutations, 0 survivors

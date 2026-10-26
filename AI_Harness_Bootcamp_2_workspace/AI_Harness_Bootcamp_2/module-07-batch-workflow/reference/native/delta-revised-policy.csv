@@ -1,0 +1,5 @@
+lot,before_route,before_status,after_route,after_status
+LW-28,hold,OPEN,reject,NOT_AUTHORIZED
+LW-41,hold,OPEN,reject,NOT_AUTHORIZED
+LW-44,hold,OPEN,reject,NOT_AUTHORIZED
+LW-60,hold,OPEN,reject,NOT_AUTHORIZED

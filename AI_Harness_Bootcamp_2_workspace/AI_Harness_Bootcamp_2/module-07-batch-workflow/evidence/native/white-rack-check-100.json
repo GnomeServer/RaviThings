@@ -1,0 +1,22 @@
+[
+  {
+    "mode": "predicted-change",
+    "result": "HOLD",
+    "reason": "Unpredicted serialized change for \"LW-01\".",
+    "baseline_name": "white-rack-65.csv",
+    "actual_name": "unpredicted.csv",
+    "baseline_size": 1389,
+    "actual_size": 1424,
+    "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+    "actual_sha256": "393c53194acdb83d41def888f6ce79b6b4bd7390cf11def2486b3f48cf442c9a",
+    "expected_sha256": "",
+    "identity_check": "not_requested",
+    "raw_byte_equal": false,
+    "baseline_row_count": 80,
+    "actual_row_count": 80,
+    "row_count_checked": 80,
+    "changed_ids": "[\"LW-01\",\"LW-12\",\"LW-28\",\"LW-41\"]",
+    "changed_count": 4,
+    "unchanged_count": 76
+  }
+]

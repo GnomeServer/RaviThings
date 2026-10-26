@@ -1,0 +1,22 @@
+[
+  {
+    "mode": "predicted-change",
+    "result": "PASS",
+    "reason": "All comparison requirements satisfied.",
+    "baseline_name": "white-rack-80.csv",
+    "actual_name": "white-rack-81.csv",
+    "baseline_size": 1388,
+    "actual_size": 1436,
+    "baseline_sha256": "0934259bd0cc6ea8f4fb7e60e6a91d15165c992b734f8e2ca284e2e64909974e",
+    "actual_sha256": "90c5ab24f736bf3c2a6b724df408d9476ddf8e085c88e83b59def2273bb5f206",
+    "expected_sha256": "",
+    "identity_check": "not_requested",
+    "raw_byte_equal": false,
+    "baseline_row_count": 80,
+    "actual_row_count": 80,
+    "row_count_checked": 80,
+    "changed_ids": "[\"LW-28\",\"LW-41\",\"LW-44\",\"LW-60\"]",
+    "changed_count": 4,
+    "unchanged_count": 76
+  }
+]

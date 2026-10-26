@@ -1,0 +1,19 @@
+{
+  "movement": "Chalk Line",
+  "commodity": "sterile surgical gloves",
+  "origin": "Ferry Depot",
+  "destination": "Clinic K-3",
+  "vehicle": "CL-9",
+  "run": "15:00 MDT, 8 October 2026",
+  "intake_closes": "14:00 MDT",
+  "unit_of_issue": "box of 50 pairs",
+  "case_means": "10 boxes",
+  "requisition_authority": "Clinic K-3 administrative officer (Ferreira)",
+  "requisition_reference": "K3-REQ-nnn",
+  "lines": [
+    {"line": "GL-65", "size": "6.5"},
+    {"line": "GL-70", "size": "7.0"},
+    {"line": "GL-75", "size": "7.5"},
+    {"line": "GL-80", "size": "8.0"}
+  ]
+}

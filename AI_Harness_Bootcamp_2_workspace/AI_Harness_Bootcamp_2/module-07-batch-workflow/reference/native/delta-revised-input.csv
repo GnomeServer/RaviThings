@@ -1,0 +1,4 @@
+lot,before_route,before_status,after_route,after_status
+LW-12,hold,OPEN,pass,READY
+LW-44,pass,READY,hold,OPEN
+LW-60,pass,READY,hold,OPEN

@@ -1,0 +1,13 @@
+{
+  "sources": [
+    {"id": "S01", "canonical": "S01_MO-27_r4.md", "inbox": "2026-10-06-1350-mo-27-r4.md", "received": "2026-10-06 13:50 MDT"},
+    {"id": "S02", "canonical": "S02_WMS_RCPT-8821.md", "inbox": "2026-10-06-1342-rcpt-8821.md", "received": "2026-10-06 13:42 MDT"},
+    {"id": "S03", "canonical": "S03_QA_RELEASE-661.md", "inbox": "2026-10-06-1348-qa-661.md", "received": "2026-10-06 13:48 MDT"},
+    {"id": "S04", "canonical": "S04_FLEET_VX-204_r7.md", "inbox": "fleet-card-vx-204-rev7.md", "received": "2026-10-01 00:00 MDT"},
+    {"id": "S05", "canonical": "S05_R71_BULLETINS.md", "inbox": "2026-10-06-1955z-r71-notices.md", "received": "2026-10-06 19:55Z"},
+    {"id": "S06", "canonical": "S06_PERMIT_PR-4418.md", "inbox": "2026-10-06-1402-pr-4418-packet.md", "received": "2026-10-06 14:02 MDT"},
+    {"id": "S07", "canonical": "S07_VENDOR_VX-240.md", "inbox": "fwd-alpine-bodyworks-vx-240.md", "received": "2026-09-12"},
+    {"id": "S08", "canonical": "S08_R17_COMMUNITY_UPDATE.md", "inbox": "2026-10-06-1400-pine-county-update.md", "received": "2026-10-06 14:00 MDT"},
+    {"id": "S09", "canonical": "S09_AI_DISPATCH_DRAFT.md", "inbox": "2026-10-06-1405-desk-ai-go.md", "received": "2026-10-06 14:05 MDT"}
+  ]
+}

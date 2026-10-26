@@ -1,0 +1,24 @@
+[PASS] platform: macOS arm64
+[PASS] disk.home: at least 15 GB free
+[PASS] git: /usr/bin/git — git version 2.50.1 (Apple Git-155)
+[PASS] node: /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.npm-global/bin/node — v24.19.0
+[PASS] npm: /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.npm-global/bin/npm — 12.0.2
+[PASS] codex: /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.npm-global/bin/codex — codex-cli 0.147.0
+[PASS] opencode: /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.npm-global/bin/opencode — 1.18.17
+[PASS] goose: /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.local/bin/goose — goose 1.46.0
+[PASS] n8n: /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.npm-global/bin/n8n — 2.34.5
+[PASS] npm.prefix: /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.npm-global is user-owned and writable
+[PASS] path.codex: /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.npm-global/bin/codex
+[PASS] path.opencode: /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.npm-global/bin/opencode
+[PASS] path.n8n: /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.npm-global/bin/n8n
+[PASS] path.goose: /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.local/bin/goose
+[PASS] runtime.node: Node 24.x at /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.npm-global/bin/node
+[PASS] runtime.python: Python 3.12.13 at /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/home/.npm-global/bin/python3.12
+[PASS] repo.remote: https://github.com/TheHolofex/AI_Harness_Bootcamp.git
+[PASS] repo.revision: eb2160230961
+[FAIL] repo.clean: worktree is not clean; inspect git status --short
+[PASS] secret.xai: SET in current process; value not printed
+[PASS] config.goose: provider=xai model=public-model
+[PASS] auth.codex: login-status command passed; account details not copied
+
+SETUP CHECK HOLD — report: /var/folders/11/krfgv8t129vg0z53sz5tgl740000gn/T/tmp.Xe6JkXTbWD/dirty.txt

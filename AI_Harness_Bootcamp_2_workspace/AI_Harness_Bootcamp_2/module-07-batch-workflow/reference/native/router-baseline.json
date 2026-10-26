@@ -1,0 +1,551 @@
+{
+  "name": "White Rack — attempt b — router",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "White Rack — upload one wave",
+        "formDescription": "Use the test form. Upload one unchanged source CSV.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "wave",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".csv",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        272
+      ],
+      "id": "47612cfe-33f2-46d2-ab63-6049a3df08b3",
+      "name": "Upload wave",
+      "webhookId": "75c2da59-5e37-4d27-91fa-d339c8f26cd4"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "wave",
+        "options": {
+          "headerRow": true,
+          "includeEmptyCells": true,
+          "skipRecordsWithErrors": {
+            "value": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        272
+      ],
+      "id": "ce91d315-4598-45cb-bf38-ad4dcd1c4d9b",
+      "name": "Read CSV",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cc225b82-4f87-42cf-8745-f19cb12cd52d",
+              "name": "pending_status",
+              "value": "OPEN",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        272
+      ],
+      "id": "548f6cc1-2eed-4e89-84d6-94544c3b3d7b",
+      "name": "Pending rule"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code v2, Run Once for All Items. Validation only; routing belongs to nodes.\nconst items = $input.all();\nconst columns = ['lot', 'permit', 'gate_window', 'input_disposition', 'resource_exception', 'pending_status'];\nconst sourceColumns = columns.slice(0, -1);\nconst sourceItems = $('Read CSV').all();\nconst seen = new Set();\nconst hold = (message) => { throw new Error(`HOLD: ${message}`); };\nif (!items.length) hold('Upload a nonempty batch with the required CSV header.');\nif (sourceItems.length !== items.length) hold('Pending rule must preserve every Read CSV row.');\nlet pending;\nreturn items.map((item, index) => {\n  const row = item.json;\n  const where = `source row ${index + 1}`;\n  const source = sourceItems[index].json;\n  if (!source || Object.keys(source).length !== sourceColumns.length ||\n      Object.keys(source).some((key, i) => key !== sourceColumns[i])) {\n    hold(`${where}: Read CSV must contain exactly the ordered fields ${sourceColumns.join(',')}; do not supply pending_status in the source.`);\n  }\n  if (!row || Object.keys(row).length !== columns.length ||\n      Object.keys(row).some((key, i) => key !== columns[i])) {\n    hold(`${where}: expected ordered fields ${columns.join(',')}; remove extra fields and restore missing fields.`);\n  }\n  for (const key of columns) {\n    if (typeof row[key] !== 'string') hold(`${where}: ${key} must be text.`);\n  }\n  if (sourceColumns.some(key => row[key] !== source[key])) hold(`${where}: Pending rule changed a source value; retain every original field.`);\n  if (!row.lot.trim() || /[,\"\\x00-\\x1f\\x7f]/.test(row.lot)) hold(`${where}: lot must be nonempty and contain no comma, quote, or ASCII control character.`);\n  if (seen.has(row.lot)) hold(`${where}: duplicate lot ${JSON.stringify(row.lot)}; use unique lots.`);\n  seen.add(row.lot);\n  if (!['NEW', 'CHANGED', 'CANCELLED', 'UNCHANGED'].includes(row.input_disposition)) hold(`${where}: invalid input_disposition.`);\n  if (!['', 'RACK_CONFLICT'].includes(row.resource_exception)) hold(`${where}: invalid resource_exception.`);\n  if (row.input_disposition === 'CANCELLED' && row.permit !== 'WITHDRAWN') hold(`${where}: CANCELLED requires permit WITHDRAWN.`);\n  if (!['OPEN', 'NOT_AUTHORIZED'].includes(row.pending_status)) hold(`${where}: pending_status must be OPEN or NOT_AUTHORIZED.`);\n  if (index && row.pending_status !== pending) hold(`${where}: pending_status must be uniform across the batch.`);\n  pending = row.pending_status;\n  return { json: { ...row, _row: index }, pairedItem: { item: index } };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        272
+      ],
+      "id": "b481f416-bf24-4b81-be31-94bd61e40195",
+      "name": "Check batch"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.resource_exception}}",
+                    "rightValue": "RACK_CONFLICT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ce03398b-9729-4769-8638-2e8ee4606c3b"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f1f0ca1e-5a06-4da0-938f-1a7d3bbb602e",
+                    "leftValue": "={{$json.permit}}",
+                    "rightValue": "AUTHORIZED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ea45132d-3e96-474e-ad4f-a09ca3907252",
+                    "leftValue": "={{$json.permit}}",
+                    "rightValue": "PENDING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "ignoreCase": false,
+          "allMatchingOutputs": false
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        240
+      ],
+      "id": "2a36b090-ae2c-44f9-82b8-46c4571f8ffa",
+      "name": "Route lots"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3354f356-8f8d-4084-a027-43237b6c39da",
+              "name": "route",
+              "value": "hold",
+              "type": "string"
+            },
+            {
+              "id": "4c8b0c6b-562f-4a85-a520-0303fe25302f",
+              "name": "status",
+              "value": "RESOURCE_CONFLICT",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1120,
+        -16
+      ],
+      "id": "b9d15306-7ca9-4326-9000-311ac8b147b3",
+      "name": "Rack hold"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "96973abe-a8b3-4c00-be7e-d25be5695096",
+              "name": "route",
+              "value": "pass",
+              "type": "string"
+            },
+            {
+              "id": "d985b67a-4d0e-4ceb-86ec-8e15b29fbc7d",
+              "name": "status",
+              "value": "READY",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1120,
+        176
+      ],
+      "id": "e5b5ee0f-99a2-41b4-96c6-adc90cca040e",
+      "name": "Ready"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cb96d188-da6b-48fd-a86a-332cab25e769",
+              "name": "route",
+              "value": "={{$json.pending_status === 'NOT_AUTHORIZED' ? 'reject' : 'hold'}}",
+              "type": "string"
+            },
+            {
+              "id": "15c82edd-5df2-4835-9a42-7f75bbddf69c",
+              "name": "status",
+              "value": "={{$json.pending_status}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1120,
+        368
+      ],
+      "id": "bef40639-4b1b-4b5e-8f7c-8da29ec5e754",
+      "name": "Pending decision"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "642e8f74-0ead-4dea-b574-0d250d2da245",
+              "name": "route",
+              "value": "hold",
+              "type": "string"
+            },
+            {
+              "id": "f992b04d-25b5-4fb0-a3ff-16fb5a22bb23",
+              "name": "status",
+              "value": "OPEN",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1120,
+        560
+      ],
+      "id": "8f7a1725-ca0b-4fb7-9b00-082a48098967",
+      "name": "Other permit"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1344,
+        240
+      ],
+      "id": "e130ba57-74c2-47da-8912-db053be0f9dd",
+      "name": "Collect routes"
+    },
+    {
+      "parameters": {
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "_row"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        272
+      ],
+      "id": "254b150c-464f-413d-b6b7-1820885f79ec",
+      "name": "Original order"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4ec57486-9f4a-4e1f-bc79-bf003729b239",
+              "name": "lot",
+              "value": "={{$json.lot}}",
+              "type": "string"
+            },
+            {
+              "id": "a72274c1-c3ff-4319-b923-f0aba58f1811",
+              "name": "route",
+              "value": "={{$json.route}}",
+              "type": "string"
+            },
+            {
+              "id": "5e3b89d4-878e-44a8-9aa0-f2c497f6f716",
+              "name": "status",
+              "value": "={{$json.status}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1792,
+        272
+      ],
+      "id": "5d72cda3-05d3-4d83-8a97-4b92b8d45689",
+      "name": "Receipt fields"
+    },
+    {
+      "parameters": {
+        "options": {
+          "fileName": "=white-rack-{{$execution.id}}.csv",
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2016,
+        272
+      ],
+      "id": "75023b0a-e766-496e-a7e4-df72b0523383",
+      "name": "Make receipt"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Upload wave": {
+      "main": [
+        [
+          {
+            "node": "Read CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read CSV": {
+      "main": [
+        [
+          {
+            "node": "Pending rule",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pending rule": {
+      "main": [
+        [
+          {
+            "node": "Check batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check batch": {
+      "main": [
+        [
+          {
+            "node": "Route lots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route lots": {
+      "main": [
+        [
+          {
+            "node": "Rack hold",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ready",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pending decision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Other permit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rack hold": {
+      "main": [
+        [
+          {
+            "node": "Collect routes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready": {
+      "main": [
+        [
+          {
+            "node": "Collect routes",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Pending decision": {
+      "main": [
+        [
+          {
+            "node": "Collect routes",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Other permit": {
+      "main": [
+        [
+          {
+            "node": "Collect routes",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Collect routes": {
+      "main": [
+        [
+          {
+            "node": "Original order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Original order": {
+      "main": [
+        [
+          {
+            "node": "Receipt fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receipt fields": {
+      "main": [
+        [
+          {
+            "node": "Make receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "57f78c93-dd1c-487d-b3b7-2ac80b9c284b",
+  "meta": {
+    "instanceId": "9f55c539155be718274b27889b2edf077632cd222503f1cef165e47190ee0f56"
+  },
+  "nodeGroups": [],
+  "id": "t3YK8dCJIJ4Dede1",
+  "tags": []
+}

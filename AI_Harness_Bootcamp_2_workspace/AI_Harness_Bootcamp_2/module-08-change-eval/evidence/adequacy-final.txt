@@ -1,0 +1,131 @@
+PASS 107
+  PASS M7-REF: reference hash 29a3ca94cdd16cf4a77cd35f948b893964303c10528189636fa6976da23a30b8
+  PASS M7-01: start exists
+  PASS M7-01: lab exists
+  PASS M7-01: accessibility exists
+  PASS M7-01: handoff exists
+  PASS M7-01: runbook exists
+  PASS M7-01: rubric exists
+  PASS M7-01: custody exists
+  PASS M7-01: a_base exists
+  PASS M7-01: a_cand exists
+  PASS M7-01: b_base exists
+  PASS M7-01: b_cand exists
+  PASS M7-01: gates exists
+  PASS M7-01: policy exists
+  PASS M7-01: cost exists
+  PASS M7-01: restore exists
+  PASS M7-01: reference exists
+  PASS M7-01: gauntlet exists
+  PASS M7-01: verdict exists
+  PASS M7-LINK: start links lab
+  PASS M7-LINK: start links accessibility
+  PASS M7-LINK: start links rubric
+  PASS M7-LINK: README.md -> shared/MODULE_07_LAB.md
+  PASS M7-LINK: README.md -> assessment/PUBLIC_RUBRIC.md
+  PASS M7-LINK: README.md -> shared/ACCESSIBILITY.md
+  PASS M7-LINK: README.md -> facilitator/RUNBOOK.md
+  PASS M7-LINK: README.md -> assessment/CUSTODY_CONTRACT.md
+  PASS M7-LINK: README.md -> reference/REFERENCE.md
+  PASS M7-LINK: README.md -> reference/GAUNTLET_PROMPT.md
+  PASS M7-LINK: shared/MODULE_07_LAB.md -> controls/PRE_RESULT_POLICY.md
+  PASS M7-LINK: shared/MODULE_07_LAB.md -> cases/pair-a.baseline.md
+  PASS M7-LINK: shared/MODULE_07_LAB.md -> cases/pair-b.baseline.md
+  PASS M7-LINK: shared/MODULE_07_LAB.md -> controls/COST_PROXY.md
+  PASS M7-LINK: shared/MODULE_07_LAB.md -> NEXT_MODULE.md
+  PASS M7-WORDS: a_base is 141 words
+  PASS M7-WORDS: a_cand is 148 words
+  PASS M7-WORDS: b_base is 123 words
+  PASS M7-WORDS: b_cand is 131 words
+  PASS M7-POL: policy names hard gate
+  PASS M7-COST: cost proxy is gate failures
+  PASS M7-BASE: both baselines pass
+  PASS M7-A: candidate A fails payload
+  PASS M7-B: candidate B fails UTC/local collapse
+  PASS M7-A: candidate A contains 84 kg
+  PASS M7-B: candidate B collapses 20:50Z
+  PASS M7-RESTORE: restore runs
+  PASS M7-RESTORE: restored work copies pass
+  PASS M7-POL: policy file not rewritten
+  PASS M7-INDEP: learner files omit S01_
+  PASS M7-INDEP: learner files omit S02_
+  PASS M7-INDEP: learner files omit S03_
+  PASS M7-INDEP: learner files omit S04_
+  PASS M7-INDEP: learner files omit S05_
+  PASS M7-INDEP: learner files omit S06_
+  PASS M7-INDEP: learner files omit S07_
+  PASS M7-INDEP: learner files omit S08_
+  PASS M7-INDEP: learner files omit S09_
+  PASS M7-INDEP: learner files omit FIRST_RESULT
+  PASS M7-INDEP: learner files omit MIN_SCREEN
+  PASS M7-INDEP: learner files omit INTERNAL_ARTIFACT
+  PASS M7-INDEP: learner files omit PO00_RESULT
+  PASS M7-INDEP: learner files omit SOURCE_EVIDENCE
+  PASS M7-INDEP: learner files omit DISCERNMENT_RESULT
+  PASS M7-INDEP: learner files omit STANDING_RULE
+  PASS M7-INDEP: learner files omit PO01_RESULT
+  PASS M7-INDEP: learner files omit CONTEXT_MAP
+  PASS M7-INDEP: learner files omit SOURCE_AS_DATA_CONTROL
+  PASS M7-INDEP: learner files omit RELOAD_RESULT
+  PASS M7-INDEP: learner files omit PO02_RESULT
+  PASS M7-INDEP: learner files omit RELEASE_DECISION
+  PASS M7-INDEP: learner files omit AUTHORITY_BOUNDARY
+  PASS M7-INDEP: learner files omit COMPOSED_NEGATIVE
+  PASS M7-INDEP: learner files omit REVOCATION_RESULT
+  PASS M7-INDEP: learner files omit PO03_RESULT
+  PASS M7-INDEP: learner files omit LOCALIZATION_RESULT
+  PASS M7-INDEP: learner files omit RECOVERY_RESULT
+  PASS M7-INDEP: learner files omit PO04_RESULT
+  PASS M7-INDEP: learner files omit SAMPLE_MANIFEST
+  PASS M7-INDEP: learner files omit PREDICATE_SPEC
+  PASS M7-INDEP: learner files omit PROTECTED_CONTROL_RESULT
+  PASS M7-INDEP: learner files omit PO05_RESULT
+  PASS M7-INDEP: learner files omit FIXED_BASELINE
+  PASS M7-INDEP: learner files omit EXCEPTION_RULE
+  PASS M7-INDEP: learner files omit DETERMINISTIC_DELTA
+  PASS M7-INDEP: learner files omit CONFIG_ID
+  PASS M7-INDEP: learner files omit RESTORE_ACTION
+  PASS M7-INDEP: learner files omit PO06_RESULT
+  PASS M7-INDEP: learner files omit RUNNABLE_PACKAGE
+  PASS M7-INDEP: learner files omit PO08_RESULT
+  PASS M7-INDEP: learner files omit QUALIFICATION_RESULT
+  PASS M7-BAN: learner scan omits 246 kg
+  PASS M7-BAN: learner scan omits 1,404 kg
+  PASS M7-BAN: learner scan omits 3 minutes late
+  PASS M7-TOKEN: learner scan omits VERIFY:
+  PASS M7-TOKEN: learner scan omits CUSTODY:
+  PASS M7-TOKEN: learner scan omits PO0
+  PASS M7-SCOPE: fictional class-only boundary
+  PASS M7-SCOPE: no real dispatch language
+  PASS M7-LAB: lab includes hard gate, any single violation
+  PASS M7-LAB: lab includes before you open
+  PASS M7-LAB: lab includes restore
+  PASS M7-18: material misses block passing
+  PASS M7-23: visible/protected separation
+  PASS M7-26: coaching limits
+  PASS M7-24: accessibility fails closed
+  PASS M7-28: handoff supports independent reconstruction
+  PASS M7-CODE: hard_gates.py compiles
+FAIL 0
+  killed M7-REF flip first hex digit of REFERENCE.sha256
+  killed M7-01 delete the Module 7 lab
+  killed M7-LINK remove the start-page lab link
+  killed M7-WORDS empty pair A baseline body
+  killed M7-POL delete the hard-gate sentence from the policy
+  killed M7-COST delete 0 or 1 from the cost proxy
+  killed M7-BASE add 84 kg to pair A baseline
+  killed M7-A remove 84 kg from candidate A
+  killed M7-B remove 20:50Z from candidate B
+  killed M7-RESTORE stop restore from copying
+  killed M7-INDEP leak S07_ into README.md
+  killed M7-BAN leak 246 kg into README.md
+  killed M7-TOKEN leak VERIFY: into README.md
+  killed M7-SCOPE add out-of-scope dispatch phrase to README.md
+  killed M7-LAB delete before you open from the lab
+  killed M7-18 delete hard gate from the rubric
+  killed M7-23 delete the word practice from the rubric
+  killed M7-26 delete may not from the runbook
+  killed M7-24 delete HOLD/hold from accessibility
+  killed M7-28 delete coaching from the handoff
+  killed M7-CODE break hard_gates.py so py_compile fails
+PASS: 21 mutations, 0 survivors

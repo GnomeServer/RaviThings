@@ -1,0 +1,2 @@
+$ python3 -m http.server 5678 & ; python3 shared/case/verify_n8n.py
+HOLD: http://127.0.0.1:5678/healthz returned HTTP 404

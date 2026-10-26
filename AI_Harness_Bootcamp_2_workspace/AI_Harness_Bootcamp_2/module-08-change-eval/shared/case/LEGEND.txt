@@ -1,0 +1,34 @@
+Slope Brief — field legend
+
+The packet is fictional practice data. claims.json is an authored draft with deliberate defects, not a recorded model response. The three PC folders contain the supplied source records. Do not mix facts between packets.
+
+Claim fields
+- id: the registered assertion, C01 through C07; keep it through correction.
+- case_id: the source packet that governs this assertion.
+- kind: mass (number and kg), time (clock and zone), citation (complete payload source text), gate (complete gate source text), or authority (an assertion about permission to act).
+- value: the assertion being checked. null means explicitly unknown, not zero, false, or permission denied.
+- locator: the exact key of the source record cited for this assertion. null means no record is cited.
+
+Source fields
+- case_id: the packet identity.
+- sources: records indexed by their locator.
+- source_id: the source record's identifier.
+- locator: the exact record key, including packet and fragment.
+- authoritative: whether the record is authoritative for its stated fact in this packet. It does not grant blanket authority to act.
+- text: the actual source passage; inspect it as well as the typed fields.
+- payload_kg: the mass in kilograms, or null if the record contains no mass field.
+- gate_utc: the UTC clock, or null when absent.
+- gate_local: the local clock, or null when absent.
+- local_zone: the local clock's zone label, or null when absent.
+
+Review fields
+- verdict: supported, contradicted, or unknown for the exact claim.
+- locator and quote: a source record from the claim's case and an exact passage from that record. An unknown judgment may leave both null.
+- reason: the reviewer's explanation, still a model judgment.
+
+Check and decision fields
+- hold: an exact check found an unresolved defect. A proper null for unavailable authority can remain explicit without blocking an internal source summary.
+- technical_complete: the report audited all required runs and complete claim coverage; not semantic truth or permission to act.
+- content_holds: at least one exact failure, reviewer conflict with the check, disagreement, or supported-claim regression remains for disposition.
+- operational_dispatch: HOLD. The exercise does not authorize movement.
+- human disposition: USE for a supported claim, KEEP_UNKNOWN for an explicit unresolved fact, HOLD for an unusable or unresolved assertion. Record the evidence and reason yourself.

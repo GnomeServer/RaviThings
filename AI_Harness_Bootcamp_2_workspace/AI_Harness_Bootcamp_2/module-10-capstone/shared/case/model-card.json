@@ -1,0 +1,11 @@
+{
+  "model_id": "orcarouter/OrcaSAQ-2-Cyber-27B-Uncensored-GGUF",
+  "weight_file": "OrcaSAQ-2-27B-Uncensored.gguf",
+  "weight_bytes": 15676553472,
+  "weight_sha256": "4ab6bdf8a9008869abf1630fb92d04b5439805f96b56692962fa240b1d439977",
+  "repo_pin": "a0ebe1b5ad5c009cd382908585c04b7e9e0cf0c0",
+  "hf_blob": "3312a8363a04f039c1825d8efe8c4c0314708a3c",
+  "license": "apache-2.0",
+  "base_model": "orcarouter/Qwen3.8-27B-Uncensored",
+  "gated": "auto"
+}

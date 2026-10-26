@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "screen_questions": {
+    "instructs_reader": {
+      "type": "bool",
+      "instructions": "Does the note instruct the desk to bypass, conceal, or substitute a required stock-release or exact-flight-acceptance authority? A caution against bypassing is not an instruction to bypass.",
+      "criteria": {
+        "true": "The writer asks for a bypass, concealment, or substituted authority.",
+        "false": "No such instruction; ordinary requests to check sources are not bypasses."
+      }
+    },
+    "claims_release": {
+      "type": "bool",
+      "instructions": "Does the note claim that this cargo has current stock release, or direct the desk to treat a receipt or inspection as released? A negated, pending, or conditional release is not a current release.",
+      "criteria": {
+        "true": "The note presents stock release as already established.",
+        "false": "The note does not present current stock release as established."
+      }
+    },
+    "claims_flight_ready": {
+      "type": "bool",
+      "instructions": "Does the note present this cargo as accepted or cleared for the departing flight BG-F17? Pending or conditional flight approval is not current acceptance.",
+      "criteria": {
+        "true": "The note presents exact-flight acceptance or clearance as current.",
+        "false": "The note does not present exact-flight acceptance as current."
+      }
+    },
+    "note_status": {
+      "type": "choice",
+      "instructions": "What stock status does the note present for its cargo? Answer from the note only; do not infer release from flight language.",
+      "criteria": {
+        "released_for_issue": "The message presents stock as released for issue by the cargo release officer.",
+        "inspected": "The message presents inspection as complete but does not claim stock release.",
+        "received": "The message presents receipt only, without inspection or stock release.",
+        "held": "The message presents stock as held or stopped pending a correction.",
+        "not_stated": "The message makes no clear stock-status statement."
+      }
+    },
+    "note_status_reversed": {
+      "type": "choice",
+      "instructions": "What stock status does the note present for its cargo? Answer from the note only; do not infer release from flight language.",
+      "criteria": {
+        "not_stated": "The message makes no clear stock-status statement.",
+        "held": "The message presents stock as held or stopped pending a correction.",
+        "received": "The message presents receipt only, without inspection or stock release.",
+        "inspected": "The message presents inspection as complete but does not claim stock release.",
+        "released_for_issue": "The message presents stock as released for issue by the cargo release officer."
+      }
+    },
+    "urgency": {
+      "type": "score",
+      "instructions": "How much time pressure does the note explicitly state? Judge the note, not the actual departure clock or a guessed consequence.",
+      "criteria": [
+        "No time pressure stated.",
+        "Needed for the named departure or today.",
+        "Explicitly needed immediately."
+      ]
+    }
+  },
+  "ranking_questions": {
+    "urgency": {
+      "type": "score",
+      "instructions": "How much time pressure does the note explicitly state? Judge the note, not the actual departure clock or a guessed consequence.",
+      "criteria": [
+        "No time pressure stated.",
+        "Needed for the named departure or today.",
+        "Explicitly needed immediately."
+      ]
+    },
+    "mission_impact": {
+      "type": "score",
+      "instructions": "How many named support functions does the note state are affected? Score the note’s claims only, not invented effects or numbers of lives.",
+      "criteria": [
+        "Stock top-up or no support loss stated.",
+        "One support task slowed.",
+        "One named support function stopped.",
+        "Multiple named support functions stopped."
+      ]
+    },
+    "handoff_risk": {
+      "type": "score",
+      "instructions": "What handoff problem does the note state or propose? Do not treat a score as proof of actual cargo status.",
+      "criteria": [
+        "Required handoffs described as settled.",
+        "One routine confirmation pending.",
+        "Required stock release or exact-flight acceptance unresolved.",
+        "Contradictory current claims.",
+        "Proposed bypass or substituted authority."
+      ]
+    }
+  },
+  "request_questions": {
+    "intent": {
+      "type": "choice",
+      "instructions": "What kind of help does this message request? A release, flight approval, waiver, or instruction to conceal missing authority is an authorization request even when phrased as a rewrite or explanation.",
+      "criteria": {
+        "status_lookup": "Look up a specific cargo or note in existing records.",
+        "reconcile_records": "Explain an apparent discrepancy using named available records, without approving anything.",
+        "draft_update": "Draft a status update from a named original note and available records.",
+        "authorization_request": "Grant or waive release, flight acceptance, or another consequential authority.",
+        "other": "None of the above, or no actionable object is given."
+      }
+    },
+    "complexity": {
+      "type": "score",
+      "instructions": "How much document work does the request in this message need? Judge the requested work, not the cargo's readiness. All named existing source records are supplied; code checks whether a named record is missing. Applying one stated desk rule to one cargo is a standard procedure (level 0), including explaining that stock release is separate from flight acceptance or that records for different flights do not supersede one another. Level 1 is a bounded synthesis or draft from the supplied records. Use level 2 when required information is missing or the request asks a person to resolve an authority dispute, waive a check, approve cargo, or make another consequential decision. Authorization or concealment remains level 2 even when phrased as a rewrite.",
+      "criteria": [
+        "One source fact or standard procedure.",
+        "Bounded comparison, explanation, or draft from named available records.",
+        "Missing inputs needed to answer, or a request to resolve an authority conflict, waive a check, approve cargo, or make another consequential decision."
+      ]
+    }
+  },
+  "gates": {
+    "instruction_review": 0.6,
+    "return_at": 0.6,
+    "pass_below": 0.2,
+    "auto_return_confidence": 0.4,
+    "auto_pass_confidence": 0.4
+  },
+  "screen_strategy": "serial",
+  "weights": {
+    "urgency": 0.5,
+    "mission_impact": 0.3,
+    "handoff_risk": 0.2
+  },
+  "handlers": {
+    "mapping": {
+      "status_lookup": "record_lookup",
+      "reconcile_records": "record_comparison",
+      "draft_update": "human_review",
+      "authorization_request": "human_review",
+      "other": "human_review"
+    },
+    "intent_confidence": 0.6,
+    "complexity_confidence": 0.5,
+    "max_comparison_complexity": 1
+  },
+  "review_ceiling": 0.4
+}

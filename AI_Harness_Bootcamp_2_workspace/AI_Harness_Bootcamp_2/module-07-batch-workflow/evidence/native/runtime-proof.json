@@ -1,0 +1,5975 @@
+{
+  "runtime": {
+    "n8n": "2.41.5",
+    "docker": "29.7.2",
+    "compose": "v5.4.0",
+    "platform": "macOS arm64 Docker Desktop",
+    "browser": "managed Chromium",
+    "published": false,
+    "bind": "127.0.0.1:5678",
+    "router_nodes": 13,
+    "checker_nodes": 6
+  },
+  "platform": "macOS arm64 / Docker Desktop",
+  "router_nodes": [
+    {
+      "name": "Upload wave",
+      "type": "n8n-nodes-base.formTrigger",
+      "version": 2.6
+    },
+    {
+      "name": "Read CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "version": 1.1
+    },
+    {
+      "name": "Pending rule",
+      "type": "n8n-nodes-base.set",
+      "version": 3.5
+    },
+    {
+      "name": "Check batch",
+      "type": "n8n-nodes-base.code",
+      "version": 2
+    },
+    {
+      "name": "Route lots",
+      "type": "n8n-nodes-base.switch",
+      "version": 3.4
+    },
+    {
+      "name": "Rack hold",
+      "type": "n8n-nodes-base.set",
+      "version": 3.5
+    },
+    {
+      "name": "Ready",
+      "type": "n8n-nodes-base.set",
+      "version": 3.5
+    },
+    {
+      "name": "Pending decision",
+      "type": "n8n-nodes-base.set",
+      "version": 3.5
+    },
+    {
+      "name": "Other permit",
+      "type": "n8n-nodes-base.set",
+      "version": 3.5
+    },
+    {
+      "name": "Collect routes",
+      "type": "n8n-nodes-base.merge",
+      "version": 3.2
+    },
+    {
+      "name": "Original order",
+      "type": "n8n-nodes-base.sort",
+      "version": 1
+    },
+    {
+      "name": "Receipt fields",
+      "type": "n8n-nodes-base.set",
+      "version": 3.5
+    },
+    {
+      "name": "Make receipt",
+      "type": "n8n-nodes-base.convertToFile",
+      "version": 1.1
+    }
+  ],
+  "baseline_export": "reference/native/router-baseline.json",
+  "boundaries": [
+    {
+      "case": "source-policy-collision-before",
+      "execution": "61",
+      "status": "success"
+    },
+    {
+      "case": "source-policy-collision-after",
+      "execution": "63",
+      "status": "error",
+      "last": "Check batch",
+      "reason": "HOLD: source row 1: Read CSV must contain exactly the ordered fields lot,permit,gate_window,input_disposition,resource_exception; do not supply pending_status in the source. [line 7]"
+    },
+    {
+      "case": "invalid-quote",
+      "id": "84",
+      "status": "error",
+      "last": "Read CSV",
+      "reason": "Quote Not Closed: the parsing is finished with an opening quote at line 3"
+    },
+    {
+      "case": "invalid-duplicate",
+      "id": "85",
+      "status": "error",
+      "last": "Check batch",
+      "reason": "HOLD: source row 2: duplicate lot \"A\"; use unique lots. [line 7]"
+    },
+    {
+      "case": "invalid-schema",
+      "id": "86",
+      "status": "error",
+      "last": "Check batch",
+      "reason": "HOLD: source row 1: Read CSV must contain exactly the ordered fields lot,permit,gate_window,input_disposition,resource_exception; do not supply pending_status in the source. [line 7]"
+    },
+    {
+      "case": "invalid-empty",
+      "id": "87",
+      "status": "error",
+      "last": "Read CSV",
+      "reason": "This operation expects the node's input data to contain a binary file 'wave', but none was found [item 0]"
+    },
+    {
+      "case": "invalid-header-only",
+      "id": "88",
+      "status": "error",
+      "last": "Check batch",
+      "reason": "HOLD: source row 1: Read CSV must contain exactly the ordered fields lot,permit,gate_window,input_disposition,resource_exception; do not supply pending_status in the source. [line 7]"
+    },
+    {
+      "case": "invalid-disposition",
+      "id": "89",
+      "status": "error",
+      "last": "Check batch",
+      "reason": "HOLD: source row 1: invalid input_disposition. [line 7]"
+    },
+    {
+      "case": "invalid-exception",
+      "id": "90",
+      "status": "error",
+      "last": "Check batch",
+      "reason": "HOLD: source row 1: invalid resource_exception. [line 7]"
+    },
+    {
+      "case": "invalid-cancelled",
+      "id": "91",
+      "status": "error",
+      "last": "Check batch",
+      "reason": "HOLD: source row 1: CANCELLED requires permit WITHDRAWN. [line 7]"
+    },
+    {
+      "case": "invalid-tab",
+      "id": "92",
+      "status": "error",
+      "last": "Check batch",
+      "reason": "HOLD: source row 1: lot must be nonempty and contain no comma, quote, or ASCII control character. [line 7]"
+    },
+    {
+      "case": "invalid-del",
+      "id": "93",
+      "status": "error",
+      "last": "Check batch",
+      "reason": "HOLD: source row 1: lot must be nonempty and contain no comma, quote, or ASCII control character. [line 7]"
+    },
+    {
+      "case": "source-policy-collision",
+      "id": "94",
+      "status": "error",
+      "last": "Check batch",
+      "reason": "HOLD: source row 1: Read CSV must contain exactly the ordered fields lot,permit,gate_window,input_disposition,resource_exception; do not supply pending_status in the source. [line 7]"
+    },
+    {
+      "case": "invalid-saved-policy",
+      "id": "99",
+      "status": "error",
+      "last": "Check batch",
+      "reason": "HOLD: source row 1: pending_status must be OPEN or NOT_AUTHORIZED. [line 7]"
+    }
+  ],
+  "originalIdentity": {
+    "id": "64",
+    "status": "success",
+    "report": {
+      "mode": "file-identity",
+      "result": "PASS",
+      "reason": "Files are identical. Retain this initial digest report; future verification must supply its original expected_sha256.",
+      "baseline_name": "white-rack-baseline-v3.json",
+      "actual_name": "white-rack-baseline-v3.json",
+      "baseline_size": 15366,
+      "actual_size": 15366,
+      "baseline_sha256": "3d02aef9cb8da98a61e992609375fd91b0fc5d8b7d9e903e9f681f354ccc67df",
+      "actual_sha256": "3d02aef9cb8da98a61e992609375fd91b0fc5d8b7d9e903e9f681f354ccc67df",
+      "expected_sha256": "",
+      "identity_check": "initial_record_only",
+      "raw_byte_equal": true,
+      "baseline_row_count": null,
+      "actual_row_count": null,
+      "row_count_checked": 0,
+      "changed_ids": "[]",
+      "changed_count": 0,
+      "unchanged_count": 0
+    }
+  },
+  "baselines": [
+    {
+      "wave": "wave1",
+      "id": "65",
+      "status": "success",
+      "receipt": "evidence/native/white-rack-65.csv",
+      "rows": [
+        {
+          "lot": "LW-01",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-02",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-03",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-04",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-05",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-06",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-07",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-08",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-09",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-10",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-11",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-12",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-13",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-14",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-15",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-16",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-17",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-18",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-19",
+          "route": "hold",
+          "status": "RESOURCE_CONFLICT"
+        },
+        {
+          "lot": "LW-20",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-21",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-22",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-23",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-24",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-25",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-26",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-27",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-28",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-29",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-30",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-31",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-32",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-33",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-34",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-35",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-36",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-37",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-38",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-39",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-40",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-41",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-42",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-43",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-44",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-45",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-46",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-47",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-48",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-49",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-50",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-51",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-52",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-53",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-54",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-55",
+          "route": "hold",
+          "status": "RESOURCE_CONFLICT"
+        },
+        {
+          "lot": "LW-56",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-57",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-58",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-59",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-60",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-61",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-62",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-63",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-64",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-65",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-66",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-67",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-68",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-69",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-70",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-71",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-72",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-73",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-74",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-75",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-76",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-77",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-78",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-79",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-80",
+          "route": "pass",
+          "status": "READY"
+        }
+      ],
+      "counts": {
+        "Upload wave": [
+          1
+        ],
+        "Read CSV": [
+          80
+        ],
+        "Pending rule": [
+          80
+        ],
+        "Check batch": [
+          80
+        ],
+        "Route lots": [
+          2,
+          64,
+          3,
+          11
+        ],
+        "Rack hold": [
+          2
+        ],
+        "Ready": [
+          64
+        ],
+        "Pending decision": [
+          3
+        ],
+        "Other permit": [
+          11
+        ],
+        "Collect routes": [
+          80
+        ],
+        "Original order": [
+          80
+        ],
+        "Receipt fields": [
+          80
+        ],
+        "Make receipt": [
+          1
+        ]
+      }
+    },
+    {
+      "wave": "wave2",
+      "id": "66",
+      "status": "success",
+      "receipt": "evidence/native/white-rack-66.csv",
+      "rows": [
+        {
+          "lot": "LW-01",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-02",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-03",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-04",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-05",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-06",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-07",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-08",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-09",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-10",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-11",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-12",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-13",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-14",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-15",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-16",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-17",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-18",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-19",
+          "route": "hold",
+          "status": "RESOURCE_CONFLICT"
+        },
+        {
+          "lot": "LW-20",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-21",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-22",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-23",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-24",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-25",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-26",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-27",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-28",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-29",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-30",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-31",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-32",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-33",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-34",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-35",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-36",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-37",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-38",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-39",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-40",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-41",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-42",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-43",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-44",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-45",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-46",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-47",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-48",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-49",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-50",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-51",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-52",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-53",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-54",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-55",
+          "route": "hold",
+          "status": "RESOURCE_CONFLICT"
+        },
+        {
+          "lot": "LW-56",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-57",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-58",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-59",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-60",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-61",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-62",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-63",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-64",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-65",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-66",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-67",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-68",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-69",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-70",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-71",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-72",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-73",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-74",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-75",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-76",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-77",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "LW-78",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-79",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "LW-80",
+          "route": "pass",
+          "status": "READY"
+        }
+      ],
+      "counts": {
+        "Upload wave": [
+          1
+        ],
+        "Read CSV": [
+          80
+        ],
+        "Pending rule": [
+          80
+        ],
+        "Check batch": [
+          80
+        ],
+        "Route lots": [
+          2,
+          64,
+          3,
+          11
+        ],
+        "Rack hold": [
+          2
+        ],
+        "Ready": [
+          64
+        ],
+        "Pending decision": [
+          3
+        ],
+        "Other permit": [
+          11
+        ],
+        "Collect routes": [
+          80
+        ],
+        "Original order": [
+          80
+        ],
+        "Receipt fields": [
+          80
+        ],
+        "Make receipt": [
+          1
+        ]
+      }
+    }
+  ],
+  "baselineExact": {
+    "id": "67",
+    "status": "success",
+    "report": {
+      "mode": "exact",
+      "result": "PASS",
+      "reason": "All comparison requirements satisfied.",
+      "baseline_name": "white-rack-65.csv",
+      "actual_name": "white-rack-66.csv",
+      "baseline_size": 1389,
+      "actual_size": 1389,
+      "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+      "actual_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+      "expected_sha256": "",
+      "identity_check": "not_requested",
+      "raw_byte_equal": true,
+      "baseline_row_count": 80,
+      "actual_row_count": 80,
+      "row_count_checked": 80,
+      "changed_ids": "[]",
+      "changed_count": 0,
+      "unchanged_count": 80
+    }
+  },
+  "changed": [
+    {
+      "wave": "wave1",
+      "id": "68",
+      "status": "success",
+      "receipt": "evidence/native/white-rack-68.csv"
+    },
+    {
+      "wave": "wave2",
+      "id": "69",
+      "status": "success",
+      "receipt": "evidence/native/white-rack-69.csv"
+    }
+  ],
+  "changeProofs": [
+    {
+      "id": "70",
+      "status": "success",
+      "report": {
+        "mode": "predicted-change",
+        "result": "PASS",
+        "reason": "All comparison requirements satisfied.",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "white-rack-68.csv",
+        "baseline_size": 1389,
+        "actual_size": 1425,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "f3553b758245f103d24d5e93269ee21c66126b4f61e0c29d71022c787e73ac65",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+        "changed_count": 3,
+        "unchanged_count": 77
+      }
+    },
+    {
+      "id": "71",
+      "status": "success",
+      "report": {
+        "mode": "predicted-change",
+        "result": "PASS",
+        "reason": "All comparison requirements satisfied.",
+        "baseline_name": "white-rack-66.csv",
+        "actual_name": "white-rack-69.csv",
+        "baseline_size": 1389,
+        "actual_size": 1425,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "f3553b758245f103d24d5e93269ee21c66126b4f61e0c29d71022c787e73ac65",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+        "changed_count": 3,
+        "unchanged_count": 77
+      }
+    }
+  ],
+  "identityRecheck": {
+    "id": "72",
+    "status": "success",
+    "report": {
+      "mode": "file-identity",
+      "result": "PASS",
+      "reason": "All comparison requirements satisfied.",
+      "baseline_name": "white-rack-baseline-v3.json",
+      "actual_name": "white-rack-baseline-v3.json",
+      "baseline_size": 15366,
+      "actual_size": 15366,
+      "baseline_sha256": "3d02aef9cb8da98a61e992609375fd91b0fc5d8b7d9e903e9f681f354ccc67df",
+      "actual_sha256": "3d02aef9cb8da98a61e992609375fd91b0fc5d8b7d9e903e9f681f354ccc67df",
+      "expected_sha256": "3d02aef9cb8da98a61e992609375fd91b0fc5d8b7d9e903e9f681f354ccc67df",
+      "identity_check": "matched",
+      "raw_byte_equal": true,
+      "baseline_row_count": null,
+      "actual_row_count": null,
+      "row_count_checked": 0,
+      "changed_ids": "[]",
+      "changed_count": 0,
+      "unchanged_count": 0
+    }
+  },
+  "restored": [
+    {
+      "wave": "wave1",
+      "id": "76",
+      "status": "success",
+      "receipt": "evidence/native/white-rack-76.csv"
+    },
+    {
+      "wave": "wave2",
+      "id": "77",
+      "status": "success",
+      "receipt": "evidence/native/white-rack-77.csv"
+    }
+  ],
+  "restoreProofs": [
+    {
+      "id": "78",
+      "status": "success",
+      "report": {
+        "mode": "exact",
+        "result": "PASS",
+        "reason": "All comparison requirements satisfied.",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "white-rack-76.csv",
+        "baseline_size": 1389,
+        "actual_size": 1389,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": true,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[]",
+        "changed_count": 0,
+        "unchanged_count": 80
+      }
+    },
+    {
+      "id": "79",
+      "status": "success",
+      "report": {
+        "mode": "exact",
+        "result": "PASS",
+        "reason": "All comparison requirements satisfied.",
+        "baseline_name": "white-rack-66.csv",
+        "actual_name": "white-rack-77.csv",
+        "baseline_size": 1389,
+        "actual_size": 1389,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": true,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[]",
+        "changed_count": 0,
+        "unchanged_count": 80
+      }
+    }
+  ],
+  "revised": {
+    "baseline": {
+      "id": "80",
+      "receipt": "evidence/native/white-rack-80.csv"
+    },
+    "changed": {
+      "id": "81",
+      "receipt": "evidence/native/white-rack-81.csv"
+    },
+    "inputProof": {
+      "id": "82",
+      "status": "success",
+      "report": {
+        "mode": "predicted-change",
+        "result": "PASS",
+        "reason": "All comparison requirements satisfied.",
+        "baseline_name": "white-rack-66.csv",
+        "actual_name": "white-rack-80.csv",
+        "baseline_size": 1389,
+        "actual_size": 1388,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "0934259bd0cc6ea8f4fb7e60e6a91d15165c992b734f8e2ca284e2e64909974e",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-12\",\"LW-44\",\"LW-60\"]",
+        "changed_count": 3,
+        "unchanged_count": 77
+      }
+    },
+    "policyProof": {
+      "id": "83",
+      "status": "success",
+      "report": {
+        "mode": "predicted-change",
+        "result": "PASS",
+        "reason": "All comparison requirements satisfied.",
+        "baseline_name": "white-rack-80.csv",
+        "actual_name": "white-rack-81.csv",
+        "baseline_size": 1388,
+        "actual_size": 1436,
+        "baseline_sha256": "0934259bd0cc6ea8f4fb7e60e6a91d15165c992b734f8e2ca284e2e64909974e",
+        "actual_sha256": "90c5ab24f736bf3c2a6b724df408d9476ddf8e085c88e83b59def2273bb5f206",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-28\",\"LW-41\",\"LW-44\",\"LW-60\"]",
+        "changed_count": 4,
+        "unchanged_count": 76
+      }
+    }
+  },
+  "emptyBranches": [
+    {
+      "absent": 0,
+      "id": "95",
+      "rows": [
+        {
+          "lot": "A",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "M",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "B",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "C",
+          "route": "hold",
+          "status": "OPEN"
+        }
+      ],
+      "switch_counts": [
+        0,
+        1,
+        1,
+        2
+      ]
+    },
+    {
+      "absent": 1,
+      "id": "96",
+      "rows": [
+        {
+          "lot": "Z",
+          "route": "hold",
+          "status": "RESOURCE_CONFLICT"
+        },
+        {
+          "lot": "M",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "B",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "C",
+          "route": "hold",
+          "status": "OPEN"
+        }
+      ],
+      "switch_counts": [
+        1,
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "absent": 2,
+      "id": "97",
+      "rows": [
+        {
+          "lot": "Z",
+          "route": "hold",
+          "status": "RESOURCE_CONFLICT"
+        },
+        {
+          "lot": "A",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "B",
+          "route": "hold",
+          "status": "OPEN"
+        },
+        {
+          "lot": "C",
+          "route": "hold",
+          "status": "OPEN"
+        }
+      ],
+      "switch_counts": [
+        1,
+        1,
+        0,
+        2
+      ]
+    },
+    {
+      "absent": 3,
+      "id": "98",
+      "rows": [
+        {
+          "lot": "Z",
+          "route": "hold",
+          "status": "RESOURCE_CONFLICT"
+        },
+        {
+          "lot": "A",
+          "route": "pass",
+          "status": "READY"
+        },
+        {
+          "lot": "M",
+          "route": "hold",
+          "status": "OPEN"
+        }
+      ],
+      "switch_counts": [
+        1,
+        1,
+        1,
+        0
+      ]
+    }
+  ],
+  "checkerNegatives": [
+    {
+      "case": "unpredicted",
+      "id": "100",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "Unpredicted serialized change for \"LW-01\".",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "unpredicted.csv",
+        "baseline_size": 1389,
+        "actual_size": 1424,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "393c53194acdb83d41def888f6ce79b6b4bd7390cf11def2486b3f48cf442c9a",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-01\",\"LW-12\",\"LW-28\",\"LW-41\"]",
+        "changed_count": 4,
+        "unchanged_count": 76
+      }
+    },
+    {
+      "case": "missing-row",
+      "id": "101",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "Receipt row counts differ (missing or extra rows). Record terminator changed for \"LW-79\". Unpredicted serialized change for \"LW-79\".",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "missing-row.csv",
+        "baseline_size": 1389,
+        "actual_size": 1408,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "5442cbef4ad9336d42a35be560d49ad3832d5dbf0e092da25f45d76bb460a9a9",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 79,
+        "row_count_checked": 79,
+        "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+        "changed_count": 3,
+        "unchanged_count": 75
+      }
+    },
+    {
+      "case": "reordered",
+      "id": "102",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "Lot identity/order changed at row 1. Lot identity/order changed at row 2.",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "reordered.csv",
+        "baseline_size": 1389,
+        "actual_size": 1425,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "b7e18eb8188927e03393550abbda745a9447698b51e0070f27531e3589f8748d",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+        "changed_count": 3,
+        "unchanged_count": 75
+      }
+    },
+    {
+      "case": "duplicate-lot",
+      "id": "103",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "actual: duplicate lot \"LW-01\".",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "duplicate-lot.csv",
+        "baseline_size": 1389,
+        "actual_size": 1425,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "46936456b8bef7b48f3fc4b346f69460e9365258da5eb749a27665fd1fd68426",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": null,
+        "actual_row_count": null,
+        "row_count_checked": 0,
+        "changed_ids": "[]",
+        "changed_count": 0,
+        "unchanged_count": 0
+      }
+    },
+    {
+      "case": "wrong-schema",
+      "id": "104",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "actual: expected exactly lot,route,status in that order.",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "wrong-schema.csv",
+        "baseline_size": 1389,
+        "actual_size": 1424,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "2e52e3b30558ad9f578cee6dd51011a53db39bf45a7097d5e58db2fb74ec3278",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": null,
+        "actual_row_count": null,
+        "row_count_checked": 0,
+        "changed_ids": "[]",
+        "changed_count": 0,
+        "unchanged_count": 0
+      }
+    },
+    {
+      "case": "removed-bom",
+      "id": "105",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "Receipt header/BOM/framing changed.",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "removed-bom.csv",
+        "baseline_size": 1389,
+        "actual_size": 1422,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "227743d6eba4f48246ca2241cb56d3b4f95156da5a1ab3d4e0b27a2a0f8bb77f",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+        "changed_count": 3,
+        "unchanged_count": 77
+      }
+    },
+    {
+      "case": "changed-newlines",
+      "id": "106",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "Receipt header/BOM/framing changed. Record terminator changed for \"LW-01\". Unpredicted serialized change for \"LW-01\". Record terminator changed for \"LW-02\". Unpredicted serialized change for \"LW-02\". Record terminator changed for \"LW-03\". Unpredicted serialized change for \"LW-03\". Record terminator changed for \"LW-04\". Unpredicted serialized change for \"LW-04\". Record terminator changed for \"LW-05\". Unpredicted serialized change for \"LW-05\". Record terminator changed for \"LW-06\". Unpredicted serialized change for \"LW-06\". Record terminator changed for \"LW-07\". Unpredicted serialized change for \"LW-07\". Record terminator changed for \"LW-08\". Unpredicted serialized change for \"LW-08\". Record terminator changed for \"LW-09\". Unpredicted serialized change for \"LW-09\". Record terminator changed for \"LW-10\". Unpredicted serialized change for \"LW-10\". Record terminator changed for \"LW-11\". Unpredicted serialized change for \"LW-11\". Record terminator changed for \"LW-12\". Record terminator changed for \"LW-13\". Unpredicted serialized change for \"LW-13\". Record terminator changed for \"LW-14\". Unpredicted serialized change for \"LW-14\". Record terminator changed for \"LW-15\". Unpredicted serialized change for \"LW-15\". Record terminator changed for \"LW-16\". Unpredicted serialized change for \"LW-16\". Record terminator changed for \"LW-17\". Unpredicted serialized change for \"LW-17\". Record terminator changed for \"LW-18\". Unpredicted serialized change for \"LW-18\". Record terminator changed for \"LW-19\". Unpredicted serialized change for \"LW-19\". Record terminator changed for \"LW-20\". Unpredicted serialized change for \"LW-20\". Record terminator changed for \"LW-21\". Unpredicted serialized change for \"LW-21\". Record terminator changed for \"LW-22\". Unpredicted serialized change for \"LW-22\". Record terminator changed for \"LW-23\". Unpredicted serialized change for \"LW-23\". Record terminator changed for \"LW-24\". Unpredicted serialized change for \"LW-24\". Record terminator changed for \"LW-25\". Unpredicted serialized change for \"LW-25\". Record terminator changed for \"LW-26\". Unpredicted serialized change for \"LW-26\". Record terminator changed for \"LW-27\". Unpredicted serialized change for \"LW-27\". Record terminator changed for \"LW-28\". Record terminator changed for \"LW-29\". Unpredicted serialized change for \"LW-29\". Record terminator changed for \"LW-30\". Unpredicted serialized change for \"LW-30\". Record terminator changed for \"LW-31\". Unpredicted serialized change for \"LW-31\". Record terminator changed for \"LW-32\". Unpredicted serialized change for \"LW-32\". Record terminator changed for \"LW-33\". Unpredicted serialized change for \"LW-33\". Record terminator changed for \"LW-34\". Unpredicted serialized change for \"LW-34\". Record terminator changed for \"LW-35\". Unpredicted serialized change for \"LW-35\". Record terminator changed for \"LW-36\". Unpredicted serialized change for \"LW-36\". Record terminator changed for \"LW-37\". Unpredicted serialized change for \"LW-37\". Record terminator changed for \"LW-38\". Unpredicted serialized change for \"LW-38\". Record terminator changed for \"LW-39\". Unpredicted serialized change for \"LW-39\". Record terminator changed for \"LW-40\". Unpredicted serialized change for \"LW-40\". Record terminator changed for \"LW-41\". Record terminator changed for \"LW-42\". Unpredicted serialized change for \"LW-42\". Record terminator changed for \"LW-43\". Unpredicted serialized change for \"LW-43\". Record terminator changed for \"LW-44\". Unpredicted serialized change for \"LW-44\". Record terminator changed for \"LW-45\". Unpredicted serialized change for \"LW-45\". Record terminator changed for \"LW-46\". Unpredicted serialized change for \"LW-46\". Record terminator changed for \"LW-47\". Unpredicted serialized change for \"LW-47\". Record terminator changed for \"LW-48\". Unpredicted serialized change for \"LW-48\". Record terminator changed for \"LW-49\". Unpredicted serialized change for \"LW-49\". Record terminator changed for \"LW-50\". Unpredicted serialized change for \"LW-50\". Record terminator changed for \"LW-51\". Unpredicted serialized change for \"LW-51\". Record terminator changed for \"LW-52\". Unpredicted serialized change for \"LW-52\". Record terminator changed for \"LW-53\". Unpredicted serialized change for \"LW-53\". Record terminator changed for \"LW-54\". Unpredicted serialized change for \"LW-54\". Record terminator changed for \"LW-55\". Unpredicted serialized change for \"LW-55\". Record terminator changed for \"LW-56\". Unpredicted serialized change for \"LW-56\". Record terminator changed for \"LW-57\". Unpredicted serialized change for \"LW-57\". Record terminator changed for \"LW-58\". Unpredicted serialized change for \"LW-58\". Record terminator changed for \"LW-59\". Unpredicted serialized change for \"LW-59\". Record terminator changed for \"LW-60\". Unpredicted serialized change for \"LW-60\". Record terminator changed for \"LW-61\". Unpredicted serialized change for \"LW-61\". Record terminator changed for \"LW-62\". Unpredicted serialized change for \"LW-62\". Record terminator changed for \"LW-63\". Unpredicted serialized change for \"LW-63\". Record terminator changed for \"LW-64\". Unpredicted serialized change for \"LW-64\". Record terminator changed for \"LW-65\". Unpredicted serialized change for \"LW-65\". Record terminator changed for \"LW-66\". Unpredicted serialized change for \"LW-66\". Record terminator changed for \"LW-67\". Unpredicted serialized change for \"LW-67\". Record terminator changed for \"LW-68\". Unpredicted serialized change for \"LW-68\". Record terminator changed for \"LW-69\". Unpredicted serialized change for \"LW-69\". Record terminator changed for \"LW-70\". Unpredicted serialized change for \"LW-70\". Record terminator changed for \"LW-71\". Unpredicted serialized change for \"LW-71\". Record terminator changed for \"LW-72\". Unpredicted serialized change for \"LW-72\". Record terminator changed for \"LW-73\". Unpredicted serialized change for \"LW-73\". Record terminator changed for \"LW-74\". Unpredicted serialized change for \"LW-74\". Record terminator changed for \"LW-75\". Unpredicted serialized change for \"LW-75\". Record terminator changed for \"LW-76\". Unpredicted serialized change for \"LW-76\". Record terminator changed for \"LW-77\". Unpredicted serialized change for \"LW-77\". Record terminator changed for \"LW-78\". Unpredicted serialized change for \"LW-78\". Record terminator changed for \"LW-79\". Unpredicted serialized change for \"LW-79\".",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "changed-newlines.csv",
+        "baseline_size": 1389,
+        "actual_size": 1505,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "e7e9afca18f46228a13233ab22a84fc5030a876ddbda63c5ca9e47899c41d53a",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+        "changed_count": 3,
+        "unchanged_count": 1
+      }
+    },
+    {
+      "case": "added-final-newline",
+      "id": "107",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "Record terminator changed for \"LW-80\". Unpredicted serialized change for \"LW-80\".",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "added-final-newline.csv",
+        "baseline_size": 1389,
+        "actual_size": 1426,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "5701e77e31f8e491364b1820d3ab928d3bf4d8bf1ce4867b6dddd4a22198a65c",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+        "changed_count": 3,
+        "unchanged_count": 76
+      }
+    },
+    {
+      "case": "changed-field-quoting",
+      "id": "108",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "CSV field framing changed for \"LW-12\".",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "changed-field-quoting.csv",
+        "baseline_size": 1389,
+        "actual_size": 1427,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "e1a9e3c6cdf30455e52dc95c3df7acbcb379652510213ee1dfc747578917c085",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+        "changed_count": 3,
+        "unchanged_count": 77
+      }
+    },
+    {
+      "case": "changed-lot-quoting",
+      "id": "109",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "CSV field framing changed for \"LW-12\".",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "changed-lot-quoting.csv",
+        "baseline_size": 1389,
+        "actual_size": 1427,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "0a02445369566bdfb211535fbdf7ca0f1c09d7fb598465ee9c5169d66a2faaa4",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+        "changed_count": 3,
+        "unchanged_count": 77
+      }
+    },
+    {
+      "case": "malformed-receipt",
+      "id": "110",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "actual: unclosed CSV quote.",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "malformed-receipt.csv",
+        "baseline_size": 1389,
+        "actual_size": 1426,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "abdd4d8e205cb2d5cc9847989d7ae9d771906188851d9201fadcb36784805fb0",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": null,
+        "actual_row_count": null,
+        "row_count_checked": 0,
+        "changed_ids": "[]",
+        "changed_count": 0,
+        "unchanged_count": 0
+      }
+    },
+    {
+      "case": "delta-omitted",
+      "id": "111",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "Unpredicted serialized change for \"LW-41\".",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "white-rack-68.csv",
+        "baseline_size": 1389,
+        "actual_size": 1425,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "f3553b758245f103d24d5e93269ee21c66126b4f61e0c29d71022c787e73ac65",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+        "changed_count": 3,
+        "unchanged_count": 77
+      }
+    },
+    {
+      "case": "delta-wrong-before",
+      "id": "112",
+      "report": {
+        "mode": "predicted-change",
+        "result": "HOLD",
+        "reason": "Prediction before/after mismatch for \"LW-12\".",
+        "baseline_name": "white-rack-65.csv",
+        "actual_name": "white-rack-68.csv",
+        "baseline_size": 1389,
+        "actual_size": 1425,
+        "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+        "actual_sha256": "f3553b758245f103d24d5e93269ee21c66126b4f61e0c29d71022c787e73ac65",
+        "expected_sha256": "",
+        "identity_check": "not_requested",
+        "raw_byte_equal": false,
+        "baseline_row_count": 80,
+        "actual_row_count": 80,
+        "row_count_checked": 80,
+        "changed_ids": "[\"LW-12\",\"LW-28\",\"LW-41\"]",
+        "changed_count": 3,
+        "unchanged_count": 77
+      }
+    }
+  ],
+  "zeroDelta": {
+    "id": "113",
+    "status": "success",
+    "report": {
+      "mode": "predicted-change",
+      "result": "PASS",
+      "reason": "All comparison requirements satisfied.",
+      "baseline_name": "white-rack-65.csv",
+      "actual_name": "white-rack-65.csv",
+      "baseline_size": 1389,
+      "actual_size": 1389,
+      "baseline_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+      "actual_sha256": "ee45d45acb05cd269877ee71d29db07187b2804d6e6fb7fb06bc71956f630027",
+      "expected_sha256": "",
+      "identity_check": "not_requested",
+      "raw_byte_equal": true,
+      "baseline_row_count": 80,
+      "actual_row_count": 80,
+      "row_count_checked": 80,
+      "changed_ids": "[]",
+      "changed_count": 0,
+      "unchanged_count": 80
+    }
+  },
+  "tamperedIdentity": {
+    "id": "114",
+    "status": "success",
+    "report": {
+      "mode": "file-identity",
+      "result": "HOLD",
+      "reason": "Files do not match the retained original expected_sha256.",
+      "baseline_name": "tampered-baseline-v3.json",
+      "actual_name": "tampered-baseline-v3.json",
+      "baseline_size": 15367,
+      "actual_size": 15367,
+      "baseline_sha256": "7afdc2896ff4df5eb418739494df0ae636da63d17f6f6f9a9f54210c43788e7e",
+      "actual_sha256": "7afdc2896ff4df5eb418739494df0ae636da63d17f6f6f9a9f54210c43788e7e",
+      "expected_sha256": "3d02aef9cb8da98a61e992609375fd91b0fc5d8b7d9e903e9f681f354ccc67df",
+      "identity_check": "mismatch",
+      "raw_byte_equal": true,
+      "baseline_row_count": null,
+      "actual_row_count": null,
+      "row_count_checked": 0,
+      "changed_ids": "[]",
+      "changed_count": 0,
+      "unchanged_count": 0
+    }
+  },
+  "limits": [
+    "Native execution: macOS arm64 Docker Desktop only. Windows, WSL, Ubuntu, Arch, Intel macOS, and Windows Arm not executed natively.",
+    "No learner completion times or learning outcomes observed.",
+    "Browser automation download/clipboard/input failures were corrected before final native evidence; they are not n8n failures."
+  ],
+  "restoredWorkflow": {
+    "url": "http://localhost:5678/workflow/KVGLPJoDcHF27gD2?projectId=q6QiiLR4E1qXAoWW&uiContext=workflow_list",
+    "name": "White Rack — attempt c — restored"
+  },
+  "changed_export": "reference/native/router-changed.json",
+  "automation_recovery": "Restored executions 73 and 74 succeeded, but the browser file-chooser helper lost download settings. Comparison 75 lacked the actual binary. Restored runs 76 and 77 were downloaded after restoring browser settings; comparisons 78 and 79 passed. Earlier paste/input automation failures were corrected before this final baseline.",
+  "verification": {
+    "recorded_at": "2026-10-02T07:27:53.924Z",
+    "cwd": "$CHECKOUT",
+    "gates": {
+      "command": ".venv/bin/python scripts/build_course.py && .venv/bin/python scripts/check_course.py && .venv/bin/python scripts/build_course.py --check",
+      "result": "PASS",
+      "scoped_gates": 27,
+      "pages": 32,
+      "raw_downloads": 692,
+      "ui_generated_assets": 38,
+      "transcript": "course-gates.txt",
+      "first_failure": "The prior generated Module 6 files had to be retired after source allowlist cutover; the first integrated gate then exposed obsolete Module 0 A1/A3/A4 source assertions.",
+      "repair": "Old generated output was retained outside the checkout and rebuilt. Incidental path/exit source assertions and their mutations were removed, not re-pinned. All 27 scoped gates then passed.",
+      "final_publication": "Publisher and byte-for-byte check passed again after the final browser save-link instruction.",
+      "final_byte_check": {
+        "command": ".venv/bin/python scripts/build_course.py --check",
+        "result": "PASS",
+        "pages": 32,
+        "raw_downloads": 692,
+        "ui_generated_assets": 38
+      }
+    },
+    "setup": {
+      "unique_command_blocks": 206,
+      "parser_runs": [
+        {
+          "platform": "windows-powershell",
+          "index": 0,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 1,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 2,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 3,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 4,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 5,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 6,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 7,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 8,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 9,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 10,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 11,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 12,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 13,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 14,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 15,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 16,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 17,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 18,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 19,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 20,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 21,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 22,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 23,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 24,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 25,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 26,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 27,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 28,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 29,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 30,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 31,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 32,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 33,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 34,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 35,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 36,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 37,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 38,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 39,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 40,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 41,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 42,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-powershell",
+          "index": 43,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 0,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 1,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 2,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 3,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 4,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 5,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 6,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 7,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 8,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 9,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 10,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 11,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 12,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 13,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 14,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 15,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 16,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 17,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 18,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 19,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 20,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 21,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 22,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 23,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 24,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 25,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 26,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 27,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 28,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 29,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 30,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 31,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 32,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 33,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 34,
+          "shell": "pwsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 35,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 36,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 37,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 38,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 39,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 40,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 41,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 42,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 43,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 44,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "windows-wsl",
+          "index": 45,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 0,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 0,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 1,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 1,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 2,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 2,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 3,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 3,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 4,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 4,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 5,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 5,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 6,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 6,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 7,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 7,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 8,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 8,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "macos",
+          "index": 9,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 9,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 10,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 10,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 11,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 11,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 12,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 12,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 13,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 13,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 14,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 14,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 15,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 15,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 16,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 16,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 17,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 17,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 18,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 18,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 19,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 19,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 20,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 20,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 21,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 21,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 22,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 22,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 23,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 23,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 24,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 24,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 25,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 25,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 26,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 26,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 27,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 27,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 28,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 28,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 29,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 29,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 30,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 30,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 31,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 31,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 32,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 32,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 33,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "macos",
+          "index": 33,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 0,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "ubuntu",
+          "index": 0,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "ubuntu",
+          "index": 1,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "ubuntu",
+          "index": 1,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "ubuntu",
+          "index": 2,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "ubuntu",
+          "index": 2,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "ubuntu",
+          "index": 3,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "ubuntu",
+          "index": 3,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "ubuntu",
+          "index": 4,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "ubuntu",
+          "index": 4,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "ubuntu",
+          "index": 5,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "ubuntu",
+          "index": 5,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "ubuntu",
+          "index": 6,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 6,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 7,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 7,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 8,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 8,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 9,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 9,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 10,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 10,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 11,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 11,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 12,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 12,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 13,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 13,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 14,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 14,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 15,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 15,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 16,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 16,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 17,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 17,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 18,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 18,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 19,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 19,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 20,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 20,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 21,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 21,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 22,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 22,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 23,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 23,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 24,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 24,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 25,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 25,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 26,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 26,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 27,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 27,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 28,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 28,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 29,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 29,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 30,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 30,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 31,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 31,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 32,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 32,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 33,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 33,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 34,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 34,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 35,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 35,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 36,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 36,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 37,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 37,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 38,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 38,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 39,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 39,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 40,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "ubuntu",
+          "index": 40,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 0,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "arch-linux",
+          "index": 0,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "arch-linux",
+          "index": 1,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "arch-linux",
+          "index": 1,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "arch-linux",
+          "index": 2,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "arch-linux",
+          "index": 2,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "arch-linux",
+          "index": 3,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "arch-linux",
+          "index": 3,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "arch-linux",
+          "index": 4,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "arch-linux",
+          "index": 4,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "arch-linux",
+          "index": 5,
+          "shell": "bash",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "arch-linux",
+          "index": 5,
+          "shell": "zsh",
+          "code": 0,
+          "output": "",
+          "reused": true
+        },
+        {
+          "platform": "arch-linux",
+          "index": 6,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 6,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 7,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 7,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 8,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 8,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 9,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 9,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 10,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 10,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 11,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 11,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 12,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 12,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 13,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 13,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 14,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 14,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 15,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 15,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 16,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 16,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 17,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 17,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 18,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 18,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 19,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 19,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 20,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 20,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 21,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 21,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 22,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 22,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 23,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 23,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 24,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 24,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 25,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 25,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 26,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 26,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 27,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 27,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 28,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 28,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 29,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 29,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 30,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 30,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 31,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 31,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 32,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 32,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 33,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 33,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 34,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 34,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 35,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 35,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 36,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 36,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 37,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 37,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 38,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 38,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 39,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 39,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 40,
+          "shell": "bash",
+          "code": 0,
+          "output": ""
+        },
+        {
+          "platform": "arch-linux",
+          "index": 40,
+          "shell": "zsh",
+          "code": 0,
+          "output": ""
+        }
+      ],
+      "controlled_host_shell_checks": [
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "fresh",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "existing-record",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "symlink-record",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "invalid-name",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "container-collision",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "volume-collision",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "network-collision",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "inspect-failure",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-N8N_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-N8N_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-N8N_SANDBOX_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-N8N_SANDBOX_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-SEARXNG_SECRET-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-SEARXNG_SECRET",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROJECT_NAME-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROJECT_NAME",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_FILE",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_ENV_FILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_ENV_FILES",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROFILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROFILES",
+          "ok": true
+        },
+        {
+          "platform": "windows-powershell",
+          "shell": "bash",
+          "scenario": "explicit-project-and-files",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "fresh",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "existing-record",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "symlink-record",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "invalid-name",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "container-collision",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "volume-collision",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "network-collision",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "inspect-failure",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-N8N_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-N8N_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-N8N_SANDBOX_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-N8N_SANDBOX_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-SEARXNG_SECRET-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-SEARXNG_SECRET",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROJECT_NAME-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROJECT_NAME",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_FILE",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_ENV_FILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_ENV_FILES",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROFILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROFILES",
+          "ok": true
+        },
+        {
+          "platform": "windows-wsl",
+          "shell": "bash",
+          "scenario": "explicit-project-and-files",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "fresh",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "existing-record",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "symlink-record",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "invalid-name",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "container-collision",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "volume-collision",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "network-collision",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "inspect-failure",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-N8N_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-N8N_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-N8N_SANDBOX_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-N8N_SANDBOX_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-SEARXNG_SECRET-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-SEARXNG_SECRET",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROJECT_NAME-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROJECT_NAME",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_FILE",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_ENV_FILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_ENV_FILES",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROFILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROFILES",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "bash",
+          "scenario": "explicit-project-and-files",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "fresh",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "existing-record",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "symlink-record",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "invalid-name",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "container-collision",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "volume-collision",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "network-collision",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "inspect-failure",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-N8N_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-N8N_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-N8N_SANDBOX_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-N8N_SANDBOX_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-SEARXNG_SECRET-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-SEARXNG_SECRET",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_PROJECT_NAME-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_PROJECT_NAME",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_FILE",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_ENV_FILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_ENV_FILES",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_PROFILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_PROFILES",
+          "ok": true
+        },
+        {
+          "platform": "macos",
+          "shell": "zsh",
+          "scenario": "explicit-project-and-files",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "fresh",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "existing-record",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "symlink-record",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "invalid-name",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "container-collision",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "volume-collision",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "network-collision",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "inspect-failure",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-N8N_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-N8N_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-N8N_SANDBOX_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-N8N_SANDBOX_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-SEARXNG_SECRET-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-SEARXNG_SECRET",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROJECT_NAME-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROJECT_NAME",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_FILE",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_ENV_FILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_ENV_FILES",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROFILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROFILES",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "bash",
+          "scenario": "explicit-project-and-files",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "fresh",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "existing-record",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "symlink-record",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "invalid-name",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "container-collision",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "volume-collision",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "network-collision",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "inspect-failure",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-N8N_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-N8N_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-N8N_SANDBOX_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-N8N_SANDBOX_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-SEARXNG_SECRET-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-SEARXNG_SECRET",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_PROJECT_NAME-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_PROJECT_NAME",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_FILE",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_ENV_FILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_ENV_FILES",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_PROFILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_PROFILES",
+          "ok": true
+        },
+        {
+          "platform": "ubuntu",
+          "shell": "zsh",
+          "scenario": "explicit-project-and-files",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "fresh",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "existing-record",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "symlink-record",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "invalid-name",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "container-collision",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "volume-collision",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "network-collision",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "inspect-failure",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-N8N_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-N8N_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-N8N_SANDBOX_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-N8N_SANDBOX_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-SEARXNG_SECRET-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-SEARXNG_SECRET",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROJECT_NAME-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROJECT_NAME",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_FILE",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_ENV_FILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_ENV_FILES",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROFILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "exported-COMPOSE_PROFILES",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "bash",
+          "scenario": "explicit-project-and-files",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "fresh",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "existing-record",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "symlink-record",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "invalid-name",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "container-collision",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "volume-collision",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "network-collision",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "inspect-failure",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-N8N_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-N8N_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-N8N_SANDBOX_VERSION-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-N8N_SANDBOX_VERSION",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-N8N_RUNNERS_AUTH_TOKEN",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-SEARXNG_SECRET-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-SEARXNG_SECRET",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_PROJECT_NAME-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_PROJECT_NAME",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_FILE",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_ENV_FILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_ENV_FILES",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_DISABLE_ENV_FILE",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_PROFILES-empty",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "exported-COMPOSE_PROFILES",
+          "ok": true
+        },
+        {
+          "platform": "arch-linux",
+          "shell": "zsh",
+          "scenario": "explicit-project-and-files",
+          "ok": true
+        }
+      ],
+      "native_helper": {
+        "code": 0,
+        "out": "NAME                                   IMAGE                                                  COMMAND                  SERVICE            CREATED       STATUS                   PORTS\nwhite-rack-course-n8n-1                docker.io/n8nio/n8n:2.41.5                             \"tini -- /docker-ent…\"   n8n                2 hours ago   Up 2 hours               127.0.0.1:5678->5678/tcp\nwhite-rack-course-runners-1            ghcr.io/n8n-io/runners:2.41.5                          \"tini -- /usr/local/…\"   runners            2 hours ago   Up 2 hours               5680/tcp\nwhite-rack-course-sandbox-api-1        ghcr.io/n8n-io/n8n-sandbox-service-api:1.3.4           \"/sbin/tini -- /usr/…\"   sandbox-api        2 hours ago   Up 2 hours (healthy)     8080/tcp, 9090/tcp\nwhite-rack-course-sandbox-certs-1      ghcr.io/n8n-io/n8n-sandbox-service-api:1.3.4           \"sh -c 'bootstrap-mt…\"   sandbox-certs      2 hours ago   Exited (0) 2 hours ago   \nwhite-rack-course-sandbox-runner-1-1   ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:1.3.4   \"/sbin/tini -- /usr/…\"   sandbox-runner-1   2 hours ago   Up 2 hours               2375-2376/tcp, 8080/tcp\nwhite-rack-course-searxng-1            ghcr.io/searxng/searxng:latest                         \"/usr/local/searxng/…\"   searxng            2 hours ago   Up 2 hours               8080/tcp\n127.0.0.1:5678\n2.41.5\n",
+        "err": ""
+      },
+      "limits": [
+        "PowerShell parsing used PowerShell 7 on macOS, not Windows PowerShell 5.1.",
+        "Bash/zsh guard checks used a controlled Docker stub, not five native platform executions.",
+        "Native n8n startup, owner access, blank-workflow persistence and workflow operations were observed on Apple Silicon Docker Desktop only."
+      ],
+      "harness_recovery": [
+        "PowerShell argument passing was corrected to use the script path environment variable.",
+        "The stdin harness was corrected from Bun.stdin.end to subprocess Blob input.",
+        "Whole-file markdown extraction was checked against the source byte count before the complete parse matrix."
+      ],
+      "reference_recheck": {
+        "command": "../../.venv/bin/python tests/test_module_00.py",
+        "cwd": "$CHECKOUT/AI_Harness_Bootcamp_2/module-00-setup",
+        "status": "MODULE PASS",
+        "positive_checks": 12,
+        "failures": 0,
+        "mutations_caught": 10,
+        "reference_version": 5,
+        "reference_sha256": "f05ea665997e46293f2dae80f8c67ef2ea10b75fea010d52e2f3ae6e56023aaa",
+        "reason": "Scoped follow-up after the explicitly recorded local n8n readiness amendment."
+      }
+    },
+    "publication": {
+      "dialog": {
+        "open": true,
+        "width": 2000,
+        "height": 1250,
+        "alt": "Upload wave form settings show required single CSV file field named wave",
+        "buttons": [
+          {
+            "tag": "BUTTON",
+            "text": "Close",
+            "href": null
+          }
+        ],
+        "focus": "BUTTON",
+        "overflow": false,
+        "closedAndFocusReturned": true
+      },
+      "full": {
+        "visibleSteps": 8,
+        "hiddenBodies": 0,
+        "openOptional": 1,
+        "images": 40,
+        "overflow": false
+      },
+      "narrow": {
+        "width": 390,
+        "scrollWidth": 390,
+        "overviewLab": [
+          {
+            "text": "Overview",
+            "current": null,
+            "rect": {
+              "x": 24,
+              "y": -1733.84375,
+              "width": 86.953125,
+              "height": 44,
+              "top": -1733.84375,
+              "right": 110.953125,
+              "bottom": -1689.84375,
+              "left": 24
+            }
+          },
+          {
+            "text": "Lab",
+            "current": "page",
+            "rect": {
+              "x": 122.953125,
+              "y": -1733.84375,
+              "width": 48.734375,
+              "height": 44,
+              "top": -1733.84375,
+              "right": 171.6875,
+              "bottom": -1689.84375,
+              "left": 122.953125
+            }
+          }
+        ]
+      },
+      "mobileMenu": {
+        "open": true,
+        "whiteRack": "Course\nCLOSE\n00 · North Shelf\nOh My Pi · directing bounded work\n01 · Cold Lantern\nSource and claim verification\n02 · Ledger Pike\nSaved instructions · context control\n03 · Kiln Hold\nContextual release · limited tool authority\n04 · Copper Span\nFailure diagnosis · verified recovery\n05 · Blue Gauge\nDerive and check bounded controls from failures\n06 · White Rack\nVisual workflows · exact comparison and restoration\n07 · Slope Brief\nChange evaluation · model variation\n08 · Night Desk\nAgent tool policies · observed enforcement\n09 · Last Count\nRunnable handoff · independent operation\nAPPEARANCE\nSystem\nDark\nSand\nRESET SAVED PLACE"
+      },
+      "overview": {
+        "title": "Module 6 · Operate a fixed workflow through change",
+        "current": [
+          "06 · White RackVisual workflows · exact comparison and restoration",
+          "06 · White RackVisual workflows · exact comparison and restoration",
+          "Overview",
+          "06 · White RackVisual workflows · exact comparison and restoration"
+        ],
+        "overflow": false,
+        "themeAttrs": [
+          [
+            "lang",
+            "en"
+          ],
+          [
+            "data-sc-theme",
+            "sand"
+          ]
+        ]
+      },
+      "noScript": {
+        "stepBodies": 8,
+        "fullSizeLinks": 40,
+        "overflow": false,
+        "modeControlsVisible": 0,
+        "pngUrl": "http://127.0.0.1:8873/AI_Harness_Bootcamp_2/module-06-batch-workflow/shared/figures/m06-n8n-01-blank-router.png"
+      },
+      "dark": {
+        "theme": "dark",
+        "background": "rgb(13, 9, 6)"
+      },
+      "downloadLinks": [
+        {
+          "href": "http://127.0.0.1:8873/AI_Harness_Bootcamp_2/module-06-batch-workflow/shared/controls/validate-batch.js",
+          "download": false
+        },
+        {
+          "href": "http://127.0.0.1:8873/AI_Harness_Bootcamp_2/module-06-batch-workflow/shared/controls/receipt-checker.json",
+          "download": false
+        }
+      ],
+      "sand": {
+        "theme": "sand",
+        "background": "rgb(228, 217, 188)"
+      },
+      "print": {
+        "print": true,
+        "hiddenBodies": 0,
+        "images": 40
+      },
+      "prefix": {
+        "root": "../../../",
+        "image": "http://127.0.0.1:8873/course-preview/AI_Harness_Bootcamp_2/module-06-batch-workflow/shared/figures/m06-n8n-02-upload-field.png",
+        "storageKeys": [
+          "reformation-ui:v1:/course-preview/",
+          "reformation-ui:v1:/"
+        ],
+        "theme": "dark"
+      },
+      "privateStatuses": [
+        {
+          "path": "reference/native/router-baseline.json",
+          "status": 404
+        },
+        {
+          "path": "reference/native/delta-core.csv",
+          "status": 404
+        },
+        {
+          "path": "evidence/native/runtime-proof.json",
+          "status": 404
+        },
+        {
+          "path": "shared/workflow/route.py",
+          "status": 404
+        },
+        {
+          "path": "shared/controls/CONTRACT.md",
+          "status": 404
+        }
+      ],
+      "setupPages": [
+        {
+          "platform": "windows-powershell",
+          "title": "Windows PowerShell setup",
+          "hasN8n": true,
+          "hasProjectHelper": true,
+          "hiddenBodies": 0,
+          "overflow": false,
+          "copyButtons": 0
+        },
+        {
+          "platform": "windows-wsl",
+          "title": "Windows WSL 2 with Ubuntu setup",
+          "hasN8n": true,
+          "hasProjectHelper": true,
+          "hiddenBodies": 0,
+          "overflow": false,
+          "copyButtons": 0
+        },
+        {
+          "platform": "macos",
+          "title": "Set up on macOS",
+          "hasN8n": true,
+          "hasProjectHelper": true,
+          "hiddenBodies": 0,
+          "overflow": false,
+          "copyButtons": 0
+        },
+        {
+          "platform": "ubuntu",
+          "title": "Ubuntu setup for Module 0",
+          "hasN8n": true,
+          "hasProjectHelper": true,
+          "hiddenBodies": 0,
+          "overflow": false,
+          "copyButtons": 0
+        },
+        {
+          "platform": "arch-linux",
+          "title": "Arch Linux setup for Module 0",
+          "hasN8n": true,
+          "hasProjectHelper": true,
+          "hiddenBodies": 0,
+          "overflow": false,
+          "copyButtons": 0
+        }
+      ],
+      "narrowSetup": {
+        "width": 390,
+        "scrollWidth": 390,
+        "codeBlocks": 41,
+        "horizontalCodeBlocks": [
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 799
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 732
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 512
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 1751
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 1178
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 968
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 1347
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 875
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 352
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 555
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 875
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 1499
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 1920
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 378
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 1751
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 1499
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 2004
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 824
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 824
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 824
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 732
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 976
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 875
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 622
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 428
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 765
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 1237
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 850
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 1220
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 1423
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 909
+          },
+          {
+            "overflowX": "auto",
+            "width": 340,
+            "scrollWidth": 1591
+          }
+        ]
+      },
+      "downloads": [
+        {
+          "file": "batch/wave1.csv",
+          "status": 200,
+          "bytes": 3696,
+          "sha256": "050447d608a0532e5d23204a1ff832e368fe899f2cd80c92cabdb6bdf044c479",
+          "matchesSource": true
+        },
+        {
+          "file": "batch/wave2.csv",
+          "status": 200,
+          "bytes": 3816,
+          "sha256": "1d14cf3e64448c0a124cb573b79b2a9bb8a6af1c4d01289b44863f48d53ff739",
+          "matchesSource": true
+        },
+        {
+          "file": "batch/wave2-revised.csv",
+          "status": 200,
+          "bytes": 3677,
+          "sha256": "fc353e6c2128a2f7f48871a20553cbbc908fcdb79d2b6053687fd99e0c0d9174",
+          "matchesSource": true
+        },
+        {
+          "file": "controls/validate-batch.js",
+          "status": 200,
+          "bytes": 2537,
+          "sha256": "2f73be526374124a2eab95bbc37ed4f892102ace8c64ed4573af2eda4b4da779",
+          "matchesSource": true
+        },
+        {
+          "file": "controls/receipt-checker.json",
+          "status": 200,
+          "bytes": 14627,
+          "sha256": "bf3c5fcf85c6f0ed9769fe032afc276d51f137f866d94359f74b22629f9156aa",
+          "matchesSource": true
+        }
+      ],
+      "guided": {
+        "mode": "guided",
+        "visibleBodies": 1,
+        "saveInstructions": true,
+        "overflow": false
+      },
+      "setupNarrow": [
+        {
+          "platform": "windows-powershell",
+          "width": 390,
+          "scrollWidth": 390,
+          "hiddenBodies": 0
+        },
+        {
+          "platform": "windows-wsl",
+          "width": 390,
+          "scrollWidth": 390,
+          "hiddenBodies": 0
+        },
+        {
+          "platform": "macos",
+          "width": 390,
+          "scrollWidth": 390,
+          "hiddenBodies": 0
+        },
+        {
+          "platform": "ubuntu",
+          "width": 390,
+          "scrollWidth": 390,
+          "hiddenBodies": 0
+        },
+        {
+          "platform": "arch-linux",
+          "width": 390,
+          "scrollWidth": 390,
+          "hiddenBodies": 0
+        }
+      ],
+      "printTransition": {
+        "events": [
+          {
+            "event": "beforeprint",
+            "hidden": 0,
+            "openOptional": 1
+          },
+          {
+            "event": "afterprint",
+            "hidden": 7,
+            "openOptional": 0
+          }
+        ],
+        "mode": "guided",
+        "visibleBodies": 1
+      },
+      "errors": {
+        "module06": {
+          "entries": [],
+          "nextSeq": 0,
+          "dropped": 0
+        },
+        "setup": {
+          "entries": [],
+          "nextSeq": 0,
+          "dropped": 0
+        }
+      },
+      "visualEvidence": {
+        "method": "Chromium PDF render with screen media, plus print-media PDF; rasterized by pdftoppm and visually inspected",
+        "files": [
+          "module-06-screen-wide.pdf",
+          "module-06-screen-narrow.pdf",
+          "setup-screen-narrow.pdf",
+          "module-06-print.pdf"
+        ],
+        "limit": "Direct screen capture and one lazy-image decode loop timed out; PDF renders are not screenshots."
+      }
+    },
+    "retention": {
+      "native_stack": "Retained; no Docker down, volume removal or unrelated service action during publication cleanup.",
+      "native_receipts_and_reports": "Retained unchanged.",
+      "publication_proof_tabs": "Four owned tabs closed.",
+      "temporary_preview_service": "Stopped.",
+      "throwaway_parser_scripts_and_shell_homes": "Removed, including the temporary helper-home copy of runtime configuration.",
+      "first_failure_and_visual_artifacts": "Retained outside checkout.",
+      "deployment": "Generated site only; no hosted deployment or push performed."
+    }
+  }
+}

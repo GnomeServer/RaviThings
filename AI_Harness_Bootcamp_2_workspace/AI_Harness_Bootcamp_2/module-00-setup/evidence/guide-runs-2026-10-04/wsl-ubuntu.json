@@ -1,0 +1,676 @@
+{
+ "platform": "wsl",
+ "guide": "windows-wsl.md",
+ "machine": "aihb-lab-main-wsl-014338",
+ "outcome": "PASS",
+ "error": "",
+ "finished": "2026-10-04T01:49:44",
+ "boxes_passed": 26,
+ "boxes_failed": 0,
+ "rows": [
+  {
+   "kind": "environment",
+   "what": "WSL window",
+   "detail": "login shell; Linux PATH plus appended Windows folders; WSL_DISTRO_NAME, WSLg variables; Xvfb :0 stands in for WSLg"
+  },
+  {
+   "kind": "window",
+   "what": "w1-opened-by-name",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Windows/system32:/mnt/c/Windows:/mnt/c/Windows/System32/Wbem:/mnt/c/Windows/System32/WindowsPowerShell/v1.0/ /bin/bash -l -i"
+  },
+  {
+   "kind": "box",
+   "line": 74,
+   "heading": "1. Check this Ubuntu",
+   "window": "w1-opened-by-name",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "FREE_GB 1680",
+    "PACKAGES_TO_INSTALL git curl",
+    "PY /usr/bin/python3.12",
+    "CHECK DONE",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 132,
+   "heading": "2. Install missing packages",
+   "window": "w1-opened-by-name",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 12.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "password"
+   ],
+   "note": "",
+   "tail": [
+    "FREE_GB 1679",
+    "PACKAGES_TO_INSTALL none",
+    "PY /usr/bin/python3.12",
+    "CHECK DONE",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 148,
+   "heading": "3. Install Oh My Pi",
+   "window": "w1-opened-by-name",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 3.2,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "SHA256 VERIFIED omp-linux-arm64 54c65b46af9dec489ab0b632fa7eff9a2056a3ced4cdad3e3de25c5ac2f743ca",
+    "PATH_LINE added to /home/learner/.profile",
+    "PATH_LINE added to /home/learner/.bashrc",
+    "OMP_VERSION omp/18.3.5",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 225,
+   "heading": "4. Get the course files",
+   "window": "w1-opened-by-name",
+   "status": "failed",
+   "exit": 1,
+   "seconds": 0.6,
+   "verdict": "PASS",
+   "expected_status": "failed",
+   "missing": [],
+   "answered": [],
+   "note": "expected: a new learner has no GitHub credentials yet",
+   "tail": [
+    "}",
+    "course_get_files",
+    "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
+    "STOP: GitHub access failed; use If GitHub access fails below",
+    "__AIHB_DONE_1__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 278,
+   "heading": "If GitHub access fails",
+   "window": "w1-opened-by-name",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 5.0,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Unpacking gh (2.45.0-1ubuntu0.3) ...",
+    "Setting up gh (2.45.0-1ubuntu0.3) ...",
+    "gh version 2.45.0 (2025-07-18 Ubuntu 2.45.0-1ubuntu0.3)",
+    "https://github.com/cli/cli/releases/tag/v2.45.0",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "stand-in",
+   "what": "GitHub browser sign-in",
+   "detail": "gh auth login --with-token (token from the host's gh login)"
+  },
+  {
+   "kind": "box",
+   "line": 306,
+   "heading": "If GitHub access fails",
+   "window": "w1-opened-by-name",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 1.2,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "  - Git operations protocol: https",
+    "  - Token: gho_************************************",
+    "  - Token scopes: 'gist', 'read:org', 'repo', 'workflow'",
+    "746ec5798db384db236940c8367d2a8804e95977\tHEAD",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 225,
+   "heading": "4. Get the course files",
+   "window": "w1-opened-by-name",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 4.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Cloned the course checkout.",
+    "Required course files present with LF line endings",
+    "R /home/learner/Documents/AIHB_OCT_2026",
+    "M /home/learner/Documents/AIHB_OCT_2026/AI_Harness_Bootcamp_2/module-00-setup",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "window",
+   "what": "w2-new-window",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Windows/system32:/mnt/c/Windows:/mnt/c/Windows/System32/Wbem:/mnt/c/Windows/System32/WindowsPowerShell/v1.0/ /bin/bash -l -i"
+  },
+  {
+   "kind": "box",
+   "line": 322,
+   "heading": "5. Open a new Ubuntu window and confirm",
+   "window": "w2-new-window",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "PY /usr/bin/python3.12",
+    "OMP_PATH /home/learner/.local/bin/omp",
+    "OMP_VERSION omp/18.3.5",
+    "MISSING",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 362,
+   "heading": "6. Enter your OpenRouter key",
+   "window": "w2-new-window",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 1.9,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "scheduled input"
+   ],
+   "note": "",
+   "tail": [
+    "$ IFS= read -r -s OPENROUTER_API_KEY",
+    "$ IFS= read -r -s OPENROUTER_API_KEY",
+    "$ IFS= read -r -s OPENROUTER_API_KEY",
+    "$ IFS= read -r -s OPENROUTER_API_KEY",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 378,
+   "heading": "7. Confirm the key is loaded",
+   "window": "w2-new-window",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "$ export OPENROUTER_API_KEY",
+    "if [ -n \"${OPENROUTER_API_KEY:-}\" ]; then printf 'SET\\n'; else printf 'MISSING\\n'; fi",
+    "SET",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 395,
+   "heading": "8. Run the readiness check",
+   "window": "w2-new-window",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 5.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "one paid OpenRouter call",
+   "tail": [
+    "LAUNCH_EXIT 0",
+    "PASS: from-omp.txt \u2014 correct content, this run's token, receipted by course_write (exact path + hash)",
+    "READINESS CHECK PASS",
+    "VERIFY_EXIT 0",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 444,
+   "heading": "9. Save the setup report and read the result",
+   "window": "w2-new-window",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.8,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "SETUP CHECK PASS \u2014 report: /home/learner/course-evidence/setup-wsl-proof-20261004T074443Z-909/module-00/setup-report-20261004T074450Z-909.txt",
+    "REPORT_EXIT 0",
+    "REPORT /home/learner/course-evidence/setup-wsl-proof-20261004T074443Z-909/module-00/setup-report-20261004T074450Z-909.txt",
+    "omp works 6b9ff0d6a3fcd4bdc1dd39e60b000f24",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 476,
+   "heading": "Check that Ubuntu can show app windows",
+   "window": "w2-new-window",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "ARCH aarch64",
+    "DISPLAY :0",
+    "WAYLAND_DISPLAY wayland-0",
+    "WSLG PRESENT",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 494,
+   "heading": "Install and open Obsidian",
+   "window": "w2-new-window",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 6.9,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "password",
+    "default answer [Y/n]"
+   ],
+   "note": "",
+   "tail": [
+    "\u001b7Progress: [ 91%] [####################################################################################################################################################################################..................] \u001b8\u001b7Progress: [ 93%] [#######################################################################################################################################################################################...............] \u001b8Setting up libheif-plugin-aomdec:arm64 (1.17.6-1ubuntu4.9) ...",
+    "\u001b7Progress: [ 94%] [##########################################################################################################################################################################################............] \u001b8\u001b7Progress: [ 96%] [#############################################################################################################################################################################################.........] \u001b8Setting up libheif-plugin-aomenc:arm64 (1.17.6-1ubuntu4.9) ...",
+    "\u001b7Progress: [ 97%] [################################################################################################################################################################################################......] \u001b8\u001b7Progress: [ 99%] [###################################################################################################################################################################################################...] \u001b8Processing triggers for libc-bin (2.39-0ubuntu8.9) ...",
+    "\u001b7\u001b8OBSIDIAN INSTALLED Obsidian-1.13.7-arm64.AppImage",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 529,
+   "heading": "Install and open Obsidian",
+   "window": "w2-new-window",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "}",
+    "course_open_obsidian",
+    "[1] 1385",
+    "OBSIDIAN STARTING; wait for its window",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "observed",
+   "what": "Obsidian process under the WSLg stand-in",
+   "detail": "7 learner processes after 15 s; the window itself was not inspected"
+  },
+  {
+   "kind": "box",
+   "line": 558,
+   "heading": "Open the practice vault and save a reply",
+   "window": "w2-new-window",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Open that folder as a vault in Obsidian, with Sync off and community plugins restricted.",
+    "Open Start, follow Token, enter the observed token in Reply, save, then run check.",
+    "ROOT /home/learner/obsidian-readiness-a98c6e3928be468fb24e35ec922eca45",
+    "VAULT /home/learner/obsidian-readiness-a98c6e3928be468fb24e35ec922eca45/vault",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "Obsidian: read Token, type it into Reply, save",
+   "detail": "Reply.md <- token ending 3a0e"
+  },
+  {
+   "kind": "box",
+   "line": 590,
+   "heading": "Watch an outside change, then reopen",
+   "window": "w2-new-window",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "This does not prove GUI use, link navigation, external refresh visibility, or reopening.",
+    "Source token rotated outside Obsidian; your saved reply was preserved.",
+    "Observe Token in Obsidian, replace Reply with the new token, and save.",
+    "Close and reopen the vault, then run check. Record actual GUI observations separately.",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "Obsidian: read Token, type it into Reply, save",
+   "detail": "Reply.md <- token ending 5a94"
+  },
+  {
+   "kind": "box",
+   "line": 608,
+   "heading": "Watch an outside change, then reopen",
+   "window": "w2-new-window",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Token generation 2: refreshed token; GUI observation still required",
+    "PASS: Obsidian file round-trip; GUI observation still required",
+    "Disk observation saved: /home/learner/obsidian-readiness-a98c6e3928be468fb24e35ec922eca45/observations/check-2867b4f5344d6de5f892b218a1470d62.json",
+    "This does not prove GUI use, link navigation, external refresh visibility, or reopening.",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 656,
+   "heading": "Install Docker Desktop and connect it to Ubuntu",
+   "window": "w2-new-window",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.3,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "$ if dpkg-query -W -f='${Status}\\n' docker-ce docker.io 2>/dev/null | grep -q 'install ok installed' || { command -v pgrep >/dev/null && pgrep -x dockerd >/dev/null; }; then printf 'HOLD: this Ubuntu already has its own Docker Engine\\n'; else printf 'NO UBUNTU DOCKER ENGINE\\n'; fi",
+    "NO UBUNTU DOCKER ENGINE",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "stand-in",
+   "what": "Docker Desktop with WSL integration on",
+   "detail": "CLI and Compose plugin on PATH, /var/run/docker.sock to the shared engine, learner in docker group"
+  },
+  {
+   "kind": "window",
+   "what": "w3-after-integration",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Windows/system32:/mnt/c/Windows:/mnt/c/Windows/System32/Wbem:/mnt/c/Windows/System32/WindowsPowerShell/v1.0/ /bin/bash -l -i"
+  },
+  {
+   "kind": "box",
+   "line": 322,
+   "heading": "5. Open a new Ubuntu window and confirm",
+   "window": "w3-after-integration",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "the guide asks for step 5 again in the new window",
+   "tail": [
+    "PY /usr/bin/python3.12",
+    "OMP_PATH /home/learner/.local/bin/omp",
+    "OMP_VERSION omp/18.3.5",
+    "MISSING",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 677,
+   "heading": "Install Docker Desktop and connect it to Ubuntu",
+   "window": "w3-after-integration",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "Docker Compose version v2.40.3",
+    "CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES",
+    "DRIVER    VOLUME NAME",
+    "DOCKER READY FOR n8n",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 710,
+   "heading": "Create the n8n configuration",
+   "window": "w3-after-integration",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 7.8,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [
+    "scheduled input",
+    "scheduled input"
+   ],
+   "note": "",
+   "tail": [
+    "\u2714 Created /home/learner/n8n-course/searxng-settings.yml",
+    "\u2714 Created /home/learner/n8n-course/.env (unique secrets generated)",
+    "Not starting (--no-start). When ready:",
+    "  docker compose -f /home/learner/n8n-course/compose.yml up -d",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "box",
+   "line": 739,
+   "heading": "Create the n8n configuration",
+   "window": "w3-after-integration",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 0.4,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "}",
+    "course_n8n_prepare",
+    "PORT BOUND 127.0.0.1:5678:5678",
+    "PROJECT aihb-n8n",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "lock",
+   "what": "n8n turn acquired",
+   "detail": ""
+  },
+  {
+   "kind": "box",
+   "line": 785,
+   "heading": "Start n8n and check it",
+   "window": "w3-after-integration",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 29.7,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "aihb-n8n-sandbox-runner-1-1   ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:1.3.4   \"/sbin/tini -- /usr/\u2026\"   sandbox-runner-1   7 seconds ago   Up Less than a second      2375-2376/tcp, 8080/tcp",
+    "aihb-n8n-searxng-1            ghcr.io/searxng/searxng:latest                         \"/usr/local/searxng/\u2026\"   searxng            8 seconds ago   Up 6 seconds               8080/tcp",
+    "127.0.0.1:5678",
+    "2.41.5",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "n8n editor in a browser: create",
+   "detail": "{\"mode\": \"create\", \"waited_s\": 4, \"setup_screen\": true, \"owner_setup\": 200, \"create\": 200, \"list\": 200, \"names\": [\"Module 7 readiness\"], \"active\": [false], \"ok\": true}"
+  },
+  {
+   "kind": "box",
+   "line": 820,
+   "heading": "Save a workflow and restart n8n",
+   "window": "w3-after-integration",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 17.5,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "aihb-n8n-sandbox-runner-1-1   ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:1.3.4   \"/sbin/tini -- /usr/\u2026\"   sandbox-runner-1   7 seconds ago   Up Less than a second      2375-2376/tcp, 8080/tcp",
+    "aihb-n8n-searxng-1            ghcr.io/searxng/searxng:latest                         \"/usr/local/searxng/\u2026\"   searxng            7 seconds ago   Up 6 seconds               8080/tcp",
+    "127.0.0.1:5678",
+    "2.41.5",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "n8n editor in a browser: verify",
+   "detail": "{\"mode\": \"verify\", \"waited_s\": 4, \"setup_screen\": false, \"login\": 200, \"list\": 200, \"names\": [\"Module 7 readiness\"], \"active\": [false], \"ok\": true}"
+  },
+  {
+   "kind": "reboot",
+   "what": "Windows restart",
+   "detail": "engine and Ubuntu restarted; the stack has no restart policy"
+  },
+  {
+   "kind": "stand-in",
+   "what": "Docker Desktop with WSL integration on",
+   "detail": "CLI and Compose plugin on PATH, /var/run/docker.sock to the shared engine, learner in docker group"
+  },
+  {
+   "kind": "window",
+   "what": "w4-later-session",
+   "detail": "-it -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/lib/wsl/lib:/mnt/c/Windows/system32:/mnt/c/Windows:/mnt/c/Windows/System32/Wbem:/mnt/c/Windows/System32/WindowsPowerShell/v1.0/ /bin/bash -l -i"
+  },
+  {
+   "kind": "guide",
+   "what": "later session",
+   "detail": "follow: start Docker Desktop, open Ubuntu by NAME, paste the start box again"
+  },
+  {
+   "kind": "box",
+   "line": 785,
+   "heading": "Start n8n and check it",
+   "window": "w4-later-session",
+   "status": "ok",
+   "exit": 0,
+   "seconds": 6.9,
+   "verdict": "PASS",
+   "expected_status": "ok",
+   "missing": [],
+   "answered": [],
+   "note": "",
+   "tail": [
+    "aihb-n8n-sandbox-runner-1-1   ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:1.3.4   \"/sbin/tini -- /usr/\u2026\"   sandbox-runner-1   45 seconds ago   Up Less than a second      2375-2376/tcp, 8080/tcp",
+    "aihb-n8n-searxng-1            ghcr.io/searxng/searxng:latest                         \"/usr/local/searxng/\u2026\"   searxng            45 seconds ago   Up 6 seconds               8080/tcp",
+    "127.0.0.1:5678",
+    "2.41.5",
+    "__AIHB_DONE_0__",
+    "$"
+   ]
+  },
+  {
+   "kind": "simulated",
+   "what": "n8n editor in a browser: verify",
+   "detail": "{\"mode\": \"verify\", \"waited_s\": 4, \"setup_screen\": false, \"login\": 200, \"list\": 200, \"names\": [\"Module 7 readiness\"], \"active\": [false], \"ok\": true}"
+  }
+ ]
+}

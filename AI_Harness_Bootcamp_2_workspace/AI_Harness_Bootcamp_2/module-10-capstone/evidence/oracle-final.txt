@@ -1,0 +1,95 @@
+PASS 93
+  PASS M10-REF: reference hash cbeab1523913b4a27d965462cc8247ff6b2c06b683e9eeaed1487a1715a06cf9
+  PASS M10-HIDE: README omits protected case folder
+  PASS M10-BEHAV-LOOPBACK: no learner instruction binds beyond loopback; quoted hostile data stays quoted
+  PASS M10-INDEP: learner files omit S01_
+  PASS M10-INDEP: learner files omit S02_
+  PASS M10-INDEP: learner files omit S03_
+  PASS M10-INDEP: learner files omit S04_
+  PASS M10-INDEP: learner files omit S05_
+  PASS M10-INDEP: learner files omit S06_
+  PASS M10-INDEP: learner files omit S07_
+  PASS M10-INDEP: learner files omit S08_
+  PASS M10-INDEP: learner files omit S09_
+  PASS M10-INDEP: learner files omit FIRST_RESULT
+  PASS M10-INDEP: learner files omit MIN_SCREEN
+  PASS M10-INDEP: learner files omit INTERNAL_ARTIFACT
+  PASS M10-INDEP: learner files omit PO00_RESULT
+  PASS M10-INDEP: learner files omit SOURCE_EVIDENCE
+  PASS M10-INDEP: learner files omit DISCERNMENT_RESULT
+  PASS M10-INDEP: learner files omit STANDING_RULE
+  PASS M10-INDEP: learner files omit PO01_RESULT
+  PASS M10-INDEP: learner files omit CONTEXT_MAP
+  PASS M10-INDEP: learner files omit SOURCE_AS_DATA_CONTROL
+  PASS M10-INDEP: learner files omit RELOAD_RESULT
+  PASS M10-INDEP: learner files omit PO02_RESULT
+  PASS M10-INDEP: learner files omit MCP_CONNECTION
+  PASS M10-INDEP: learner files omit HANDLING_REGISTER
+  PASS M10-INDEP: learner files omit AUTHORITY_BOUNDARY
+  PASS M10-INDEP: learner files omit COMPOSED_NEGATIVE
+  PASS M10-INDEP: learner files omit REVOCATION_RESULT
+  PASS M10-INDEP: learner files omit PO03_RESULT
+  PASS M10-INDEP: learner files omit LOCALIZATION_RESULT
+  PASS M10-INDEP: learner files omit RECOVERY_RESULT
+  PASS M10-INDEP: learner files omit PO05_RESULT
+  PASS M10-INDEP: learner files omit SAMPLE_MANIFEST
+  PASS M10-INDEP: learner files omit PREDICATE_SPEC
+  PASS M10-INDEP: learner files omit PROTECTED_CONTROL_RESULT
+  PASS M10-INDEP: learner files omit PO06_RESULT
+  PASS M10-INDEP: learner files omit FIXED_BASELINE
+  PASS M10-INDEP: learner files omit EXCEPTION_RULE
+  PASS M10-INDEP: learner files omit DETERMINISTIC_DELTA
+  PASS M10-INDEP: learner files omit CONFIG_ID
+  PASS M10-INDEP: learner files omit RESTORE_ACTION
+  PASS M10-INDEP: learner files omit PO07_RESULT
+  PASS M10-INDEP: learner files omit PRE_RESULT_POLICY
+  PASS M10-INDEP: learner files omit CHANGE_DECISION
+  PASS M10-INDEP: learner files omit COST_PROXY
+  PASS M10-INDEP: learner files omit RESTORED_BASELINE
+  PASS M10-INDEP: learner files omit PO08_RESULT
+  PASS M10-INDEP: learner files omit RUNNABLE_PACKAGE
+  PASS M10-INDEP: learner files omit W-9
+  PASS M10-INDEP: learner files omit RC-0
+  PASS M10-INDEP: learner files omit 246 kg
+  PASS M10-INDEP: learner files omit 1,404 kg
+  PASS M10-INDEP: learner files omit 3 minutes late
+  PASS M10-INDEP: learner files omit South Store
+  PASS M10-INDEP: learner files omit Clinic R-12
+  PASS M10-TOKEN: learner scan omits VERIFY:
+  PASS M10-TOKEN: learner scan omits PO0
+  PASS M10-CHK-CITE: check_package.py rejects cross-module citation
+  PASS M10-CHK-CITE: reject names S07
+  PASS M10-CHK-CLEAN: shipped package is clean
+  PASS M10-CHK-ARGS: checker requires package argument
+  PASS M10-CHK-MISSING: checker rejects missing package
+  PASS M10-PACKAGE-STRUCTURE: received package resolves its own dependencies from an unrelated cwd
+  PASS M10-PACKAGE-STRUCTURE: empty package cannot pass
+  PASS M10-PACKAGE-STRUCTURE: missing restore field holds
+  PASS M10-PACKAGE-STRUCTURE: empty operating bounds hold
+  PASS M10-PACKAGE-PATH: missing identity-card dependency holds
+  PASS M10-PACKAGE-PATH: an existing path outside the received kit holds
+  PASS M10-PACKAGE-STRUCTURE: invalid text receives a readable HOLD rather than a traceback
+  PASS M10-BEHAV-VERIFY: verified fixture passes
+  PASS M10-BEHAV-VERIFY: tampered weights refuse with a named reason
+  PASS M10-BEHAV-VERIFY: wrong-size weights refuse
+  PASS M10-BEHAV-VERIFY: symlinked weights refuse
+  PASS M10-BEHAV-WIRE: wire emits the loopback service
+  PASS M10-BEHAV-LOOPBACK: overlay binds loopback only
+  PASS M10-BEHAV-LOOPBACK: launch records a loopback base url
+  PASS M10-BEHAV-EXISTS: rewiring an existing output refuses
+  PASS M10-BEHAV-WIRE: privileged port refuses
+  PASS M10-BEHAV-ATOMIC: no temp files remain
+  PASS M10-BEHAV-DISABLE: probe refuses under a disabled control
+  PASS M10-BEHAV-DISABLE: verify refuses under a disabled control
+  PASS M10-BEHAV-DISABLE: wire refuses and writes nothing under a disabled control
+  PASS M10-BEHAV-DISABLE: stop refuses under a disabled control
+  PASS M10-BEHAV-MALFORMED: malformed identity card exits 2
+  PASS M10-BEHAV-PROBE: probe passes against a live loopback service
+  PASS M10-BEHAV-PROBE: probe holds on a dead port
+  PASS M10-BEHAV-STOP: stop passes with a valid receipt on a dead port
+  PASS M10-BEHAV-STOP: stop holds while the service is still up
+  PASS M10-BEHAV-STOP: a receipt naming another port refuses
+  PASS M10-BEHAV-ATOMIC: no temp files remain after the stop cycle
+  PASS M10-BEHAV-WIRE: second wire run succeeds
+  PASS M10-BEHAV-FRESH: wire outputs are identical modulo the port argument
+FAIL 0

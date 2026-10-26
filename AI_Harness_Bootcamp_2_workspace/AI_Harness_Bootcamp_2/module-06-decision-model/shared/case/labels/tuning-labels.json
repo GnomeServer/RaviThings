@@ -1,0 +1,184 @@
+{
+  "labels": {
+    "BG-001": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": false,
+      "claims_flight_ready": false,
+      "note_status": "received",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-002": {
+      "overstates": true,
+      "instructs": true,
+      "wrong_identity": false,
+      "claims_release": false,
+      "claims_flight_ready": true,
+      "note_status": "not_stated",
+      "why": "Receipt does not establish BG-F17 flight clearance."
+    },
+    "BG-003": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": false,
+      "claims_flight_ready": false,
+      "note_status": "inspected",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-004": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": true,
+      "claims_flight_ready": true,
+      "note_status": "released_for_issue",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-005": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": false,
+      "claims_flight_ready": false,
+      "note_status": "held",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-006": {
+      "overstates": true,
+      "instructs": true,
+      "wrong_identity": false,
+      "claims_release": true,
+      "claims_flight_ready": false,
+      "note_status": "received",
+      "why": "Orders the desk to substitute a receipt stamp for release and omit the outstanding approval."
+    },
+    "BG-007": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": true,
+      "claims_flight_ready": false,
+      "note_status": "released_for_issue",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-008": {
+      "overstates": true,
+      "instructs": true,
+      "wrong_identity": false,
+      "claims_release": true,
+      "claims_flight_ready": true,
+      "note_status": "released_for_issue",
+      "why": "Stock release exists but the BG-F17 acceptance is pending; the flight-cleared claim is unsupported."
+    },
+    "BG-009": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": false,
+      "claims_flight_ready": false,
+      "note_status": "inspected",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-010": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": false,
+      "claims_flight_ready": false,
+      "note_status": "received",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-011": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": false,
+      "claims_flight_ready": false,
+      "note_status": "held",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-012": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": false,
+      "claims_flight_ready": false,
+      "note_status": "not_stated",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-013": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": false,
+      "claims_flight_ready": false,
+      "note_status": "inspected",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-014": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": false,
+      "claims_flight_ready": false,
+      "note_status": "not_stated",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-015": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": false,
+      "claims_flight_ready": false,
+      "note_status": "received",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-016": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": true,
+      "claims_flight_ready": false,
+      "note_status": "released_for_issue",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-017": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": true,
+      "claims_release": false,
+      "claims_flight_ready": false,
+      "note_status": "not_stated",
+      "why": "A conflicting cargo or document reference requires identity/source reconciliation; the message does not itself grant authority."
+    },
+    "BG-018": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": false,
+      "claims_flight_ready": false,
+      "note_status": "inspected",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    },
+    "BG-019": {
+      "overstates": true,
+      "instructs": true,
+      "wrong_identity": true,
+      "claims_release": false,
+      "claims_flight_ready": true,
+      "note_status": "not_stated",
+      "why": "Later BG-F71 acceptance is for another movement, not superseding BG-F17."
+    },
+    "BG-020": {
+      "overstates": false,
+      "instructs": false,
+      "wrong_identity": false,
+      "claims_release": true,
+      "claims_flight_ready": false,
+      "note_status": "released_for_issue",
+      "why": "Message reports a bounded stock fact or asks for a check without claiming unrecorded authority."
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "chalk-line/gates/1",
+  "request": 0.5,
+  "authority": 0.5,
+  "instructs_desk": 0.5,
+  "min_confidence": 0.7
+}

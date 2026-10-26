@@ -1,0 +1,3 @@
+Arch Linux amd64 container execution — package/runtime subset only
+
+RESULT: UNTESTED — Docker Desktop amd64 emulation could not run pacman because the container sandbox could not switch to the alpm download user (seccomp error 22). This is not an Arch command failure and is not counted as target execution.

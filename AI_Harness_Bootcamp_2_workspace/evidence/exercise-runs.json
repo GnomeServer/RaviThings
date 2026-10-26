@@ -1,0 +1,1394 @@
+{
+  "module02_ai_handoffs": {
+    "date": "2026-10-06",
+    "publication_authorization": "Publish now with the two-revision live result explicitly unverified; after the site is live, test and publish necessary fixes without further questions.",
+    "offline_status": "PASS",
+    "offline_scoped_gates": 34,
+    "offline_elapsed_seconds": 227.53,
+    "publication_counts": {"instructional_pages": 35, "raw_downloads": 406, "ui_generated_assets": 40},
+    "ui_observations": ["Chromium walkthrough at 1440 and 390 pixels", "Dark and Sand appearance", "shell switching and command copying", "full-size figure viewing", "native macOS Obsidian source inspection"],
+    "two_revision_live_status": "UNVERIFIED_V2_BUILD_AND_RETRIEVAL_NOT_STARTED",
+    "initial_publication_live_status": "UNVERIFIED",
+    "prior_live_sessions": 2,
+    "prior_live_result": "Both judge attempts read all forty source files, then reached the 300-second deadline before returning judgments; neither build nor retrieval started.",
+    "change_after_failure": "Module 02 explicitly requests the supported low-thinking mode; other callers retain their default.",
+    "post_publication_paid_authorization": {"maximum_total_sessions": 8, "fresh_sessions": 6, "requires_site_live_first": true, "automatic_retries": false, "model_substitution": false},
+    "private_evidence_root": "$HOME/course-evidence/module02-ai-handoffs-20261006T030026Z",
+    "limitations": ["No completed live v1/v2 proof", "Live records retain their original helper; final answer-link rendering has separate offline and native-UI proof", "v2 judgment contains a semantic double-counting finding, not human acceptance", "No human learner completion claim", "No native Windows, WSLg, Intel macOS, Ubuntu, or Arch GUI proof"],
+    "post_publication_verification": {
+      "offline_status": "PASS",
+      "offline_scoped_gates": 35,
+      "offline_elapsed_seconds": 215.94,
+      "publication_counts": {"instructional_pages": 35, "raw_downloads": 407, "ui_generated_assets": 40},
+      "module02_mutations": {"killed": 6, "survived": 0},
+      "real_cli_synthetic_smoke": "v1 and v2 completed; both preservation checks passed; synthetic receipts are not provider evidence",
+      "live_v1_status": "PASS",
+      "live_v1_phases": ["judge", "build", "freeze", "retrieve"],
+      "live_v1_run_ids": {
+        "judge": "95e325f3-9078-436a-97c5-1ec2a3aa8a0a",
+        "build": "bbf0c7ba-ef0a-4bad-8b89-05de5fe73800",
+        "retrieve": "0630710a-8442-494b-93e6-087aa31b1871"
+      },
+      "live_v2_status": "JUDGE_VERIFIED_BUILD_AND_RETRIEVAL_NOT_STARTED",
+      "live_v2_judge_run_id": "1cca982c-2254-4296-8a95-c96a6a36e223",
+      "live_v2_judge_reads": {"distinct_sources": 40, "additional_context": ["Feedback.md", "previous-judgments.json", "previous-build.json"]},
+      "live_v2_semantic_finding": "JG-012 rationale counts a qualification of the existing closed-gate condition as a fifth independent deficiency; not accepted as a correct semantic judgment.",
+      "sessions_used": {"before_publication": 2, "after_publication": 6, "total": 8, "authorized_maximum": 8},
+      "authorization_stop": "Private guard returned HOLD before v2 build; no ninth model session started; no v2 Knowledge or answers published.",
+      "missing_rule_negative": "HOLD before model contact; restore followed by passing live v1 preservation check",
+      "source_preservation": "Live v1 preservation check passed after the capped v2 judge",
+      "fixes": ["Require contiguous verbatim quotation spans", "Derive reverse source-to-claim membership from validated citations", "Limit each answer citation's judgment links and displayed limits to matching source passages"],
+      "native_ui_proof": "Separate final-renderer projection of genuine v1 outputs: answer to Knowledge to judgment to original source; original live receipts unchanged",
+      "private_records": ["live-derived-coverage/v1-result.json", "live-derived-coverage/v2-result.json", "live-derived-coverage/v2-judgment-observation.json", "live-derived-coverage/missing-rule-and-restore.json", "final-cli-smoke/observations.json", "final-renderer-preview/projection.json", "observed-live-phase-identities.json"]
+    }
+  },
+  "schema_version": 1,
+  "run_id": "20261005T002550Z-navigation-main-integration",
+  "generated_at_utc": "2026-10-05T01:49:23.069Z",
+  "implementation_status": "integrated_and_technically_verified",
+  "external_acceptance_status": "unobserved_lanes_remain_hold",
+  "release_status": "HOLD",
+  "publication_authorization": {
+    "status": "authorized_by_user",
+    "instruction": "merge, commit, and push the changes and get rid of the extra branch and worktree.",
+    "scope": [
+      "commit",
+      "merge_to_main",
+      "push",
+      "remove_task_branch_and_worktree"
+    ],
+    "overrides_prior_git_publication_hold": true,
+    "authorizes_paid_calls": false,
+    "pre_override_report": {
+      "href": "20261004T105600Z-course-navigation-readiness/pre-publication-override-exercise-runs.json",
+      "sha256": "0239fe8b5be8cec49770b7915278453b3b0f9edad8a5bdc0cff0d8302ef35628",
+      "bytes": 54785
+    }
+  },
+  "scope": "Integrate the navigation/readiness changes with current main while preserving its module rewrites, individual capstone and course progression. Publication is explicitly authorized despite unobserved evidence; no paid exercise calls are authorized by this integration.",
+  "evidence_root": "$HOME/course-evidence/reformation-qa",
+  "path_resolution": "Resolve href/raw_href against evidence_root. Historical reports keep their original path semantics. Source-manifest paths are checkout-relative.",
+  "integration": {
+    "task_commit": "95c0cfce52e2c3511b2b1f258fe6a4d8c081f27e",
+    "incoming_main_commit": "4ad745ce5a2ac01157619e5ecaae1c17d0c5b810",
+    "preserved_designs": [
+      "Module00 long-document workflow and current-course README from concurrent upstream work",
+      "Native OMP orchestration in Module05",
+      "Pinned decision model in module-06-decision-model",
+      "Agent spreadsheet in Module07",
+      "Structured claim checks and review ensemble in Module08",
+      "Individual, in-session Cold Foundry with no independent recipient requirement"
+    ],
+    "retired_task_requirements": [
+      "Module06 run-corpus pages",
+      "Module07 deterministic n8n routing/receipt exercise",
+      "Module08 38-call comparison design",
+      "Mandatory external Module10 recipient/after-hours attempt"
+    ],
+    "limit": "Prior observations are source-bound. No old PASS is promoted to merged-source runtime, human or billing evidence.",
+    "concurrent_omp_commit": "16086718abc1fbbf9ba84c755af3e6c1c06cb796"
+  },
+  "previous_runs": [
+    {
+      "run_id": "20260930T224039-live-33ed8fb4",
+      "scope": "Byte-exact incoming main report, including its newer Module02/06/08 source-bound observations; original path semantics retained.",
+      "href": "20261004T105600Z-course-navigation-readiness/pre-integration-main-exercise-runs.json",
+      "sha256": "d5f02b21d6723f593bc778a8ea27ec4fee232ff11d47f161e6c8749180ef1188",
+      "bytes": 178278
+    },
+    {
+      "run_id": "20261004T105600Z-course-navigation-readiness",
+      "scope": "Complete navigation/readiness campaign with explicit publication override, before reconciliation with rewritten main modules. The 57-image audit and72-view matrix refer to these earlier source identities, not automatically to merged main.",
+      "href": "20261004T105600Z-course-navigation-readiness/authorized-task-exercise-runs.json",
+      "sha256": "1cabb1bfe62519165728c9220b745365b2ab2ce400f352da162a4d653158e4d7",
+      "bytes": 55582
+    },
+    {
+      "scope": "Passing 33-gate integration before the concurrent latest-OMP merge; retained byte-for-byte.",
+      "href": "20261005T002550Z-navigation-main-integration/pre-latest-omp-merge-exercise-runs.json",
+      "sha256": "ac9524d50e13b2853f046a3e49b65f7b055623bf586d5c396bb01e9cea5d3c73",
+      "bytes": 59760
+    },
+    {
+      "scope": "Intermediate latest-OMP aggregate gate was HOLD. Its per-module phrases refer to the earlier verification, not a passing intermediate aggregate.",
+      "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/pre-final-exercise-runs.json",
+      "sha256": "309abf5540c04fb97084110a4070f733f8c5e6e52cd5e83503005634e58097d6",
+      "bytes": 62587
+    }
+  ],
+  "runtime": {
+    "scope": "This integration only; earlier independent paid campaigns remain recorded in archived main reports.",
+    "paid_launcher_turns_started": 0,
+    "paid_provider_requests_started": 0,
+    "provider_billed_usd": null,
+    "paid_admission": "HOLD; publication authorization is not spending authorization"
+  },
+  "verification": {
+    "status": "passed_scoped_technical_checks",
+    "offline": {
+      "status": "passed",
+      "scoped_gates": 34,
+      "elapsed_seconds": 223.68,
+      "record": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/course-gates.log",
+        "sha256": "df80f090df6e69bdf39bba8d83b59076749a8ce64dbd59cb3d07459e47e25197",
+        "bytes": 155468
+      },
+      "raw_record": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/course-gates.raw.log",
+        "sha256": "caa5377e26ee93e4f7b5193bc1e4329e66411a671941f0cefc286fc394ebd5bd",
+        "bytes": 156668
+      },
+      "environment": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/environment.json",
+        "sha256": "4ca0d8a7840dc31d7b140c0034392f3787256da06b1b2388fc57d515614db2ce",
+        "bytes": 402
+      },
+      "scope": "Complete34-gate run before the subsequent five-file staff reference/verification merge. No executable or public-source bytes changed in that subsequent merge; its affected checks and exact byte publication check passed separately below. Darwin arm64, dedicated TMPDIR, unchanged600-second per-command deadline, no provider calls.",
+      "source_manifest": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/source-manifest.json",
+        "sha256": "2e143fd1e822b27df84a4ff6bcbad77cb02a32d3a8def25ccbabe26efebfa57f",
+        "bytes": 182189
+      }
+    },
+    "command_parsers": {
+      "status": "passed",
+      "maintained_fences": 502,
+      "fences": {
+        "bash": 301,
+        "powershell": 201
+      },
+      "parser_invocations": {
+        "bash": 301,
+        "zsh": 301,
+        "powershell": 201,
+        "sh": 0
+      },
+      "scope": "Bash3.2.57, Zsh5.9 and PowerShell7.6.6 on Darwin. sh self-check passed but no maintained sh fences; Windows PowerShell5.1 remains unobserved."
+    },
+    "publication": {
+      "status": "passed",
+      "instructional_pages": 35,
+      "raw_downloads": 436,
+      "ui_and_generated_assets": 40,
+      "byte_for_byte_check": true
+    },
+    "browser": {
+      "status": "passed",
+      "engine": "Chrome/150.0.7871.24",
+      "matrix_observations": 120,
+      "matrix_failures": 0,
+      "record": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix.json",
+        "sha256": "e615f80f8590367401e742ea6d0f793999228579b66a0a245b802958bcb5055c",
+        "bytes": 79255
+      },
+      "screenshots": [
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/000-320-sand.png",
+          "sha256": "599235717ad3069392d0b1ac705e1bac39edcecb34f903a214294e1ac7ded667",
+          "bytes": 42243
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/001-320-sand.png",
+          "sha256": "43e10281d9ff585de9f00aad0b38ae88f7df1a97e672b1f59e1a922b52f64768",
+          "bytes": 70169
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/002-320-sand.png",
+          "sha256": "4f5edf05fd5b25eddd4183e8d4557480176760d5f4176fb947bb67f8c6d123d7",
+          "bytes": 55201
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/003-320-sand.png",
+          "sha256": "0ce4e3012d7c629569d1b8fa1d57ea9d8403319f4f2e8d9c62c655707a625e83",
+          "bytes": 74337
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/004-320-sand.png",
+          "sha256": "c7e4af2f0185b96929c049ed53b6a80f79de425caa3894d72ec83563f724d39b",
+          "bytes": 75905
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/005-320-sand.png",
+          "sha256": "a1048d2c75637bd947ca0ab50bdadd09bd18a15671388c2349f91026808d3b62",
+          "bytes": 57999
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/006-320-sand.png",
+          "sha256": "8a38eb8fc17196eeafef5887b7264c2a2a19d01ff7c22f92647b6b8fa78a3559",
+          "bytes": 108994
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/007-320-sand.png",
+          "sha256": "bbb9018ea797dc21600f3a2730cd3839c876058e9e25e748be063ab33d2b3265",
+          "bytes": 104502
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/008-320-sand.png",
+          "sha256": "1db1aec82a2f5a25443da810156ca913ec491f2b4a004cf3e1e3d836e0541bf1",
+          "bytes": 71837
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/009-320-dark.png",
+          "sha256": "5b4861e22c262d173e84187dab42f00a479dbec0700355fa0e4c69a53aa7d624",
+          "bytes": 42329
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/010-320-dark.png",
+          "sha256": "2f574b27090f2cd7bd47cb466390b2dce1c074389a9c857174455ecc26f6d4b8",
+          "bytes": 70959
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/011-320-dark.png",
+          "sha256": "b4a15f19fb463e25a9e63cd34f7d1b7cc8fd59e5da3fb32aefddcb1dfc9d3c36",
+          "bytes": 55823
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/012-320-dark.png",
+          "sha256": "bf442d1da55f80c231c90d8c2e42ce23cd6c3d360035b3cc5e10925d8d54547e",
+          "bytes": 75354
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/013-320-dark.png",
+          "sha256": "297527f2c8a3f6915a50122c9ca974e1f170a20f6c3bd9699c601ba522a67b27",
+          "bytes": 76782
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/014-320-dark.png",
+          "sha256": "1a3e88a6efaa18d7dcd2c3d9a3851e22ef49f0ddc9a09cbefb87aff847eccf75",
+          "bytes": 58758
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/015-320-dark.png",
+          "sha256": "ff2fc617f1fed663788054855f1e876d92e1ae862dc23749804fb05d3d1ab686",
+          "bytes": 109931
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/016-320-dark.png",
+          "sha256": "288616585c49bdf2fd8e70983732cbab8e9439005eb5cba71d48845ef7cbdd61",
+          "bytes": 105435
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/017-320-dark.png",
+          "sha256": "e06f212b6da45eaed293ce7e04813202edab6669d05ec8aec99c39e0c215eaf6",
+          "bytes": 72197
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/018-390-sand.png",
+          "sha256": "30b43e0af39abbb7685fe6119cf697aa6fad6d40466771a1feb746011d6de478",
+          "bytes": 211694
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/019-390-sand.png",
+          "sha256": "503382f006c57ce7db5c6fea4f987000aef89a11b05f94d962e9e086744e24ce",
+          "bytes": 116309
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/020-390-sand.png",
+          "sha256": "e0092d02af6f8ec5909b22149d62b08ad1d2dc2669845c632185e417661c1333",
+          "bytes": 109388
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/021-390-sand.png",
+          "sha256": "eef5aa8d3b60b20b05f54ae3a64a746234c8163bcd872138eeb6e747b6073276",
+          "bytes": 113651
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/022-390-sand.png",
+          "sha256": "43f1df0f7578fda3d6c010a5031d95fafd541693ea298f1adcca76f317c1bea7",
+          "bytes": 135410
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/023-390-sand.png",
+          "sha256": "a82a24e59762899fb42d2c48f73de4385189ccaa96d1c72fe01d56e7a5888a26",
+          "bytes": 104526
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/024-390-sand.png",
+          "sha256": "7c2635486231d5d0af102b71ed2716f1b70541d63c13d13c1b46b026d19ce0d1",
+          "bytes": 170357
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/025-390-sand.png",
+          "sha256": "1e69c9f87efea0c240892d3111d5b33db651a3944ae71abe814680065df478e7",
+          "bytes": 148688
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/026-390-sand.png",
+          "sha256": "ed9b6de35993ed4b79ecc9d2294f2ef5a06d6220cd925ad5e88d1b06e5f3320d",
+          "bytes": 127068
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/027-390-dark.png",
+          "sha256": "8258dd459504ee61e40972c840d043587bc9b0f17e60f3e8f1d4b2dc8c4d2c07",
+          "bytes": 209786
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/028-390-dark.png",
+          "sha256": "78a9e2fa7104434f854792f1ce2adc10d6e20b956d2f5e0fe4ce4b2d01043e61",
+          "bytes": 117770
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/029-390-dark.png",
+          "sha256": "9fa2232027bffeacb4a1d34f95170eec2bfda86fad9bb49b2db3d12a82cbcde6",
+          "bytes": 110647
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/030-390-dark.png",
+          "sha256": "ee3317af033fc00757d36678825d987ad76afd9cde491ada179fcf77521e9e49",
+          "bytes": 115213
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/031-390-dark.png",
+          "sha256": "0c24ee3402d7163213e7fc662e1a1294707ecf02064bd923df26fd87799d594c",
+          "bytes": 136621
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/032-390-dark.png",
+          "sha256": "64972717e2c98536c924f6a3fccc342ff29bf773ab3c3187fae1946bc9fc8e91",
+          "bytes": 105156
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/033-390-dark.png",
+          "sha256": "59cb93848320d0e53b9e19d06551e43f334ae06227785f42ecba2f78a3412a62",
+          "bytes": 171699
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/034-390-dark.png",
+          "sha256": "6b562624db244dc7795803b83e38c5febb64869c8b85f034338c5681816b393b",
+          "bytes": 149600
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/035-390-dark.png",
+          "sha256": "86a2201c08aec4b5fb15c789cf1acdab8ab3a8772e78daa962a53227e21bba03",
+          "bytes": 128256
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/036-768-sand.png",
+          "sha256": "5eae6ca74a720cac6f05fcd3de32c31e0cfe5bb964732c3e6f238036a27bede5",
+          "bytes": 659002
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/037-768-sand.png",
+          "sha256": "4398d3244a23d566fe3a6a48426421474e9d66e3326679027a89831ed2d1dfca",
+          "bytes": 170630
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/038-768-sand.png",
+          "sha256": "bfb02baf3fb9c954910c1aead45c56718d46f2338aa4491d00eeb1e56e6756d5",
+          "bytes": 198690
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/039-768-sand.png",
+          "sha256": "0010e0ce569c1d077d6e72697d5edea3be55ec571bd38e7c5cadbb302623b415",
+          "bytes": 190183
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/040-768-sand.png",
+          "sha256": "e2bd15c493bd6a6b547c8aa5be78a04124568ed1325bb6782a8b360bf2a97f5d",
+          "bytes": 235874
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/041-768-sand.png",
+          "sha256": "8edb253448398aabd2758e0c4d90aa7ff532ce95c429195a26a39b9b46b58a12",
+          "bytes": 156131
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/042-768-sand.png",
+          "sha256": "ab106db2b8664d585145c2ea70ae1bde06d8ac5491595affea26c4d0b3b93157",
+          "bytes": 495158
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/043-768-sand.png",
+          "sha256": "7cdd11cb69a794bbb77f48822c1437164a9903e67ef3ded38467414c787b5b9c",
+          "bytes": 444419
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/044-768-sand.png",
+          "sha256": "27b69c2014442c6c21edc539c18776b8b2e9c87c8fa7acfc2bb4811dd2f37969",
+          "bytes": 194764
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/045-768-dark.png",
+          "sha256": "053cb288d1d7b050539b41c1be4fd56a38f14410a1f941ca4fde545bd32994ae",
+          "bytes": 645222
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/046-768-dark.png",
+          "sha256": "33efdc388b949f38602125ae94e765de06d37668e1cbbbc30629aa657ecdf49c",
+          "bytes": 172922
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/047-768-dark.png",
+          "sha256": "d4574b91b440f60947a8b82bf92903a227cd80affaef5ced6b16ec555750cee8",
+          "bytes": 199939
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/048-768-dark.png",
+          "sha256": "c7774dc467ac42e856df817f239dd50ac74af3987d0af1cfca012a13e9440e13",
+          "bytes": 191346
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/049-768-dark.png",
+          "sha256": "441bfad8d950c559b384381f5e4210700e52ba90f784e7aa753e8f7c8eba5dd6",
+          "bytes": 237125
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/050-768-dark.png",
+          "sha256": "a8f897f9e7d8b94d81450c8f6db3355a7471df86f006af05d96957667500dd80",
+          "bytes": 156732
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/051-768-dark.png",
+          "sha256": "df2ef9a9125031e38bffe49908710d7342e0b1159d09ac7b9cd331ccabc7ced2",
+          "bytes": 496187
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/052-768-dark.png",
+          "sha256": "22a6db22a4b7e4ba23370be2aa040e5dfdd45a6380e5666be6c1f271f43736df",
+          "bytes": 445761
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/053-768-dark.png",
+          "sha256": "89a348cbed1e723f22ff1e46f40d5cc81e78a87d382b82b8824d37fd9435619c",
+          "bytes": 196161
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/054-1024-sand.png",
+          "sha256": "6ed9d7ac1f15d1f3f48ba16bd8d1d2a15f20c85e4bf5b3b779fa3078de775428",
+          "bytes": 997076
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/055-1024-sand.png",
+          "sha256": "16a6951c9b614178d12cc8693ca49b33ebd27c7c8b4da87be6ef387a00803f40",
+          "bytes": 164584
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/056-1024-sand.png",
+          "sha256": "bf94f8349cea27034ffc2158ebcd48195a977da98798cb6675265e0df627a096",
+          "bytes": 193246
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/057-1024-sand.png",
+          "sha256": "1980438facefba365c19f07feebc3976df4c9463e89e9c281439c0d1208ccc38",
+          "bytes": 187017
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/058-1024-sand.png",
+          "sha256": "c24e705fb642968fe35ddf392312b4f2f91795e1cbcb8e6f6e5b718409a9272c",
+          "bytes": 230952
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/059-1024-sand.png",
+          "sha256": "0218e5795facaf4da47347f872ae59abb4e9fce2f0f6504f8b117ed1fd01402f",
+          "bytes": 146442
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/060-1024-sand.png",
+          "sha256": "9224ce929de8f98567408f55c06bf93e755ebd59a93b4383c06e7e236863b495",
+          "bytes": 488139
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/061-1024-sand.png",
+          "sha256": "14dcf1b5970a019841a43cf053b61fa4ac4fbfc27bfba44df4052ac8d05bcc70",
+          "bytes": 432133
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/062-1024-sand.png",
+          "sha256": "6f0b345b6237821b6e0783f75c1254bfb2a78258756df794c92102496e43d55f",
+          "bytes": 183330
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/063-1024-dark.png",
+          "sha256": "cf96e1b1439f8b73b0e812db3e3c691cd98f58158e7f54e3e5c6978d746b1dc4",
+          "bytes": 986876
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/064-1024-dark.png",
+          "sha256": "d88678c8212b4346801c9934695f1da47dd19b52b9a9ddfa7833b695be267de2",
+          "bytes": 165171
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/065-1024-dark.png",
+          "sha256": "5ca53715111c49be48c353e0ba1cb724b8653929ad72527185f00f5f240e2513",
+          "bytes": 194182
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/066-1024-dark.png",
+          "sha256": "a38ed4331b163289c421608518a929dffbc0642b6522163db2b736598198a589",
+          "bytes": 188006
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/067-1024-dark.png",
+          "sha256": "2969b8b88dd789930662eb7b76e4f24d0fe176c95c0f9ad5c048b3bb9bc3c975",
+          "bytes": 232606
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/068-1024-dark.png",
+          "sha256": "9687c1599dd96ecf7731fa50561b6d938e5ff8607cd284a302b146b3b76b356d",
+          "bytes": 146775
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/069-1024-dark.png",
+          "sha256": "ca9e226bfe8b93c31660ba901a6ef7e212c898b36a664c0fc5ff1d71b2302e1a",
+          "bytes": 489230
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/070-1024-dark.png",
+          "sha256": "50b535e1b5f41f961cbc9071f06fdcd24fad82f0ee434934009d218f7332507e",
+          "bytes": 433353
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/071-1024-dark.png",
+          "sha256": "bd7fe9b2d7c39b0da5b0683066923374e1076e855c19ac2720e858c553d2ce99",
+          "bytes": 184880
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/072-1440-sand.png",
+          "sha256": "bd39ca774efc895518bfa72b3208dd0dbf28e72cb6125ca518474eda0ecaca3e",
+          "bytes": 1202489
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/073-1440-sand.png",
+          "sha256": "efc9eee163e35ac4225ab1012315e8ceedbd200f6436b535c561c2432ff622a9",
+          "bytes": 253208
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/074-1440-sand.png",
+          "sha256": "8af3b28564c7109cbe92de4e4457b45d0c5dfe550f03488ecee0b7d0d4493e05",
+          "bytes": 360183
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/075-1440-sand.png",
+          "sha256": "10a61e243d2cc12c1cb6ab36fa9bf58c56ac74aefc2495e0c2d48f5979590726",
+          "bytes": 368556
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/076-1440-sand.png",
+          "sha256": "3347e23d35dd2d88519b2f7436e816c11abfd3d732b769d27af53ebb5677e27f",
+          "bytes": 370081
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/077-1440-sand.png",
+          "sha256": "b17f4f5da46e939a2e0d36ba2bca3883bb82842c106672437b5f3870eab93ce3",
+          "bytes": 324192
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/078-1440-sand.png",
+          "sha256": "2389964b8de42d7efa5ef6bc9d142a4062d349bfc7ac0ee7c8f8a33bc395c03c",
+          "bytes": 802666
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/079-1440-sand.png",
+          "sha256": "f563905a2cd2444ad823e6e193c18234983dfb8f0d150e2666b1173fbe5bbd9c",
+          "bytes": 739664
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/080-1440-sand.png",
+          "sha256": "4affb0cb99d488b48c2c6d645b1a28b4df888440f15fa455a26faced40be4372",
+          "bytes": 351520
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/081-1440-dark.png",
+          "sha256": "85bebea286f76fd616df3e3bc7aaac3f15bdb672f3c3bcff61120808485a82b1",
+          "bytes": 1199817
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/082-1440-dark.png",
+          "sha256": "a1062bc269d2c357edcb9bd7120f78ad405d10f131735969e657dabd4beb28c6",
+          "bytes": 254708
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/083-1440-dark.png",
+          "sha256": "14b268b191bd57ad470d11caa29340471545e977b3735c4d31c6a9abc7cafee9",
+          "bytes": 360561
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/084-1440-dark.png",
+          "sha256": "e7de5c9a20e8d292412463d3b355c6266928f5954ac211b587ae41992b7b66a9",
+          "bytes": 369169
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/085-1440-dark.png",
+          "sha256": "a2cbef71d70550eb8c5604f23049bdfca306b28bd63ca71fe4301f36e5ec6bfb",
+          "bytes": 370986
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/086-1440-dark.png",
+          "sha256": "c66c64ece95d8eabbba25f0185bac1c41db756c9512b586f4f89084879eb972a",
+          "bytes": 324503
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/087-1440-dark.png",
+          "sha256": "c4e4f239b5f981557f7143c318e729301afecb0efd0e45131b50d742562f03bc",
+          "bytes": 805823
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/088-1440-dark.png",
+          "sha256": "866bea34a57d34f433b9b55d0096c8baaf704b8c3350270073f0a9000e83485b",
+          "bytes": 741367
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/089-1440-dark.png",
+          "sha256": "f8bfdc8436983f179a6387730e2aa8dd18bc0e11bc9c51a58f264e491909a4d1",
+          "bytes": 351238
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/090-1366-sand.png",
+          "sha256": "6db016bb277a492f5064c81c7ae6a66d587f685ec9b9d151c19b8506b7dc9baa",
+          "bytes": 473149
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/091-1366-sand.png",
+          "sha256": "6b95478532bccb71c2f290018a3a9f35fe608b5edde8e796bf0d0349ed4aeca1",
+          "bytes": 133491
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/092-1366-sand.png",
+          "sha256": "b751c98dee039ce1e3967ead1be630e535a9667dc3404271f555c1f2d96b1aff",
+          "bytes": 152772
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/093-1366-sand.png",
+          "sha256": "64dfbfeaf1fae545d8407f4c26971ff4e4b40dced7b5adec33a332e5cddebbe2",
+          "bytes": 153601
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/094-1366-sand.png",
+          "sha256": "ace0486fc024476d81d1c7f9e9a6c2cd2ec0b06c8dbffdd5ae10cdb34d11866d",
+          "bytes": 182376
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/095-1366-sand.png",
+          "sha256": "b1e5cd6968a6e9c91c77188bd7b820fd6b606655147acd5cf3d37b6e00964bff",
+          "bytes": 106367
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/096-1366-sand.png",
+          "sha256": "fee5ff447233db398b84546860770c1f43e374825292479266129ff2083a892b",
+          "bytes": 528210
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/097-1366-sand.png",
+          "sha256": "3aec999846b042f117e6016652ccaea4ca9e45b32c072103bd988598e538a3d9",
+          "bytes": 508949
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/098-1366-sand.png",
+          "sha256": "d73e5e298a7e7e907187370abc21ca887b329493765b2f3957edead9ec644bb9",
+          "bytes": 144836
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/099-1366-dark.png",
+          "sha256": "5c6239f6964d3ff35a78457fbc96a29b6d6bd5180038c2668c52cbcd094d6641",
+          "bytes": 467411
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/100-1366-dark.png",
+          "sha256": "c53f81311c353c5974b42924d17d6a017bc651e62bc9eba2be1681e2a0452672",
+          "bytes": 133136
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/101-1366-dark.png",
+          "sha256": "f5d89af60d83092ff71d9a6d20dbf1eab8962f4ad1352677a4ce4f5699ab2951",
+          "bytes": 153857
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/102-1366-dark.png",
+          "sha256": "ddf51e440b150667f10a41a52f8e6840554a9bf6540023d11040a567e1d9bedd",
+          "bytes": 154610
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/103-1366-dark.png",
+          "sha256": "7a7fbeea61f18923eca4347dc7513549d3b2b464265a7ba9c9880d4712d168b3",
+          "bytes": 183252
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/104-1366-dark.png",
+          "sha256": "750a1507f2f6af548ecacb0f1128c4e670e99eea5d8eef8fb96ea708c00c3e1e",
+          "bytes": 106451
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/105-1366-dark.png",
+          "sha256": "353423b3c9629a9010cfcc19077bb0ac3dc7272a4ed894f7a67a5191f97a0a5b",
+          "bytes": 528848
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/106-1366-dark.png",
+          "sha256": "3f6a24d5f342258a88488483e6b11cbb204286d50b0f08116016cdf11c4ada08",
+          "bytes": 509731
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/107-1366-dark.png",
+          "sha256": "49a52342eef5ef86dfe3a0591cbcf8367e14d4f32f68a8bd9a28c6d2320dafa2",
+          "bytes": 145323
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/108-320-sand.png",
+          "sha256": "7619e0f2b0dd4411c632bf9ae6938dda71881d5581c725d7456a0246234b4335",
+          "bytes": 109915
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/109-320-dark.png",
+          "sha256": "65d7396b8d35b2f8fcfdb159d640387e7db713cd98a3bbc9c8b5a62be8b08653",
+          "bytes": 111038
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/110-390-sand.png",
+          "sha256": "4a7d471fba7e39ccac36b2b1d5d5362a5327a0dd970dc5778a1d8fd8a2af18d6",
+          "bytes": 166131
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/111-390-dark.png",
+          "sha256": "1f2526cfa2495a34a132ff8cc5a1de34c60f8fee76abb5f0f0f3a719c26229c1",
+          "bytes": 167449
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/112-768-sand.png",
+          "sha256": "5bc08e3996c932cf90700697f9ce18a42783830abf48e808b4ea3bf0c83b9f7a",
+          "bytes": 477918
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/113-768-dark.png",
+          "sha256": "f8d74766e7060f885ad6a468d6b66388ff45856cc380058ed7c73449d51848a2",
+          "bytes": 478386
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/114-1024-sand.png",
+          "sha256": "13c12791e5b899ced0658b70a89ac7c0cec22323955704ceb8ddde6d6372138f",
+          "bytes": 458199
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/115-1024-dark.png",
+          "sha256": "266f3424effea5b80d02685ef01435fd688006f458d0719a40afa188efd9e764",
+          "bytes": 459245
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/116-1440-sand.png",
+          "sha256": "e90c68668d66a8ad020255a4280b02e31f690b487e7220d29f9abb4f142ea7d9",
+          "bytes": 760367
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/117-1440-dark.png",
+          "sha256": "6765484432b3a7a7105fa4709e14424630782f69605c890da896255f4addbd74",
+          "bytes": 761584
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/118-1366-sand.png",
+          "sha256": "2df9721a6e18a00261871b93f54557eb55bc9225f6f205ca6c1f4dcb9a6dbf78",
+          "bytes": 444890
+        },
+        {
+          "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-settled/119-1366-dark.png",
+          "sha256": "5c71641fd57fce8f53cb6a8ae0fedef08734ccf844661204ec4f641f9b51f6e2",
+          "bytes": 445578
+        }
+      ],
+      "search": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/search.json",
+        "sha256": "05aad427469a1b676c91f7aefe99902253641ef0e597669825482763072e2c30",
+        "bytes": 739
+      },
+      "search_screenshot": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/search-landing.png",
+        "sha256": "08d3871616e21a2d0f645696f8281bf962ba22d44d0655e3b0cba1b06370ae8d",
+        "bytes": 150959
+      },
+      "progressive_reading": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/progressive-reading.json",
+        "sha256": "4b0835a9077a2acffdb995df76a609c09720d23ff58123c870635872770987ae",
+        "bytes": 256
+      },
+      "no_script_screenshot": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/longform-no-script.png",
+        "sha256": "03ef27bc7184f7e8ae272c8efb0aa081e99acca10c7b6fe32d922db8a70a6efb",
+        "bytes": 217600
+      },
+      "print_pdf": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/longform-print.pdf",
+        "sha256": "482e4fd71d41c9024c9803cf6242508a922809def7f8158fa1ca53287821aea2",
+        "bytes": 7643350
+      },
+      "scope": "Ten current destinations including the new Module00 longform lab; six viewports in Sand/Dark. Actual keyboard focus transfer, visible anchor placement, no overflow/duplicate IDs/open dialogs. Current Module00 search landing; all15 longform steps exposed without JavaScript and in print. Earlier prefixed-mount and full image-audit receipts remain historical."
+    },
+    "work_preparation": {
+      "status": "passed",
+      "record": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/work-preparation.json",
+        "sha256": "5e3fd1c8d130d40aa17a0e9f529136f13ccabb410775c7e118f46c59bcb80018",
+        "bytes": 7256
+      },
+      "scope": "Actual fresh preparation commands for Modules05/06/07/08/10; Module10 package structure check only, not command execution or model/human performance."
+    },
+    "preserved_failures": [
+      {
+        "scope": "First build stopped on the capstone preparation anchor renamed by incoming main; corrected to the new individual-work heading.",
+        "record": {
+          "href": "20261005T002550Z-navigation-main-integration/integration-build-first-failure.json",
+          "sha256": "a2bba4980fb68ccb73caa65d9767e716e58629fe0b2ea82f99458166644e2fba",
+          "bytes": 452
+        }
+      },
+      {
+        "scope": "Obsolete generated output was preserved outside the checkout before clean publication.",
+        "record": {
+          "href": "20261005T002550Z-navigation-main-integration/stale-generated-output-preserved.json",
+          "sha256": "5bac7e56b75bed4a8c16b508aaa3ce32b3cd146809d9653f7cd98e5af00a3b2c",
+          "bytes": 332
+        }
+      },
+      {
+        "scope": "The first full gate reached a stale generated prepare_work.py after the actual Module07 smoke exposed and corrected its retired input references. Final complete run passed.",
+        "records": {
+          "redacted": {
+            "href": "20261005T002550Z-navigation-main-integration/first-integration-gates.log",
+            "sha256": "84dad87728ab84757ab78bdec45e1e960cf36f0e3ed92750aa49f2339c68f2bc",
+            "bytes": 141987
+          },
+          "raw": {
+            "href": "20261005T002550Z-navigation-main-integration/first-integration-gates.raw.log",
+            "sha256": "16f7aad04b42ef2c0d354c3ea8332436b332a0c43eebc0dfe1cf2eaaf6ea6ba7",
+            "bytes": 149456
+          }
+        }
+      },
+      {
+        "scope": "The intermediate latest-OMP integration hit the unchanged 600-second Module02 mutation deadline. The final full run used a dedicated TMPDIR, retained every gate/oracle and deadline, and passed.",
+        "record": {
+          "href": "20261005T002550Z-navigation-main-integration/latest-omp-integration/course-gates.log",
+          "sha256": "c867b34c63470a71d30d0266e79951da3faeb8bf94f2ffca1721b1b77a2be830",
+          "bytes": 142004
+        },
+        "raw_record": {
+          "href": "20261005T002550Z-navigation-main-integration/latest-omp-integration/course-gates.raw.log",
+          "sha256": "462e147a1cf91a0861070a035c3034fa690e1881e7b88c78a476bb2ce4e550fd",
+          "bytes": 143192
+        }
+      },
+      {
+        "scope": "Browser harness corrections only: press API argument order, numeric-leading DOM ID lookup, and waiting for actual focus settlement rather than sampling after two frames. No product code changed for these capture errors.",
+        "records": [
+          {
+            "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-harness-first-attempt.json",
+            "sha256": "173bc569705fe42f3b645c5f9b5f6d28b4618dde13162173b6f53c88fdded6a6",
+            "bytes": 150
+          },
+          {
+            "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-harness-second-attempt.json",
+            "sha256": "733bcbbaee4b6b953f6c58e9cb6891e36b229e46b5f28c3dd0022890a2c98edf",
+            "bytes": 188
+          },
+          {
+            "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/browser-matrix-before-focus-settlement.json",
+            "sha256": "1b2e8fd9a21a606a796dd8ab7fb8b6dde7b80d024a5b6a0cea695a2835a6560b",
+            "bytes": 144191
+          }
+        ]
+      }
+    ],
+    "historical_limits": "Earlier57-image audit, hosted32-gate run, and72-view matrix remain bound to their archived task source. New merged-source proof is recorded above; no inherited native, human, live-model, or billing PASS.",
+    "post_full_gate_merge": {
+      "status": "passed",
+      "incoming_main_commit": "4ad745ce5a2ac01157619e5ecaae1c17d0c5b810",
+      "changed_files": [
+        {
+          "path": "AI_Harness_Bootcamp_2/module-00-setup/reference/REFERENCE.md",
+          "before_sha256": "d0dd91ef2abe06328f28282c468e4cfa03dcebdf8e6c15a04c98379c48cd99c8",
+          "after_sha256": "4fb8353aa0f66df24ad398857640142d1f6cea9cce64c63ec0ad8bb9578575f9"
+        },
+        {
+          "path": "AI_Harness_Bootcamp_2/module-00-setup/reference/REFERENCE.sha256",
+          "before_sha256": "79cd6d5f9430f50b39b396b4184e22a0d2cb05f5bb331ebff401a71a42918734",
+          "after_sha256": "8bdcdeb1df4321e06bcf9f8f9da13821b0209457cfc62e684e6d5329177dde8a"
+        },
+        {
+          "path": "AI_Harness_Bootcamp_2/module-05-diagnose-review/reference/REFERENCE.md",
+          "before_sha256": "6c25300f9760b46bac58985767c41284c4b8eb4f7047d223ad89c72d342eaaeb",
+          "after_sha256": "94dccde477c1582671b4032ce26da473a943b410ab5eba4c2e2220fbf9711508"
+        },
+        {
+          "path": "AI_Harness_Bootcamp_2/module-05-diagnose-review/reference/REFERENCE.sha256",
+          "before_sha256": "c36116f031d3dab3693fad4d1289b89e7b87c4de9a0a0f42b4a18440a6727cd8",
+          "after_sha256": "0e00aeeeb883d4be866a7e1fcc66068acb3670dbaafcc18e6b1e1ec33a70bc08"
+        },
+        {
+          "path": "README.md",
+          "before_sha256": "a261baa33f0f325683199d98e8aa336ba36b571122b2c398fb8e9d9786309199",
+          "after_sha256": "80e6e92c8c9fae08272f2c27c9683d40704b0017c91a3eaf7aee5f9a0213b708"
+        }
+      ],
+      "checks": [
+        "Current502-fence command syntax inventory",
+        "Module00 behavioral and12-mutation oracle",
+        "Module05 behavioral suite:14 tests",
+        "Core frozen-reference and eleven-module supply graph",
+        "Exact-byte publication:35 pages,436 raw downloads,40 assets"
+      ],
+      "elapsed_seconds": 17.32,
+      "record": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/post-main-checks.log",
+        "sha256": "be37e051c2e61409c1cb9f290797f55fb3324280876a01937f4276378e6ed9b8",
+        "bytes": 43619
+      },
+      "raw_record": {
+        "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/post-main-checks.raw.log",
+        "sha256": "be37e051c2e61409c1cb9f290797f55fb3324280876a01937f4276378e6ed9b8",
+        "bytes": 43619
+      }
+    }
+  },
+  "modules": [
+    {
+      "id": "00",
+      "case": "North Shelf",
+      "directory": "module-00-setup",
+      "current_technical_verification": "passed_final_integrated_offline_gates; no new live or human observation",
+      "prior_observations": {
+        "main_report": {
+          "run_id": "20260930T224039-live-33ed8fb4",
+          "scope": "Byte-exact incoming main report, including its newer Module02/06/08 source-bound observations; original path semantics retained.",
+          "href": "20261004T105600Z-course-navigation-readiness/pre-integration-main-exercise-runs.json",
+          "sha256": "d5f02b21d6723f593bc778a8ea27ec4fee232ff11d47f161e6c8749180ef1188",
+          "bytes": 178278
+        },
+        "main_entry_id": "00",
+        "task_report": {
+          "run_id": "20261004T105600Z-course-navigation-readiness",
+          "scope": "Complete navigation/readiness campaign with explicit publication override, before reconciliation with rewritten main modules. The 57-image audit and72-view matrix refer to these earlier source identities, not automatically to merged main.",
+          "href": "20261004T105600Z-course-navigation-readiness/authorized-task-exercise-runs.json",
+          "sha256": "1cabb1bfe62519165728c9220b745365b2ab2ce400f352da162a4d653158e4d7",
+          "bytes": 55582
+        },
+        "limit": "Consult the original source/config identities and dates; not a new live or human observation."
+      }
+    },
+    {
+      "id": "01",
+      "case": "Cold Lantern",
+      "directory": "module-01-mission-thread",
+      "current_technical_verification": "passed_final_integrated_offline_gates; no new live or human observation",
+      "prior_observations": {
+        "main_report": {
+          "run_id": "20260930T224039-live-33ed8fb4",
+          "scope": "Byte-exact incoming main report, including its newer Module02/06/08 source-bound observations; original path semantics retained.",
+          "href": "20261004T105600Z-course-navigation-readiness/pre-integration-main-exercise-runs.json",
+          "sha256": "d5f02b21d6723f593bc778a8ea27ec4fee232ff11d47f161e6c8749180ef1188",
+          "bytes": 178278
+        },
+        "main_entry_id": "01",
+        "task_report": {
+          "run_id": "20261004T105600Z-course-navigation-readiness",
+          "scope": "Complete navigation/readiness campaign with explicit publication override, before reconciliation with rewritten main modules. The 57-image audit and72-view matrix refer to these earlier source identities, not automatically to merged main.",
+          "href": "20261004T105600Z-course-navigation-readiness/authorized-task-exercise-runs.json",
+          "sha256": "1cabb1bfe62519165728c9220b745365b2ab2ce400f352da162a4d653158e4d7",
+          "bytes": 55582
+        },
+        "limit": "Consult the original source/config identities and dates; not a new live or human observation."
+      }
+    },
+    {
+      "id": "02",
+      "case": "Ledger Pike",
+      "directory": "module-02-context-desk",
+      "current_technical_verification": "passed_final_integrated_offline_gates; no new live or human observation",
+      "prior_observations": {
+        "main_report": {
+          "run_id": "20260930T224039-live-33ed8fb4",
+          "scope": "Byte-exact incoming main report, including its newer Module02/06/08 source-bound observations; original path semantics retained.",
+          "href": "20261004T105600Z-course-navigation-readiness/pre-integration-main-exercise-runs.json",
+          "sha256": "d5f02b21d6723f593bc778a8ea27ec4fee232ff11d47f161e6c8749180ef1188",
+          "bytes": 178278
+        },
+        "main_entry_id": "02",
+        "task_report": {
+          "run_id": "20261004T105600Z-course-navigation-readiness",
+          "scope": "Complete navigation/readiness campaign with explicit publication override, before reconciliation with rewritten main modules. The 57-image audit and72-view matrix refer to these earlier source identities, not automatically to merged main.",
+          "href": "20261004T105600Z-course-navigation-readiness/authorized-task-exercise-runs.json",
+          "sha256": "1cabb1bfe62519165728c9220b745365b2ab2ce400f352da162a4d653158e4d7",
+          "bytes": 55582
+        },
+        "limit": "Consult the original source/config identities and dates; not a new live or human observation."
+      }
+    },
+    {
+      "id": "03",
+      "case": "Kiln Hold",
+      "directory": "module-03-mcp-research",
+      "current_technical_verification": "passed_final_integrated_offline_gates; no new live or human observation",
+      "prior_observations": {
+        "main_report": {
+          "run_id": "20260930T224039-live-33ed8fb4",
+          "scope": "Byte-exact incoming main report, including its newer Module02/06/08 source-bound observations; original path semantics retained.",
+          "href": "20261004T105600Z-course-navigation-readiness/pre-integration-main-exercise-runs.json",
+          "sha256": "d5f02b21d6723f593bc778a8ea27ec4fee232ff11d47f161e6c8749180ef1188",
+          "bytes": 178278
+        },
+        "main_entry_id": "03",
+        "task_report": {
+          "run_id": "20261004T105600Z-course-navigation-readiness",
+          "scope": "Complete navigation/readiness campaign with explicit publication override, before reconciliation with rewritten main modules. The 57-image audit and72-view matrix refer to these earlier source identities, not automatically to merged main.",
+          "href": "20261004T105600Z-course-navigation-readiness/authorized-task-exercise-runs.json",
+          "sha256": "1cabb1bfe62519165728c9220b745365b2ab2ce400f352da162a4d653158e4d7",
+          "bytes": 55582
+        },
+        "limit": "Consult the original source/config identities and dates; not a new live or human observation."
+      }
+    },
+    {
+      "id": "04",
+      "case": "Chalk Line",
+      "directory": "module-04-typed-decisions",
+      "current_technical_verification": "passed_final_integrated_offline_gates; no new live or human observation",
+      "prior_observations": {
+        "main_report": {
+          "run_id": "20260930T224039-live-33ed8fb4",
+          "scope": "Byte-exact incoming main report, including its newer Module02/06/08 source-bound observations; original path semantics retained.",
+          "href": "20261004T105600Z-course-navigation-readiness/pre-integration-main-exercise-runs.json",
+          "sha256": "d5f02b21d6723f593bc778a8ea27ec4fee232ff11d47f161e6c8749180ef1188",
+          "bytes": 178278
+        },
+        "main_entry_id": "04",
+        "task_report": {
+          "run_id": "20261004T105600Z-course-navigation-readiness",
+          "scope": "Complete navigation/readiness campaign with explicit publication override, before reconciliation with rewritten main modules. The 57-image audit and72-view matrix refer to these earlier source identities, not automatically to merged main.",
+          "href": "20261004T105600Z-course-navigation-readiness/authorized-task-exercise-runs.json",
+          "sha256": "1cabb1bfe62519165728c9220b745365b2ab2ce400f352da162a4d653158e4d7",
+          "bytes": 55582
+        },
+        "limit": "Consult the original source/config identities and dates; not a new live or human observation."
+      }
+    },
+    {
+      "id": "05",
+      "case": "Copper Span",
+      "directory": "module-05-diagnose-review",
+      "current_technical_verification": "passed_final_integrated_offline_gates; no new live or human observation",
+      "prior_observations": {
+        "main_report": {
+          "run_id": "20260930T224039-live-33ed8fb4",
+          "scope": "Byte-exact incoming main report, including its newer Module02/06/08 source-bound observations; original path semantics retained.",
+          "href": "20261004T105600Z-course-navigation-readiness/pre-integration-main-exercise-runs.json",
+          "sha256": "d5f02b21d6723f593bc778a8ea27ec4fee232ff11d47f161e6c8749180ef1188",
+          "bytes": 178278
+        },
+        "main_entry_id": "05",
+        "task_report": {
+          "run_id": "20261004T105600Z-course-navigation-readiness",
+          "scope": "Complete navigation/readiness campaign with explicit publication override, before reconciliation with rewritten main modules. The 57-image audit and72-view matrix refer to these earlier source identities, not automatically to merged main.",
+          "href": "20261004T105600Z-course-navigation-readiness/authorized-task-exercise-runs.json",
+          "sha256": "1cabb1bfe62519165728c9220b745365b2ab2ce400f352da162a4d653158e4d7",
+          "bytes": 55582
+        },
+        "limit": "Consult the original source/config identities and dates; not a new live or human observation."
+      }
+    },
+    {
+      "id": "06",
+      "case": "Blue Gauge",
+      "directory": "module-06-decision-model",
+      "current_technical_verification": "passed_final_integrated_offline_gates; no new live or human observation",
+      "prior_observations": {
+        "main_report": {
+          "run_id": "20260930T224039-live-33ed8fb4",
+          "scope": "Byte-exact incoming main report, including its newer Module02/06/08 source-bound observations; original path semantics retained.",
+          "href": "20261004T105600Z-course-navigation-readiness/pre-integration-main-exercise-runs.json",
+          "sha256": "d5f02b21d6723f593bc778a8ea27ec4fee232ff11d47f161e6c8749180ef1188",
+          "bytes": 178278
+        },
+        "main_entry_id": "06",
+        "task_report": {
+          "run_id": "20261004T105600Z-course-navigation-readiness",
+          "scope": "Complete navigation/readiness campaign with explicit publication override, before reconciliation with rewritten main modules. The 57-image audit and72-view matrix refer to these earlier source identities, not automatically to merged main.",
+          "href": "20261004T105600Z-course-navigation-readiness/authorized-task-exercise-runs.json",
+          "sha256": "1cabb1bfe62519165728c9220b745365b2ab2ce400f352da162a4d653158e4d7",
+          "bytes": 55582
+        },
+        "limit": "Consult the original source/config identities and dates; not a new live or human observation."
+      }
+    },
+    {
+      "id": "07",
+      "case": "White Rack",
+      "directory": "module-07-batch-workflow",
+      "current_technical_verification": "passed_final_integrated_offline_gates; no new live or human observation",
+      "prior_observations": {
+        "main_report": {
+          "run_id": "20260930T224039-live-33ed8fb4",
+          "scope": "Byte-exact incoming main report, including its newer Module02/06/08 source-bound observations; original path semantics retained.",
+          "href": "20261004T105600Z-course-navigation-readiness/pre-integration-main-exercise-runs.json",
+          "sha256": "d5f02b21d6723f593bc778a8ea27ec4fee232ff11d47f161e6c8749180ef1188",
+          "bytes": 178278
+        },
+        "main_entry_id": "07",
+        "task_report": {
+          "run_id": "20261004T105600Z-course-navigation-readiness",
+          "scope": "Complete navigation/readiness campaign with explicit publication override, before reconciliation with rewritten main modules. The 57-image audit and72-view matrix refer to these earlier source identities, not automatically to merged main.",
+          "href": "20261004T105600Z-course-navigation-readiness/authorized-task-exercise-runs.json",
+          "sha256": "1cabb1bfe62519165728c9220b745365b2ab2ce400f352da162a4d653158e4d7",
+          "bytes": 55582
+        },
+        "limit": "Consult the original source/config identities and dates; not a new live or human observation."
+      }
+    },
+    {
+      "id": "08",
+      "case": "Slope Brief",
+      "directory": "module-08-change-eval",
+      "current_technical_verification": "passed_final_integrated_offline_gates; no new live or human observation",
+      "prior_observations": {
+        "main_report": {
+          "run_id": "20260930T224039-live-33ed8fb4",
+          "scope": "Byte-exact incoming main report, including its newer Module02/06/08 source-bound observations; original path semantics retained.",
+          "href": "20261004T105600Z-course-navigation-readiness/pre-integration-main-exercise-runs.json",
+          "sha256": "d5f02b21d6723f593bc778a8ea27ec4fee232ff11d47f161e6c8749180ef1188",
+          "bytes": 178278
+        },
+        "main_entry_id": "08",
+        "task_report": {
+          "run_id": "20261004T105600Z-course-navigation-readiness",
+          "scope": "Complete navigation/readiness campaign with explicit publication override, before reconciliation with rewritten main modules. The 57-image audit and72-view matrix refer to these earlier source identities, not automatically to merged main.",
+          "href": "20261004T105600Z-course-navigation-readiness/authorized-task-exercise-runs.json",
+          "sha256": "1cabb1bfe62519165728c9220b745365b2ab2ce400f352da162a4d653158e4d7",
+          "bytes": 55582
+        },
+        "limit": "Consult the original source/config identities and dates; not a new live or human observation."
+      }
+    },
+    {
+      "id": "09",
+      "case": "Night Desk",
+      "directory": "module-09-agent-safeguards",
+      "current_technical_verification": "passed_final_integrated_offline_gates; no new live or human observation",
+      "prior_observations": {
+        "main_report": {
+          "run_id": "20260930T224039-live-33ed8fb4",
+          "scope": "Byte-exact incoming main report, including its newer Module02/06/08 source-bound observations; original path semantics retained.",
+          "href": "20261004T105600Z-course-navigation-readiness/pre-integration-main-exercise-runs.json",
+          "sha256": "d5f02b21d6723f593bc778a8ea27ec4fee232ff11d47f161e6c8749180ef1188",
+          "bytes": 178278
+        },
+        "main_entry_id": "09",
+        "task_report": {
+          "run_id": "20261004T105600Z-course-navigation-readiness",
+          "scope": "Complete navigation/readiness campaign with explicit publication override, before reconciliation with rewritten main modules. The 57-image audit and72-view matrix refer to these earlier source identities, not automatically to merged main.",
+          "href": "20261004T105600Z-course-navigation-readiness/authorized-task-exercise-runs.json",
+          "sha256": "1cabb1bfe62519165728c9220b745365b2ab2ce400f352da162a4d653158e4d7",
+          "bytes": 55582
+        },
+        "limit": "Consult the original source/config identities and dates; not a new live or human observation."
+      }
+    },
+    {
+      "id": "10",
+      "case": "Cold Foundry",
+      "directory": "module-10-capstone",
+      "current_technical_verification": "passed_final_integrated_offline_gates; no new live or human observation",
+      "prior_observations": {
+        "main_report": {
+          "run_id": "20260930T224039-live-33ed8fb4",
+          "scope": "Byte-exact incoming main report, including its newer Module02/06/08 source-bound observations; original path semantics retained.",
+          "href": "20261004T105600Z-course-navigation-readiness/pre-integration-main-exercise-runs.json",
+          "sha256": "d5f02b21d6723f593bc778a8ea27ec4fee232ff11d47f161e6c8749180ef1188",
+          "bytes": 178278
+        },
+        "main_entry_id": "10",
+        "task_report": {
+          "run_id": "20261004T105600Z-course-navigation-readiness",
+          "scope": "Complete navigation/readiness campaign with explicit publication override, before reconciliation with rewritten main modules. The 57-image audit and72-view matrix refer to these earlier source identities, not automatically to merged main.",
+          "href": "20261004T105600Z-course-navigation-readiness/authorized-task-exercise-runs.json",
+          "sha256": "1cabb1bfe62519165728c9220b745365b2ab2ce400f352da162a4d653158e4d7",
+          "bytes": 55582
+        },
+        "limit": "Consult the original source/config identities and dates; not a new live or human observation."
+      }
+    }
+  ],
+  "retained_main_revision_records": {
+    "module02_obsidian_revision": {
+      "run_id": "module02-obsidian-20261002T060403Z",
+      "evidence_root": "$HOME/course-evidence/module02-obsidian-20261002T060403Z",
+      "scope": "Automated maintainer implementation, actual host GUI interaction, serial live-provider runs, and published-surface observations; not human learner completion or measured learner timing. Historical observations above are unchanged.",
+      "acceptance": "Observed proof recorded here; final offline and main-integration receipts are retained externally.",
+      "branch": "feat/module02-obsidian",
+      "base_commit": "d11979bad4915ae38467d937865a9d5ca649b818",
+      "integrated_main": "3cfb72be5ca43b4b3f3e574bf6f4a2f0a76a5f81",
+      "offline": {
+        "module02_criterion_groups": 8,
+        "module02_mutations_killed": 8,
+        "module02_mutation_survivors": 0,
+        "obsidian_readiness_tests_passed": 17,
+        "first_integrated_scoped_gates_passed": 27,
+        "first_integrated_transcript": "integrated-offline-gates.txt",
+        "final_tree_transcript": "final-offline-gates.txt",
+        "command_parser_record": "integrated-shell-syntax.json",
+        "command_parser_scope": "73 initial command blocks, 121 Bash/zsh/PowerShell parser runs on macOS. The final overview correction removed eight duplicate blocks without changing surviving commands. This is not native Windows or Linux execution.",
+        "protected_inputs": "The forty DN files, shared/run_omp.py, and shared/course_guard.mjs match the base commit."
+      },
+      "desktop": {
+        "host": "Darwin 25.6 arm64",
+        "obsidian": "1.13.7",
+        "installation": "Checksum-verified official DMG in a task-owned location with a separate profile; existing installations and vaults preserved",
+        "readiness": "Actual link/edit/save, external token refresh, second edit, close/reopen, and both disk checks observed",
+        "live_vault": "Actual external Draft refresh, four editor-authored Knowledge notes, MOC, source-link navigation, admission reasons, substantive KB-003 revision, and final GUI audit/context records",
+        "settings": "Restricted mode observed on. Sync initially enabled in the fresh live vault, then explicitly disabled before Knowledge authoring. No account used.",
+        "record": "readiness-desktop-observations.json",
+        "other_gui_lanes": "Native Windows, WSLg, Intel macOS, Ubuntu, and Arch unobserved"
+      },
+      "local_negative_proof": {
+        "records": [
+          "offline-smoke/revision-proof.json",
+          "offline-smoke/negative-proof.json"
+        ],
+        "observed": "Unreviewed edited bytes held; renewed admission enabled a new revision; disposable cold tampering held with its named path; original v1 remained valid."
+      },
+      "live_provider": {
+        "status": "Completed with the original ingestion proposal HOLD retained and repaired without another ingestion",
+        "paid_run_invocations": 3,
+        "automatic_retries": 0,
+        "task_local_omp": "18.3.5",
+        "existing_default_omp": "18.4.9 preserved",
+        "provider_model": "openrouter/anthropic/claude-sonnet-4.6",
+        "credential": "Only the user-authorized ignored OPENROUTER_API_KEY assignment was parsed in a child process; the file was not executed and the value was not printed or published.",
+        "spending_authorization": "User explicitly authorized the paid maintainer runs; the original authorization metadata is retained. No account setting changed. Current learner instructions do not prescribe a per-key spending limit.",
+        "ingest": "Shared and phase audits PASS with all forty distinct sources read. Proposal validation exit 1: KB-001 DN-037 excerpt mismatch. Three valid Drafts staged; all evidence retained; no second ingestion.",
+        "cold_v1": "PASS, five executed reads, all three answers supported with valid citations; raw-source NOT_ATTEMPTED",
+        "revision": "KB-003 only: distinguish three authorizations from stamp status and gate constraint, adding exact DN-040 evidence. Fresh admission/freeze passed; MOC and other Knowledge notes unchanged.",
+        "missing_rule": "With the credential available, exit 2 before provider contact and no evidence directory; identical rule bytes restored before cold-v2",
+        "cold_v2": "PASS, five executed reads, focal KB-003 read and cited including DN-040; all three answers supported; raw-source NOT_ATTEMPTED",
+        "observed_effect": "Q3 explicitly names quality release, vehicle assignment, and permit approval as three authorizations, separately from stamp status and gate closure. One observed category clarification, not a fabricated v1 factual failure or general performance claim.",
+        "identity_after_gui_audit": "Both frozen revisions passed after final audit and context-map edits.",
+        "records": [
+          "live-integrated/evidence",
+          "live-integrated/local-v1-proof.json",
+          "live-integrated/local-v2-preparation.json",
+          "live-integrated/missing-rule-proof.json",
+          "live-integrated/audit-before-cold-v2.md"
+        ]
+      },
+      "publication": {
+        "record": "published-surface-proof.json",
+        "observed": "Actual wide/narrow Dark/Sand views, keyboard skip and guide controls, exact native clipboard copy, both full-size figures, all five setup pages, raw-download byte matches, no-JavaScript content, actual print PDF, prefixed navigation/search, and private-route/search exclusion",
+        "browser": "HeadlessChrome/145.0.7632.6, isolated profile on macOS",
+        "limitation": "Browser rendering does not establish installation or GUI execution on another operating system."
+      },
+      "independent_reviews": {
+        "runtime_security": "EXCELLENT",
+        "learning_progression": "EXCELLENT",
+        "platform_publication": "EXCELLENT",
+        "material_findings_remaining": 0,
+        "records": [
+          "FinalRuntimeReview.txt",
+          "FinalLearningReview.txt",
+          "FinalPlatformReview.txt"
+        ]
+      },
+      "integration_receipt": "final-integration.json",
+      "pushed_or_deployed": false
+    },
+    "module08_hallucination_revision": {
+      "date": "2026-10-04",
+      "scope": "Structured source checks, blind ensemble review, evidence-bound correction, and complete recheck; this observation is separate from the historical campaign above.",
+      "evidence_root": "$HOME/course-evidence/module08-hallucination-20261004T195428Z-62c876a8",
+      "path_resolution": "Paths in this revision are relative to this revision's evidence_root.",
+      "runtime": {
+        "omp": "18.3.5",
+        "model_selector": "openrouter/anthropic/claude-sonnet-4.6",
+        "observed_omp_sessions": 5,
+        "independent_model_families": false
+      },
+      "report": {
+        "path": "attempt/report.json",
+        "sha256": "f46b4e768e84ed2f833dfb6124900f54a8cbfddd251b31a8862359412d4ea747",
+        "technical_complete": true,
+        "content_holds": false,
+        "corrected_claims_rechecked": 7,
+        "deterministic_issues": 0,
+        "disagreements_after": 0,
+        "regressions": 0,
+        "unknown_authority": 1,
+        "operational_dispatch": "HOLD"
+      },
+      "commands": {
+        "path": "commands.json",
+        "sha256": "0c320b30de8d68973b25b2e47d6dc1c6b7dfbf7f0860886938da87f7c25ac8be",
+        "missing_key_observation": "HOLD before a model attempt was created"
+      },
+      "offline_regressions": {
+        "test_module_08.py": 14,
+        "test_adequacy.py": 4,
+        "status": "passed"
+      },
+      "publication": {
+        "path": "publication-proof.json",
+        "observed": "Overview-to-lab navigation, eight steps, PowerShell tab and native command copy, desktop/mobile layouts without horizontal overflow, mobile course menu, no-JavaScript command access, no browser errors",
+        "screenshots": [
+          "overview-desktop.webp",
+          "lab-desktop.webp",
+          "lab-mobile.webp",
+          "lab-mobile-nojs.webp"
+        ]
+      },
+      "limitations": [
+        "One campaign is not a measured hallucination rate.",
+        "Separate same-model sessions do not establish independent model-family errors.",
+        "No Jev invocation or calibrated confidence measurement.",
+        "No human learner acceptance or timing measured.",
+        "Browser rendering is not Windows execution."
+      ]
+    },
+    "local_n8n_simplification": {
+      "run_id": "20261006T021456Z-simplify-local-n8n",
+      "status": "scoped_technical_checks_passed",
+      "scope": "Staff-prepared n8n 2.41.5 plus matching external task runners; five simplified learner routes; actual agent/tool/XLSX run and persistence on Apple Silicon.",
+      "evidence_root": "$HOME/course-evidence/reformation-qa/20261006T021456Z-simplify-local-n8n",
+      "path_resolution": "Paths in this revision resolve against its evidence_root. Source-manifest paths are checkout-relative.",
+      "report": {
+        "path": "validation-summary.json",
+        "sha256": "a9951767e22fe86b2884d60f23b8fdc672eb0fab61ab939aab09c9090c440927",
+        "bytes": 8118
+      },
+      "source_manifest": {
+        "path": "source-manifest.json",
+        "sha256": "edeca601fd879c138a8e7b67dd0c59c6d4b1dd785b9d2ad5827ecc48eaaa8174",
+        "bytes": 5872
+      },
+      "previous_report": {
+        "path": "previous-exercise-runs.json",
+        "sha256": "dff0fea28be960c9478f3023d1677d61237f572d3aa1f0b72cee41ac48d1b55d",
+        "bytes": 72666
+      },
+      "integration": {
+        "incoming_main_commit": "bb936d1d98e0541e322be40d4e8cd85dda1ccbb0",
+        "status": "all_35_scoped_gates_passed",
+        "publication_pages": 35,
+        "publication_downloads": 428,
+        "publication_assets": 40,
+        "report": {
+          "path": "integration-summary.json",
+          "sha256": "4b38d03d18e6b63daa2d40843222e624b73112e08b2ec686242ebf9d333d1ea6",
+          "bytes": 2850
+        }
+      },
+      "limits": [
+        "Native runtime observed on Apple Silicon only; no Windows PowerShell 5.1, WSL, Intel Mac, Ubuntu or Arch execution.",
+        "Workflows assembled through the local API; browser upload, execution, download, publish/unpublish and export actions exercised.",
+        "Observed key-level OpenRouter usage delta was USD 0.13572; no per-generation billing receipts or enforced-cap proof.",
+        "Course visuals are screen-media PDF rasterizations after screenshot capture timeouts.",
+        "No human learner timing, independent acceptance or assistive-technology evidence. Prior unobserved lanes remain HOLD."
+      ]
+    }
+  },
+  "unobserved_lanes": [
+    "Native Windows PowerShell5.1 full syntax/receipt/current-package execution",
+    "Required native/cohort setup and exact-model/context32768 capstone rehearsals",
+    "Current facilitator, novice-pilot and actual human peer observations where applicable",
+    "Bounded authorized paid campaigns and directly observed provider billing"
+  ],
+  "release_decision": "Git integration/publication and task-resource removal authorized explicitly by the user. Missing evidence remains HOLD; it does not prohibit this authorized publication and is not relabeled PASS.",
+  "source_manifest": {
+    "href": "20261005T002550Z-navigation-main-integration/final-upstream-integration/post-main-source-manifest.json",
+    "sha256": "da226ae380c95e789575dfec694b93d3f4cba3acc93d504468093329d0172ac3",
+    "bytes": 182153
+  }
+}
