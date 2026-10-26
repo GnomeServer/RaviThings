@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 940" role="img" aria-labelledby="title desc" style="color:var(--fg,currentColor)"><title id="title">Six questions organize the evidence</title><desc id="desc">An editorial map of research-brief.md. Themes overlap; anchor IDs are representative.</desc>
+<style>text{font-family:Arial,"Liberation Sans",sans-serif} .serif{font-family:Georgia,"Liberation Serif",serif} .mono{font-family:"DejaVu Sans Mono",monospace}</style>
+<path d="M44 43H78" fill="none" stroke="var(--accent,currentColor)" stroke-width="3" opacity="1"/>
+<text x="90" y="48" font-size="11" fill="var(--muted,currentColor)" font-weight="600" text-anchor="start" letter-spacing="1.65">STANTON  /  INFORMATION FOUNDATION</text>
+<text x="956" y="48" font-size="11" fill="var(--muted,currentColor)" font-weight="500" text-anchor="end" class="mono">FIELD GUIDE  /  02</text>
+<text x="44" y="111" font-size="46" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">Six questions organize the evidence</text>
+<text x="46" y="147" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">An editorial map of research-brief.md. Themes overlap; anchor IDs are representative.</text>
+<path d="M44 176H956" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<rect x="44" y="205" width="440" height="194" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<text x="66" y="240" font-size="18" fill="var(--c1,currentColor)" font-weight="500" text-anchor="start" class="mono">01</text>
+<text x="104" y="239" font-size="11" fill="var(--c1,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">WEB MEASUREMENT</text>
+<text x="66" y="277" font-size="25" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">What is changing online?</text>
+<text x="66" y="306" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Authorship signals, sampling frames,</text>
+<text x="66" y="327" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">detector uncertainty and null findings.</text>
+<text x="66" y="358" font-size="13" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Do not mistake prevalence for inaccuracy.</text>
+<text x="66" y="383" font-size="10" fill="var(--c1,currentColor)" font-weight="400" text-anchor="start" class="mono">R011 · R012 · R013</text>
+<rect x="516" y="205" width="440" height="194" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<text x="538" y="240" font-size="18" fill="var(--c2,currentColor)" font-weight="500" text-anchor="start" class="mono">02</text>
+<text x="576" y="239" font-size="11" fill="var(--c2,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">RECURSIVE REUSE</text>
+<text x="538" y="277" font-size="25" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">How can training fail?</text>
+<text x="538" y="306" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Generated outputs enter later training;</text>
+<text x="538" y="327" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">errors and rare-detail loss can compound.</text>
+<text x="538" y="358" font-size="13" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Conditional findings, not inevitable collapse.</text>
+<text x="538" y="383" font-size="10" fill="var(--c2,currentColor)" font-weight="400" text-anchor="start" class="mono">R001 · R002 · R005 · R006</text>
+<rect x="44" y="421" width="440" height="194" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<text x="66" y="456" font-size="18" fill="var(--c3,currentColor)" font-weight="500" text-anchor="start" class="mono">03</text>
+<text x="104" y="455" font-size="11" fill="var(--c3,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">COUNTEREVIDENCE</text>
+<text x="66" y="493" font-size="25" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">When does synthetic help?</text>
+<text x="66" y="522" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Accumulation, task fit, curation, verification</text>
+<text x="66" y="543" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">and unsuccessful self-training results.</text>
+<text x="66" y="574" font-size="13" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Better averages do not preserve every detail.</text>
+<text x="66" y="599" font-size="10" fill="var(--c3,currentColor)" font-weight="400" text-anchor="start" class="mono">R003 · R007–R010 · R056</text>
+<rect x="516" y="421" width="440" height="194" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<text x="538" y="456" font-size="18" fill="var(--c4,currentColor)" font-weight="500" text-anchor="start" class="mono">04</text>
+<text x="576" y="455" font-size="11" fill="var(--c4,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">ORIGINS &amp; RECOVERY</text>
+<text x="538" y="493" font-size="25" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">What can preservation do?</text>
+<text x="538" y="522" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Provenance, original objects, checksums,</text>
+<text x="538" y="543" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">access controls and restoration tests.</text>
+<text x="538" y="574" font-size="13" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Authenticity and intact bytes are not truth.</text>
+<text x="538" y="599" font-size="10" fill="var(--c4,currentColor)" font-weight="400" text-anchor="start" class="mono">R014 · R016 · R017 · R035</text>
+<rect x="44" y="637" width="440" height="194" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<text x="66" y="672" font-size="18" fill="var(--c5,currentColor)" font-weight="500" text-anchor="start" class="mono">05</text>
+<text x="104" y="671" font-size="11" fill="var(--c5,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">EXISTING RESPONSIBILITIES</text>
+<text x="66" y="709" font-size="25" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">Who already does this work?</text>
+<text x="66" y="738" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Defense infrastructure, AI/data governance,</text>
+<text x="66" y="759" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">records officials and civilian custodians.</text>
+<text x="66" y="790" font-size="13" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">There is no institutional vacuum.</text>
+<text x="66" y="815" font-size="10" fill="var(--c5,currentColor)" font-weight="400" text-anchor="start" class="mono">S001 · R025 · R046 · R016</text>
+<rect x="516" y="637" width="440" height="194" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<text x="538" y="672" font-size="18" fill="var(--c6,currentColor)" font-weight="500" text-anchor="start" class="mono">06</text>
+<text x="576" y="671" font-size="11" fill="var(--c6,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">POLICY IMPLICATIONS</text>
+<text x="538" y="709" font-size="25" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">What should Congress do?</text>
+<text x="538" y="738" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">A focused command, bounded duties,</text>
+<text x="538" y="759" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">cost discipline and independent oversight.</text>
+<text x="538" y="790" font-size="13" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">A recommendation—not a scientific finding.</text>
+<text x="538" y="815" font-size="10" fill="var(--c6,currentColor)" font-weight="400" text-anchor="start" class="mono">R019 · R021 + synthesis</text>
+<path d="M44 879H956" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="904" font-size="11" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Source findings, qualified inferences and policy proposals remain distinct throughout the package.</text>
+<text x="44" y="926" font-size="10" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start" class="mono">SOURCE  research-brief.md  /  source-catalog.jsonl</text>
+<text x="956" y="926" font-size="10" fill="var(--muted,currentColor)" font-weight="400" text-anchor="end" class="mono">CUTOFF  07 OCT 2026</text>
+</svg>

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 940" role="img" aria-labelledby="title desc" style="color:var(--fg,currentColor)"><title id="title">The collection, at a glance</title><desc id="desc">Two source lanes. A shared record of origin. One proposed congressional statement.</desc>
+<style>text{font-family:Arial,"Liberation Sans",sans-serif} .serif{font-family:Georgia,"Liberation Serif",serif} .mono{font-family:"DejaVu Sans Mono",monospace}</style>
+<path d="M44 43H78" fill="none" stroke="var(--accent,currentColor)" stroke-width="3" opacity="1"/>
+<text x="90" y="48" font-size="11" fill="var(--muted,currentColor)" font-weight="600" text-anchor="start" letter-spacing="1.65">STANTON  /  INFORMATION FOUNDATION</text>
+<text x="956" y="48" font-size="11" fill="var(--muted,currentColor)" font-weight="500" text-anchor="end" class="mono">FIELD GUIDE  /  01</text>
+<text x="44" y="111" font-size="46" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">The collection, at a glance</text>
+<text x="46" y="147" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Two source lanes. A shared record of origin. One proposed congressional statement.</text>
+<path d="M44 176H956" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="213" font-size="11" fill="var(--accent,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">THE LIBRARY</text>
+<text x="956" y="215" font-size="13" fill="var(--accent,currentColor)" font-weight="700" text-anchor="end" class="mono">154 CATALOG RECORDS</text>
+<rect x="44" y="235" width="440" height="354" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<path d="M66 265H102" fill="none" stroke="var(--c1,currentColor)" stroke-width="3" opacity="1"/>
+<text x="66" y="301" font-size="28" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">Stanton material</text>
+<text x="462" y="264" font-size="10" fill="var(--c1,currentColor)" font-weight="600" text-anchor="end" class="mono">S-SERIES</text>
+<rect x="516" y="235" width="440" height="354" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<path d="M538 265H574" fill="none" stroke="var(--c2,currentColor)" stroke-width="3" opacity="1"/>
+<text x="538" y="301" font-size="28" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">Research &amp; institutions</text>
+<text x="934" y="264" font-size="10" fill="var(--c2,currentColor)" font-weight="600" text-anchor="end" class="mono">R-SERIES</text>
+<text x="66" y="341" font-size="11" fill="var(--c1,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">OFFICIAL RECORD</text>
+<text x="66" y="366" font-size="15" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start">Prepared statements + hearing transcripts</text>
+<text x="66" y="388" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">S001 / S002 / S003</text>
+<text x="66" y="419" font-size="11" fill="var(--c1,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">DIRECT &amp; REPORTED VOICE</text>
+<text x="66" y="444" font-size="15" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start">Published Q&amp;A + attributed reporting</text>
+<text x="66" y="466" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">S004 / S005–S010</text>
+<text x="66" y="497" font-size="11" fill="var(--c1,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">CONTEXT &amp; MEDIA LEADS</text>
+<text x="66" y="522" font-size="15" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start">Official articles, captions, recording pages</text>
+<text x="66" y="544" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Keep speaker and fidelity labels intact</text>
+<text x="538" y="341" font-size="11" fill="var(--c2,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">MECHANISMS &amp; CONDITIONS</text>
+<text x="538" y="366" font-size="15" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start">Recursive training + synthetic-data evidence</text>
+<text x="538" y="388" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Theory, experiments, corrections, versions</text>
+<text x="538" y="419" font-size="11" fill="var(--c2,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">MEASUREMENT &amp; CONTROLS</text>
+<text x="538" y="444" font-size="15" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start">Web studies, provenance + preservation</text>
+<text x="538" y="466" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Methods, sample limits, technical standards</text>
+<text x="538" y="497" font-size="11" fill="var(--c2,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">RESPONSIBILITIES &amp; AUTHORITY</text>
+<text x="538" y="522" font-size="15" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start">Defense policy + civilian institutions</text>
+<text x="538" y="544" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Programs, governance, statutory context</text>
+<text x="44" y="626" font-size="11" fill="var(--accent,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">THE PROVENANCE LAYER</text>
+<rect x="44" y="646" width="216" height="96" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<text x="60" y="676" font-size="19" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Catalog</text>
+<text x="60" y="699" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Identity, rights, versions</text>
+<text x="60" y="723" font-size="10" fill="var(--accent,currentColor)" font-weight="400" text-anchor="start" class="mono">source-catalog.jsonl</text>
+<rect x="276" y="646" width="216" height="96" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<text x="292" y="676" font-size="19" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Search log</text>
+<text x="292" y="699" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Coverage, exclusions, gaps</text>
+<text x="292" y="723" font-size="10" fill="var(--accent,currentColor)" font-weight="400" text-anchor="start" class="mono">search-log.md</text>
+<rect x="508" y="646" width="216" height="96" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<text x="524" y="676" font-size="19" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Source files</text>
+<text x="524" y="699" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Originals or labeled records</text>
+<text x="524" y="723" font-size="10" fill="var(--accent,currentColor)" font-weight="400" text-anchor="start" class="mono">sources/</text>
+<rect x="740" y="646" width="216" height="96" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<text x="756" y="676" font-size="19" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Fixity</text>
+<text x="756" y="699" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Byte-level checksums</text>
+<text x="756" y="723" font-size="10" fill="var(--accent,currentColor)" font-weight="400" text-anchor="start" class="mono">SHA256SUMS</text>
+<text x="44" y="776" font-size="11" fill="var(--accent,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">THE WORKING DOCUMENTS</text>
+<text x="44" y="807" font-size="17" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Research brief</text>
+<text x="44" y="833" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Evidence + counterevidence</text>
+<text x="276" y="807" font-size="17" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Voice analysis</text>
+<text x="276" y="833" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Attributed rhetorical patterns</text>
+<text x="508" y="807" font-size="17" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Witness statement</text>
+<text x="508" y="833" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Bounded policy recommendation</text>
+<text x="740" y="807" font-size="17" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Claim audit</text>
+<text x="740" y="833" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Exact wording + source locators</text>
+<path d="M44 879H956" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="904" font-size="11" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Records include excerpts and inaccessible leads. Different versions are not independent studies or speeches.</text>
+<text x="44" y="926" font-size="10" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start" class="mono">SOURCE  source-catalog.jsonl  /  README.md</text>
+<text x="956" y="926" font-size="10" fill="var(--muted,currentColor)" font-weight="400" text-anchor="end" class="mono">CUTOFF  07 OCT 2026</text>
+</svg>

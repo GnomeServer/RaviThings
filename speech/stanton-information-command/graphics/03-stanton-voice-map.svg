@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 940" role="img" aria-labelledby="title desc" style="color:var(--fg,currentColor)"><title id="title">The voice is anchored, not invented</title><desc id="desc">A map of the authenticated material used to shape the proposed Stanton testimony.</desc>
+<style>text{font-family:Arial,"Liberation Sans",sans-serif} .serif{font-family:Georgia,"Liberation Serif",serif} .mono{font-family:"DejaVu Sans Mono",monospace}</style>
+<path d="M44 43H78" fill="none" stroke="var(--accent,currentColor)" stroke-width="3" opacity="1"/>
+<text x="90" y="48" font-size="11" fill="var(--muted,currentColor)" font-weight="600" text-anchor="start" letter-spacing="1.65">STANTON  /  INFORMATION FOUNDATION</text>
+<text x="956" y="48" font-size="11" fill="var(--muted,currentColor)" font-weight="500" text-anchor="end" class="mono">FIELD GUIDE  /  03</text>
+<text x="44" y="111" font-size="46" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">The voice is anchored, not invented</text>
+<text x="46" y="147" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">A map of the authenticated material used to shape the proposed Stanton testimony.</text>
+<path d="M44 176H956" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="213" font-size="11" fill="var(--accent,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">PRINCIPAL ANCHORS</text>
+<rect x="44" y="234" width="288" height="156" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<rect x="63" y="251" width="50.4" height="25" rx="5" fill="var(--c1,none)" fill-opacity="0.08" stroke="var(--c1,currentColor)" stroke-width="1"/>
+<text x="75" y="268" font-size="11" fill="var(--c1,currentColor)" font-weight="600" text-anchor="start">S001</text>
+<text x="63" y="309" font-size="23" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">Prepared testimony</text>
+<text x="63" y="338" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">21 May 2025 · official statement</text>
+<text x="63" y="361" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Mission, responsibility, readiness</text>
+<rect x="356" y="234" width="288" height="156" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<rect x="375" y="251" width="50.4" height="25" rx="5" fill="var(--c2,none)" fill-opacity="0.08" stroke="var(--c2,currentColor)" stroke-width="1"/>
+<text x="387" y="268" font-size="11" fill="var(--c2,currentColor)" font-weight="600" text-anchor="start">S003</text>
+<text x="375" y="309" font-size="23" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">Hearing record</text>
+<text x="375" y="338" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">24 March 2026 · oral + prepared</text>
+<text x="375" y="361" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Stanton’s identified remarks only</text>
+<rect x="668" y="234" width="288" height="156" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<rect x="687" y="251" width="50.4" height="25" rx="5" fill="var(--c3,none)" fill-opacity="0.08" stroke="var(--c3,currentColor)" stroke-width="1"/>
+<text x="699" y="268" font-size="11" fill="var(--c3,currentColor)" font-weight="600" text-anchor="start">S004</text>
+<text x="687" y="309" font-size="23" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">Published Q&amp;A</text>
+<text x="687" y="338" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">1 May 2025 · publication date</text>
+<text x="687" y="361" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Direct answers; local excerpt</text>
+<text x="44" y="431" font-size="11" fill="var(--accent,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">EIGHT OBSERVED TRAITS</text>
+<circle cx="53" cy="470" r="5" fill="var(--c1,currentColor)" stroke="var(--c1,currentColor)" opacity="1" stroke-width="1.4"/>
+<text x="71" y="475" font-size="18" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Mission before technology</text>
+<text x="71" y="499" font-size="14" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Lead with the operational need.</text>
+<text x="467" y="518" font-size="10" fill="var(--c1,currentColor)" font-weight="400" text-anchor="end" class="mono">S001 / S003</text>
+<path d="M71 526H480" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<circle cx="525" cy="470" r="5" fill="var(--c2,currentColor)" stroke="var(--c2,currentColor)" opacity="1" stroke-width="1.4"/>
+<text x="543" y="475" font-size="18" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Active responsibility</text>
+<text x="543" y="499" font-size="14" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Name the owner. State the duty.</text>
+<text x="939" y="518" font-size="10" fill="var(--c2,currentColor)" font-weight="400" text-anchor="end" class="mono">S001 / S003</text>
+<path d="M543 526H952" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<circle cx="53" cy="554" r="5" fill="var(--c3,currentColor)" stroke="var(--c3,currentColor)" opacity="1" stroke-width="1.4"/>
+<text x="71" y="559" font-size="18" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Short declarative anchors</text>
+<text x="71" y="583" font-size="14" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Use compact sentences to set priorities.</text>
+<text x="467" y="602" font-size="10" fill="var(--c3,currentColor)" font-weight="400" text-anchor="end" class="mono">S001 / S003</text>
+<path d="M71 610H480" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<circle cx="525" cy="554" r="5" fill="var(--c4,currentColor)" stroke="var(--c4,currentColor)" opacity="1" stroke-width="1.4"/>
+<text x="543" y="559" font-size="18" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Purposeful imperatives</text>
+<text x="543" y="583" font-size="14" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Make “must” carry a requirement.</text>
+<text x="939" y="602" font-size="10" fill="var(--c4,currentColor)" font-weight="400" text-anchor="end" class="mono">S001 / S003 / S004</text>
+<path d="M543 610H952" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<circle cx="53" cy="638" r="5" fill="var(--c5,currentColor)" stroke="var(--c5,currentColor)" opacity="1" stroke-width="1.4"/>
+<text x="71" y="643" font-size="18" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Concrete consequences</text>
+<text x="71" y="667" font-size="14" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Connect technical choices to operations.</text>
+<text x="467" y="686" font-size="10" fill="var(--c5,currentColor)" font-weight="400" text-anchor="end" class="mono">S004 / S009</text>
+<path d="M71 694H480" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<circle cx="525" cy="638" r="5" fill="var(--c6,currentColor)" stroke="var(--c6,currentColor)" opacity="1" stroke-width="1.4"/>
+<text x="543" y="643" font-size="18" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">A bounded set of priorities</text>
+<text x="543" y="667" font-size="14" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Limit the list. Make each item count.</text>
+<text x="939" y="686" font-size="10" fill="var(--c6,currentColor)" font-weight="400" text-anchor="end" class="mono">S001</text>
+<path d="M543 694H952" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<circle cx="53" cy="722" r="5" fill="var(--c1,currentColor)" stroke="var(--c1,currentColor)" opacity="1" stroke-width="1.4"/>
+<text x="71" y="727" font-size="18" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Readiness over activity</text>
+<text x="71" y="751" font-size="14" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Ask for outcomes, not motion.</text>
+<text x="467" y="770" font-size="10" fill="var(--c1,currentColor)" font-weight="400" text-anchor="end" class="mono">S003 / S004</text>
+<circle cx="525" cy="722" r="5" fill="var(--c2,currentColor)" stroke="var(--c2,currentColor)" opacity="1" stroke-width="1.4"/>
+<text x="543" y="727" font-size="18" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Clear institutional roles</text>
+<text x="543" y="751" font-size="14" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Distinguish partners and responsibilities.</text>
+<text x="939" y="770" font-size="10" fill="var(--c2,currentColor)" font-weight="400" text-anchor="end" class="mono">S001</text>
+<rect x="44" y="805" width="912" height="52" rx="8" fill="var(--accent,none)" fill-opacity="0.07" stroke="var(--accent,currentColor)" stroke-width="1"/>
+<text x="64" y="837" font-size="17" fill="var(--fg,currentColor)" font-weight="500" text-anchor="start" class="serif">Borrow the discipline. Do not invent the experience, the quotation, or the endorsement.</text>
+<path d="M44 879H956" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="904" font-size="11" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Reporting is not a transcript. Captions are not audio-verified. Other witnesses’ words are not Stanton’s.</text>
+<text x="44" y="926" font-size="10" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start" class="mono">SOURCE  voice-analysis.md  /  S001 · S003 · S004 · S009</text>
+<text x="956" y="926" font-size="10" fill="var(--muted,currentColor)" font-weight="400" text-anchor="end" class="mono">CUTOFF  07 OCT 2026</text>
+</svg>

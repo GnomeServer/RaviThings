@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 940" role="img" aria-labelledby="title desc" style="color:var(--fg,currentColor)"><title id="title">How the evidence becomes testimony</title><desc id="desc">The architecture of the final third draft—not a chart of an existing organization.</desc>
+<style>text{font-family:Arial,"Liberation Sans",sans-serif} .serif{font-family:Georgia,"Liberation Serif",serif} .mono{font-family:"DejaVu Sans Mono",monospace}</style>
+<path d="M44 43H78" fill="none" stroke="var(--accent,currentColor)" stroke-width="3" opacity="1"/>
+<text x="90" y="48" font-size="11" fill="var(--muted,currentColor)" font-weight="600" text-anchor="start" letter-spacing="1.65">STANTON  /  INFORMATION FOUNDATION</text>
+<text x="956" y="48" font-size="11" fill="var(--muted,currentColor)" font-weight="500" text-anchor="end" class="mono">FIELD GUIDE  /  04</text>
+<text x="44" y="111" font-size="46" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">How the evidence becomes testimony</text>
+<text x="46" y="147" font-size="15" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">The architecture of the final third draft—not a chart of an existing organization.</text>
+<path d="M44 176H956" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="213" font-size="11" fill="var(--accent,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">SIX-SECTION ARGUMENT</text>
+<text x="432" y="213" font-size="11" fill="var(--accent,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">THE PROPOSED MISSION</text>
+<text x="44" y="258" font-size="16" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start" class="mono">01</text>
+<text x="86" y="260" font-size="19" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Opening</text>
+<text x="86" y="285" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">State the need. Ask for establishment.</text>
+<path d="M86 309H385" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="357" font-size="16" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start" class="mono">02</text>
+<text x="86" y="359" font-size="19" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Risk to the information base</text>
+<text x="86" y="384" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Explain the mechanism and its limits.</text>
+<path d="M86 408H385" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="456" font-size="16" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start" class="mono">03</text>
+<text x="86" y="458" font-size="19" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Why this is readiness</text>
+<text x="86" y="483" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Use one clearly hypothetical example.</text>
+<path d="M86 507H385" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="555" font-size="16" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start" class="mono">04</text>
+<text x="86" y="557" font-size="19" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">A focused command</text>
+<text x="86" y="582" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Assign four bounded duties.</text>
+<path d="M86 606H385" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="654" font-size="16" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start" class="mono">05</text>
+<text x="86" y="656" font-size="19" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Congressional direction</text>
+<text x="86" y="681" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Request authority, a plan and oversight.</text>
+<path d="M86 705H385" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="753" font-size="16" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start" class="mono">06</text>
+<text x="86" y="755" font-size="19" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Closing</text>
+<text x="86" y="780" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Demand demonstrated capability.</text>
+<rect x="432" y="234" width="524" height="86" rx="12" fill="var(--accent,none)" fill-opacity="0.07" stroke="var(--accent,currentColor)" stroke-width="1"/>
+<text x="452" y="268" font-size="27" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start" class="serif">Strategic Information Command</text>
+<text x="452" y="296" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Proposed · defense-led · narrow preservation-and-assurance mission</text>
+<text x="432" y="356" font-size="11" fill="var(--accent,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">FOUR DUTIES</text>
+<rect x="432" y="376" width="252" height="110" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<path d="M448 398H474" fill="none" stroke="var(--c1,currentColor)" stroke-width="3" opacity="1"/>
+<text x="448" y="424" font-size="18" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Identify &amp; prioritize</text>
+<text x="448" y="450" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Mission dependence, uniqueness,</text>
+<text x="448" y="470" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">origins and risk of loss.</text>
+<rect x="704" y="376" width="252" height="110" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<path d="M720 398H746" fill="none" stroke="var(--c2,currentColor)" stroke-width="3" opacity="1"/>
+<text x="720" y="424" font-size="18" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Preserve originals</text>
+<text x="720" y="450" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Separate versions, control access,</text>
+<text x="720" y="470" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">record custody and test recovery.</text>
+<rect x="432" y="502" width="252" height="110" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<path d="M448 524H474" fill="none" stroke="var(--c3,currentColor)" stroke-width="3" opacity="1"/>
+<text x="448" y="550" font-size="18" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Enable traceable use</text>
+<text x="448" y="576" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Carry origins, changes, rights</text>
+<text x="448" y="596" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">and access conditions.</text>
+<rect x="704" y="502" width="252" height="110" rx="12" fill="var(--surface,none)" fill-opacity="1" stroke="var(--border,currentColor)" stroke-width="1"/>
+<path d="M720 524H746" fill="none" stroke="var(--c4,currentColor)" stroke-width="3" opacity="1"/>
+<text x="720" y="550" font-size="18" fill="var(--fg,currentColor)" font-weight="600" text-anchor="start">Demonstrate readiness</text>
+<text x="720" y="576" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Independent restoration tests;</text>
+<text x="720" y="596" font-size="13" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">task and rare-case evaluation.</text>
+<text x="432" y="665" font-size="11" fill="var(--accent,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.8">THREE CONGRESSIONAL REQUESTS</text>
+<text x="432" y="698" font-size="11" fill="var(--c1,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.5">AUTHORIZE</text>
+<text x="548" y="698" font-size="14" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start">Narrow mission + named accountability</text>
+<path d="M432 715H956" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="432" y="749" font-size="11" fill="var(--c2,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.5">PLAN</text>
+<text x="548" y="749" font-size="14" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start">Costed phases + existing capabilities</text>
+<path d="M432 766H956" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="432" y="800" font-size="11" fill="var(--c3,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.5">OVERSEE</text>
+<text x="548" y="800" font-size="14" fill="var(--fg,currentColor)" font-weight="400" text-anchor="start">Annual reporting + independent review</text>
+<path d="M432 817H956" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="857" font-size="10" fill="var(--accent,currentColor)" font-weight="700" text-anchor="start" letter-spacing="1.4">CIVILIAN BOUNDARIES</text>
+<text x="221" y="857" font-size="12" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">No archive takeover. No compelled civilian collection. No general content-policing power.</text>
+<path d="M44 879H956" fill="none" stroke="var(--border,currentColor)" stroke-width="1" opacity="1"/>
+<text x="44" y="904" font-size="11" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start">Preservation supports judgment; it does not certify truth or guarantee model performance.</text>
+<text x="44" y="926" font-size="10" fill="var(--muted,currentColor)" font-weight="400" text-anchor="start" class="mono">SOURCE  witness-statement.md  /  research-brief.md</text>
+<text x="956" y="926" font-size="10" fill="var(--muted,currentColor)" font-weight="400" text-anchor="end" class="mono">CUTOFF  07 OCT 2026</text>
+</svg>
