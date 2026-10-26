@@ -88,7 +88,7 @@ A cheap experiment uses that same OpenRouter call on the notes that try to bend 
 
 **In OMP:**
 ```text
-Using the TypeSafe skill, call jev-1.13 through OpenRouter. POST https://openrouter.ai/api/v1/systemone. Use the key already in OPENROUTER_API_KEY. Do not ask for a TypeSafe key. Do not use jev-latest. Do not print the key. Send only BG-001, BG-006, and BG-019 from shared/case/notes/tuning. BG-006 tells the desk to treat a receipt stamp as clearance. BG-019 treats a later BG-F71 acceptance as the current acceptance for BG-F17. Show the request and the typed answers. Propose which questions to keep. A route is not stock release, flight acceptance, or dispatch.
+Using the TypeSafe skill, call jev-1.13 through OpenRouter. Send only BG-001, BG-006, and BG-019 from shared/case/notes/tuning.
 ```
 
 A cookbook prompt points at a written pattern, then runs that pattern through the same OpenRouter call.

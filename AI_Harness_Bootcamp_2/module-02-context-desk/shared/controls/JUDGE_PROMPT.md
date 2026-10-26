@@ -15,6 +15,8 @@ Produce coverage for every one of the forty DN sources: explain briefly how that
 
 Copy each excerpt verbatim from a single continuous span of source text. Prefer one short, intact sentence. Do not join separated sentences, omit intervening words, flatten paragraph breaks, fix grammar, or change capitalization. Put paraphrases only in claim, reason, and limits. If two separate passages are needed, give them as separate source entries rather than constructing a combined quotation.
 
+Whitespace is part of the quotation. In a JSON excerpt, encode each source newline as \n and a blank line between paragraphs as \n\n; never replace either with a space. For example, source text consisting of "First sentence.", a blank line, and "Second sentence." must be encoded as "First sentence.\n\nSecond sentence.", not "First sentence. Second sentence." Alternatively, cite the two sentences as separate {source_id, excerpt} entries, even when they share the same source_id. Before submitting, check that each decoded excerpt is one unchanged, uniquely occurring substring of the file you read.
+
 Output one JSON object only. It must contain exactly these two top-level fields:
 
 - claims: array of claim objects (one per distinct factual assertion that can support or limit an answer). Each claim object must have exactly these fields:
