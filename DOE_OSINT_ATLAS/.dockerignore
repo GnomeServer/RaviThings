@@ -1,0 +1,37 @@
+# Large binary artifacts
+videos/
+data/
+chroma_db/
+*.pkl
+*.db
+*.csv
+*.zip
+*.webm
+*.mp4
+*.mp3
+*.wav
+*.png
+*.log
+
+# Build/dev artifacts
+.git/
+.superpowers/
+__pycache__/
+.pytest_cache/
+.env
+.playwright-mcp/
+node_modules/
+frontend/build/
+frontend/node_modules/
+docs/
+tests/
+
+# Video production scripts (not needed for server)
+record_*.py
+generate_*.py
+composite_*.py
+split_*.py
+video_transitions.py
+check_data.py
+run_graph_enrichment.py
+fix_domain_sync.py

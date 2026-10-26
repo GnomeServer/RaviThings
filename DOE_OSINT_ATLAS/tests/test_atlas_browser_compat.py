@@ -1,0 +1,707 @@
+"""Cross-browser compatibility tests for the OSINT Atlas Command Console.
+
+This test suite is the FIRST line of defense against the "works on my
+machine" problem. It runs the SAME test scenarios against three different
+browser engines:
+
+  - Chromium (used by Chrome, Edge, Brave, Opera)
+  - Firefox (Gecko engine)
+  - WebKit (used by Safari, including iOS Safari)
+
+That covers >95% of real-world users with a single test run.
+
+────────────────────────────────────────────────────────────────────────
+HOW TO RUN
+────────────────────────────────────────────────────────────────────────
+
+1. Install dependencies (one time):
+
+       pip install playwright pytest-playwright
+       python3 -m playwright install chromium firefox webkit
+
+2. Start the local atlas server in a separate terminal:
+
+       PORT=8765 SITE_PASSWORD="" python3 test_atlas_server.py
+
+3. Run the tests against ALL THREE browsers in one shot:
+
+       python3 -m pytest tests/test_atlas_browser_compat.py \
+           --browser chromium --browser firefox --browser webkit -v
+
+   Or against a single browser:
+
+       python3 -m pytest tests/test_atlas_browser_compat.py --browser firefox -v
+
+   Or with screenshots on failure:
+
+       python3 -m pytest tests/test_atlas_browser_compat.py \
+           --browser chromium --browser firefox --browser webkit \
+           --screenshot=only-on-failure --output=test-results -v
+
+4. Read the output. Each scenario runs three times (one per browser).
+   If a test passes in Chromium but fails in Firefox, you've caught a
+   cross-browser issue BEFORE a user reports it.
+
+────────────────────────────────────────────────────────────────────────
+WHAT THIS COVERS
+────────────────────────────────────────────────────────────────────────
+
+  • Page loads cleanly on every engine (no console errors)
+  • Map and 2,214 markers render
+  • Legend filter click works (Bug 1 — Firefox SVG hit-test regression)
+  • Detail panel opens with readable risk factors (Bug 2 — text clipping)
+  • Risk factor pills are tall enough to display text (>= 18px height)
+  • Command Console opens, accepts text, and self-heals after a stuck state
+  • Empty filter guard preserves markers
+  • Kill chain panel and chat console coexist (slide-aside)
+  • Closing the chat console preserves the detail panel
+  • Map action badges persist across token updates
+  • Send/Stop button visibility toggles correctly
+
+────────────────────────────────────────────────────────────────────────
+WHAT THIS DOES NOT COVER (and why)
+────────────────────────────────────────────────────────────────────────
+
+  • Real LLM responses — we mock fetch to avoid backend dependency.
+    The conversation history fix (C1) is verified by inspecting the
+    payload structure rather than the LLM output.
+  • iOS Safari soft keyboard layout — Playwright WebKit runs the same
+    engine but not on a real device. M3 (100dvh) is verified by CSS
+    presence, not by triggering the soft keyboard.
+  • Real touch input — Playwright simulates clicks; touch is implied
+    by the 44x44 button sizing assertion.
+  • Visual regression — pixel diffs are out of scope. If you need them,
+    add `--snapshot-update` and use `expect(page).to_have_screenshot()`.
+
+────────────────────────────────────────────────────────────────────────
+ADDING A NEW TEST
+────────────────────────────────────────────────────────────────────────
+
+Every test function takes a `page` fixture provided by pytest-playwright.
+Inside, drive the page with `page.goto`, `page.evaluate`, `page.click`,
+and assert with `assert`. The fixture runs the same function once per
+browser engine selected on the command line.
+"""
+
+import os
+import pytest
+from playwright.sync_api import Page, expect
+
+ATLAS_URL = os.environ.get("ATLAS_URL", "http://localhost:8765/atlas")
+
+# Viewport sizes to test layout-sensitive behavior across.
+# 1920×1080: typical desktop monitor
+# 1366×768:  most common corporate laptop screen (Windows ESR Firefox class)
+# 1280×720:  Playwright default; smallest commonly-used laptop
+LAYOUT_VIEWPORTS = [
+    pytest.param(1920, 1080, id="1920x1080"),
+    pytest.param(1366, 768, id="1366x768"),
+    pytest.param(1280, 720, id="1280x720"),
+]
+
+
+@pytest.fixture(autouse=True)
+def goto_atlas(page: Page):
+    """Navigate every test to the atlas page and wait for it to be ready."""
+    page.goto(ATLAS_URL)
+    # Wait for the data to load and the map cluster to initialize
+    page.wait_for_function(
+        "typeof markerCluster !== 'undefined' && markerCluster !== null && "
+        "typeof allMarkers !== 'undefined' && allMarkers.length > 0",
+        timeout=15000,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Page load + smoke tests
+# ─────────────────────────────────────────────────────────────────────
+
+def test_page_loads_without_errors(page: Page):
+    """Page loads, title is set, no JS errors in console (favicon 404 ok)."""
+    errors = []
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+    page.reload()
+    page.wait_for_function("typeof DATA !== 'undefined' && DATA !== null", timeout=15000)
+    assert page.title() == "OSINT Atlas — DOE Contractor Intelligence"
+    assert errors == [], f"Page errors: {errors}"
+
+
+def test_all_markers_render(page: Page):
+    """All contractor markers are added to the cluster."""
+    count = page.evaluate("() => allMarkers.length")
+    assert count >= 2200, f"expected at least 2200 markers, got {count}"
+    visible = page.evaluate("""() => {
+        let n = 0; markerCluster.eachLayer(() => n++); return n;
+    }""")
+    assert visible == count, f"all markers should be in the cluster; got {visible}/{count}"
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Bug 1 — Legend filter click (Firefox/Windows SVG hit-test regression)
+# ─────────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("vw,vh", LAYOUT_VIEWPORTS)
+def test_legend_click_filters_markers_on_parent_div(page: Page, vw, vh):
+    """Clicking the legend item DIV directly filters markers — at multiple viewports."""
+    page.set_viewport_size({"width": vw, "height": vh})
+    page.wait_for_function(
+        "typeof markerCluster !== 'undefined' && markerCluster !== null && "
+        "typeof allMarkers !== 'undefined' && allMarkers.length > 0",
+        timeout=15000,
+    )
+    result = page.evaluate("""() => {
+        const item = document.querySelector('#legendItems .legend-item[data-category="IT & Cyber"]');
+        let before = 0; markerCluster.eachLayer(() => before++);
+        item.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        let after = 0; markerCluster.eachLayer(() => after++);
+        return { before, after, dimmed: item.classList.contains('dimmed') };
+    }""")
+    assert result["before"] > result["after"], (
+        f"viewport {vw}x{vh}: clicking legend item should reduce visible markers; got {result}"
+    )
+    assert result["dimmed"], f"viewport {vw}x{vh}: legend item should have .dimmed class"
+
+
+def test_legend_click_on_swatch_child_still_filters(page: Page):
+    """Clicking the SVG swatch (a child) should still bubble to parent.
+
+    This is the key Firefox regression test: SVG hit-testing in Firefox
+    sometimes failed to bubble clicks up to parent elements. The fix uses
+    `pointer-events: none` on legend-item children plus event delegation.
+    """
+    result = page.evaluate("""() => {
+        const item = document.querySelector('#legendItems .legend-item[data-category="Manufacturing"]');
+        const swatch = item.querySelector('.legend-swatch');
+        let before = 0; markerCluster.eachLayer(() => before++);
+        swatch.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        let after = 0; markerCluster.eachLayer(() => after++);
+        return {
+            swatchPointerEvents: window.getComputedStyle(swatch).pointerEvents,
+            before, after,
+            dimmed: item.classList.contains('dimmed'),
+        };
+    }""")
+    # Either pointer-events:none is working, or event delegation is — both fix the bug
+    assert result["before"] > result["after"], f"swatch click should filter markers; got {result}"
+    assert result["dimmed"]
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Bug 2 — Risk factor text clipping
+# ─────────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("vw,vh", LAYOUT_VIEWPORTS)
+def test_risk_factors_have_readable_size(page: Page, vw, vh):
+    """Risk factor pills are tall enough that text isn't clipped — at multiple viewports."""
+    page.set_viewport_size({"width": vw, "height": vh})
+    page.wait_for_function(
+        "typeof markerCluster !== 'undefined' && markerCluster !== null", timeout=15000
+    )
+    result = page.evaluate("""() => {
+        let bestIdx = 0, mostFactors = 0;
+        for (let i = 0; i < 200; i++) {
+            const r = computeRiskScore(DATA.contractors[i]);
+            if (r.factors.length > mostFactors) { mostFactors = r.factors.length; bestIdx = i; }
+        }
+        openDetailPanel(bestIdx);
+        const factor = document.querySelector('.risk-factor');
+        if (!factor) return { error: 'no risk factor element' };
+        const rect = factor.getBoundingClientRect();
+        const cs = window.getComputedStyle(factor);
+        return { height: rect.height, fontSize: cs.fontSize };
+    }""")
+    assert result.get("height", 0) >= 18, (
+        f"viewport {vw}x{vh}: risk factor pill should be at least 18px tall; got {result}"
+    )
+    assert result["fontSize"] in ("11px",), (
+        f"viewport {vw}x{vh}: risk factor font should be 11px; got {result}"
+    )
+
+
+def test_section_dividers_are_not_cyan(page: Page):
+    """The 'blue highlighting' added for video creation should be gone.
+
+    Section title underlines and panel section dividers should be neutral
+    grey, not cyan rgba(0,229,255,...).
+    """
+    result = page.evaluate("""() => {
+        openDetailPanel(0);
+        const section = document.querySelector('.panel-section');
+        const title = document.querySelector('.section-title');
+        return {
+            sectionBorderBottom: window.getComputedStyle(section).borderBottomColor,
+            titleBorderBottom: window.getComputedStyle(title).borderBottomColor,
+            titleColor: window.getComputedStyle(title).color,
+        };
+    }""")
+    # The neutral divider is rgba(255, 255, 255, 0.06) — should NOT contain "229" (cyan green channel)
+    assert "229" not in result["sectionBorderBottom"], (
+        f"panel-section border-bottom is still cyan: {result['sectionBorderBottom']}"
+    )
+    assert "229" not in result["titleBorderBottom"], (
+        f"section-title border-bottom is still cyan: {result['titleBorderBottom']}"
+    )
+
+
+def test_risk_label_not_clipped(page: Page):
+    """Regression test for commit 027779c — 'Attack Surface Risk' label clipping.
+
+    The .risk-score-banner used to have a ::before pseudo-element rendering
+    '// THREAT ASSESSMENT' that overlapped the .risk-label text inside the
+    banner, clipping it. Fix removed the pseudo-element and bumped .risk-label
+    from 10px → 11px with explicit line-height 1.5 for cross-engine breathing
+    room. This test pins all four signals so the regression cannot return.
+    """
+    result = page.evaluate("""() => {
+        // Find a contractor with risk factors so the banner renders
+        let bestIdx = 0, mostFactors = 0;
+        for (let i = 0; i < 200; i++) {
+            const r = computeRiskScore(DATA.contractors[i]);
+            if (r.factors.length > mostFactors) { mostFactors = r.factors.length; bestIdx = i; }
+        }
+        openDetailPanel(bestIdx);
+        const label = document.querySelector('.risk-label');
+        const banner = document.querySelector('.risk-score-banner');
+        if (!label || !banner) return { error: 'no risk label or banner element' };
+        const labelRect = label.getBoundingClientRect();
+        const bannerRect = banner.getBoundingClientRect();
+        const labelStyle = window.getComputedStyle(label);
+        const bannerBeforeStyle = window.getComputedStyle(banner, '::before');
+        return {
+            labelHeight: labelRect.height,
+            labelFontSize: labelStyle.fontSize,
+            labelLineHeight: labelStyle.lineHeight,
+            distanceFromBannerTop: labelRect.top - bannerRect.top,
+            pseudoContent: bannerBeforeStyle.content,
+        };
+    }""")
+    # The fix sets line-height: 1.5 on an 11px font, so height should be ~16.5px
+    assert result.get("labelHeight", 0) >= 15, (
+        f"risk label height < 15px — text is being clipped; got {result}"
+    )
+    assert result["labelFontSize"] == "11px", (
+        f"risk label should be 11px (--fs-tiny); got {result['labelFontSize']}"
+    )
+    # The pseudo-element that used to overlap must be gone
+    assert result["pseudoContent"] in ("none", '""', "normal"), (
+        f"::before pseudo-element should be removed; got content={result['pseudoContent']}"
+    )
+    # Label should be at least 8px from the top of the banner (was negative/0 when clipped)
+    assert result["distanceFromBannerTop"] >= 8, (
+        f"risk label is hugging the banner top — likely clipped; got {result}"
+    )
+
+
+def test_dmarc_cell_does_not_leak_raw_html(page: Page):
+    """Regression test for the details panel DMARC cell leaking raw HTML.
+
+    The DMARC Policy cell used to compute its value as:
+        dmarcValue += `</span><span style="...">(scanned N days ago)`
+    hoping to break out of the parent .data-value span and inject a
+    styled suffix. But the grid renderer wraps every value in
+    escapeHtml(item.value), so the angle brackets got escaped and the
+    user saw the literal text:
+        "none</span><span style=...;">(scanned 13 days ago)"
+
+    Fix: values stay plain text; suffix moved to a separate item.suffix
+    field rendered inside its own .data-suffix span. This test finds a
+    contractor whose DNS block carries both dmarc_policy and query_time
+    (so the suffix path fires), opens its detail panel, and asserts the
+    DMARC cell's textContent contains no raw HTML fragments.
+    """
+    result = page.evaluate("""() => {
+        // Find a contractor whose DNS block will populate DMARC + age suffix
+        let targetIdx = -1;
+        for (let i = 0; i < DATA.contractors.length; i++) {
+            const dns = (DATA.contractors[i].osint || {}).dns || {};
+            if (dns.dmarc_policy && dns.query_time) { targetIdx = i; break; }
+        }
+        if (targetIdx === -1) {
+            return { error: 'no contractor has both dmarc_policy and query_time' };
+        }
+        openDetailPanel(targetIdx);
+
+        // Locate the DMARC Policy cell by its label text
+        const labels = Array.from(document.querySelectorAll('.data-label'));
+        const dmarcLabel = labels.find(el => el.textContent.trim() === 'DMARC Policy');
+        if (!dmarcLabel) return { error: 'DMARC Policy cell not rendered', idx: targetIdx };
+
+        const cell = dmarcLabel.closest('.data-cell');
+        const valueEl = cell.querySelector('.data-value');
+        const suffixEl = cell.querySelector('.data-suffix');
+
+        return {
+            idx: targetIdx,
+            valueText: valueEl ? valueEl.textContent : null,
+            valueInnerHTML: valueEl ? valueEl.innerHTML : null,
+            suffixText: suffixEl ? suffixEl.textContent : null,
+            suffixComputedFontSize: suffixEl ? window.getComputedStyle(suffixEl).fontSize : null,
+        };
+    }""")
+
+    assert not result.get("error"), f"setup failure: {result}"
+    # The raw HTML escape bug would leave '<span' or '</span>' visible in textContent
+    assert "<span" not in (result["valueText"] or ""), (
+        f"DMARC cell textContent contains raw '<span' — escape-then-inject bug is back: {result}"
+    )
+    assert "</span>" not in (result["valueText"] or ""), (
+        f"DMARC cell textContent contains raw '</span>' — escape-then-inject bug is back: {result}"
+    )
+    # The value itself should be the raw policy string (not the concatenated HTML)
+    assert result["valueText"] is not None, f"no .data-value found: {result}"
+    assert len(result["valueText"]) < 100, (
+        f"DMARC value is suspiciously long — expected a short policy name, got: {result['valueText'][:200]}"
+    )
+    # The suffix must be rendered as its own span with the 8px styling
+    assert result["suffixText"] is not None, (
+        f"expected .data-suffix span to exist when query_time is set: {result}"
+    )
+    assert "scanned" in result["suffixText"], (
+        f"suffix should contain 'scanned ... ago', got: {result['suffixText']}"
+    )
+    assert result["suffixComputedFontSize"] == "8px", (
+        f"suffix should be rendered at 8px (the styling we moved from inline to .data-suffix), "
+        f"got: {result['suffixComputedFontSize']}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Bug 3 — Typography and panel sizing
+# ─────────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("vw,vh", LAYOUT_VIEWPORTS)
+def test_command_console_is_larger(page: Page, vw, vh):
+    """Command Console panel is wide enough for readability — at multiple viewports."""
+    page.set_viewport_size({"width": vw, "height": vh})
+    page.wait_for_function(
+        "typeof markerCluster !== 'undefined' && markerCluster !== null", timeout=15000
+    )
+    result = page.evaluate("""() => {
+        toggleAtlasChat();
+        const panel = document.getElementById('atlasChatPanel');
+        return {
+            width: panel.getBoundingClientRect().width,
+            fontSize: window.getComputedStyle(panel).fontSize,
+        };
+    }""")
+    # At 1280×720 the panel may need to scale down — accept ≥ 480 there.
+    min_width = 480 if vw < 1366 else 500
+    assert result["width"] >= min_width, (
+        f"viewport {vw}x{vh}: chat panel width should be >= {min_width}px; got {result}"
+    )
+    assert result["fontSize"] in ("13px",), (
+        f"viewport {vw}x{vh}: chat font should be 13px; got {result}"
+    )
+
+
+def test_detail_panel_is_larger(page: Page):
+    """Detail panel is at least 520px wide and has a readable base font."""
+    result = page.evaluate("""() => {
+        openDetailPanel(0);
+        const panel = document.getElementById('detailPanel');
+        return {
+            width: panel.getBoundingClientRect().width,
+            fontSize: window.getComputedStyle(panel).fontSize,
+        };
+    }""")
+    assert result["width"] >= 520, f"detail panel width should be >= 520px; got {result}"
+    assert result["fontSize"] in ("13px",)
+
+
+def test_send_button_meets_touch_target_size(page: Page):
+    """Send button is at least 44x44 (iOS recommended touch target)."""
+    result = page.evaluate("""() => {
+        if (!atlasChatOpen) toggleAtlasChat();
+        const send = document.getElementById('atlasChatSend');
+        const rect = send.getBoundingClientRect();
+        return { width: rect.width, height: rect.height };
+    }""")
+    assert result["width"] >= 44 and result["height"] >= 44, (
+        f"Send button should be >= 44x44; got {result}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Audit bundle — empty filter guard, badge persistence, etc.
+# ─────────────────────────────────────────────────────────────────────
+
+def test_empty_filter_guard_preserves_markers(page: Page):
+    """LLM emitting a filter that matches zero contractors must not blank the map."""
+    result = page.evaluate("""() => {
+        let before = 0; markerCluster.eachLayer(() => before++);
+        executeMapCommand({action: 'filter', field: 'category', value: 'NONEXISTENT_XYZ', op: 'eq'});
+        let after = 0; markerCluster.eachLayer(() => after++);
+        return { before, after };
+    }""")
+    assert result["before"] == result["after"] == 2214
+
+
+def test_kill_chain_panel_coexists_with_chat(page: Page):
+    """When kill_chain triggers a panel, the chat slides aside instead of overlapping."""
+    result = page.evaluate("""async () => {
+        toggleAtlasChat();
+        await new Promise(r => setTimeout(r, 100));
+        executeMapCommand({action: 'kill_chain', contractor_index: 0});
+        await new Promise(r => setTimeout(r, 200));
+        return {
+            chatLeftSide: document.getElementById('atlasChatPanel').classList.contains('left-side'),
+            detailOpen: document.getElementById('detailPanel').classList.contains('open'),
+        };
+    }""")
+    assert result["chatLeftSide"] is True
+    assert result["detailOpen"] is True
+
+
+def test_closing_chat_preserves_detail_panel(page: Page):
+    """Closing the chat console must NOT close the detail panel."""
+    result = page.evaluate("""async () => {
+        openDetailPanel(0);
+        toggleAtlasChat();
+        await new Promise(r => setTimeout(r, 100));
+        toggleAtlasChat();  // close
+        await new Promise(r => setTimeout(r, 200));
+        return {
+            chatOpen: atlasChatOpen,
+            detailOpen: document.getElementById('detailPanel').classList.contains('open'),
+        };
+    }""")
+    assert result["chatOpen"] is False
+    assert result["detailOpen"] is True
+
+
+def test_send_stop_button_visibility(page: Page):
+    """Send button shows when idle, Stop button shows during streaming."""
+    result = page.evaluate("""() => {
+        if (!atlasChatOpen) toggleAtlasChat();
+        setChatStreamingUI(false);
+        const sendIdle = window.getComputedStyle(document.getElementById('atlasChatSend')).display;
+        const stopIdle = window.getComputedStyle(document.getElementById('atlasChatStop')).display;
+        setChatStreamingUI(true);
+        const sendStreaming = window.getComputedStyle(document.getElementById('atlasChatSend')).display;
+        const stopStreaming = window.getComputedStyle(document.getElementById('atlasChatStop')).display;
+        setChatStreamingUI(false);
+        return { sendIdle, stopIdle, sendStreaming, stopStreaming };
+    }""")
+    assert result["sendIdle"] == "flex"
+    assert result["stopIdle"] == "none"
+    assert result["sendStreaming"] == "none"
+    assert result["stopStreaming"] == "flex"
+
+
+def test_textarea_auto_grows_on_multiline_input(page: Page):
+    """Textarea grows when user pastes multi-line content."""
+    result = page.evaluate("""() => {
+        if (!atlasChatOpen) toggleAtlasChat();
+        const ta = document.getElementById('atlasChatInput');
+        ta.value = '';
+        ta.style.height = 'auto';
+        const initial = ta.offsetHeight;
+        ta.value = 'line one\\nline two\\nline three\\nline four';
+        ta.dispatchEvent(new Event('input', { bubbles: true }));
+        const grown = ta.offsetHeight;
+        return { initial, grown };
+    }""")
+    assert result["grown"] > result["initial"], f"textarea should grow; got {result}"
+    assert result["grown"] <= 120, f"textarea should cap at 120px; got {result}"
+
+
+def test_app_loads_with_unpkg_blocked(page: Page):
+    """The app must still load even if unpkg.com / Google Fonts is unreachable.
+
+    This is the canonical "corporate proxy blocks the CDN" use case. After
+    self-hosting Leaflet/MarkerCluster/heat/d3 in frontend/static/vendor/,
+    the page should be entirely independent of unpkg.com.
+    """
+    # Intercept all unpkg.com requests and abort them
+    page.route("https://unpkg.com/**", lambda r: r.abort())
+    page.route("https://fonts.googleapis.com/**", lambda r: r.abort())
+    page.route("https://fonts.gstatic.com/**", lambda r: r.abort())
+
+    errors = []
+    page.on("pageerror", lambda exc: errors.append(str(exc)))
+    # Re-navigate so the route blocking takes effect
+    page.goto(ATLAS_URL)
+    page.wait_for_function(
+        "typeof markerCluster !== 'undefined' && markerCluster !== null && "
+        "typeof allMarkers !== 'undefined' && allMarkers.length > 0",
+        timeout=15000,
+    )
+    assert errors == [], f"Page errors with unpkg blocked: {errors}"
+    # Confirm the map actually rendered
+    count = page.evaluate("() => allMarkers.length")
+    assert count >= 2200, f"map should have markers even without unpkg; got {count}"
+
+
+def test_client_error_telemetry_posts_on_thrown_error(page: Page):
+    """Throwing an error in the page must POST to /api/client-error.
+
+    Verifies the full client→server pipeline:
+    1. window.addEventListener('error', ...) catches the throw
+    2. The handler builds the JSON payload with the expected fields
+    3. fetch() is called against POST /api/client-error
+    4. The server responds 204 (or at least non-error)
+    """
+    captured = []
+
+    def handle_route(route):
+        # Capture the request body before letting it through
+        request = route.request
+        try:
+            captured.append({
+                "url": request.url,
+                "method": request.method,
+                "post_data": request.post_data_json,
+            })
+        except Exception:
+            captured.append({"url": request.url, "method": request.method, "post_data": None})
+        # Stub the response so we don't actually write to disk during tests
+        route.fulfill(status=204, body="")
+
+    page.route("**/api/client-error", handle_route)
+
+    # Trigger an error from inside the page. setTimeout ensures it's
+    # captured by window.onerror rather than thrown synchronously into
+    # page.evaluate (which would propagate as a python exception).
+    page.evaluate("""() => {
+        setTimeout(() => { throw new Error('telemetry-regression-test'); }, 0);
+    }""")
+
+    # Give the error handler a moment to fire
+    page.wait_for_timeout(500)
+
+    assert len(captured) >= 1, f"expected at least 1 POST to /api/client-error, got {captured}"
+    last = captured[-1]
+    assert last["method"] == "POST"
+    assert "/api/client-error" in last["url"]
+    body = last["post_data"]
+    assert body is not None, f"expected JSON body, got None: {captured}"
+    assert body.get("kind") == "error", f"kind should be 'error'; got {body}"
+    assert "telemetry-regression-test" in body.get("message", ""), (
+        f"message should include the thrown error text; got {body}"
+    )
+    assert body.get("session"), "session id should be set"
+    assert body.get("userAgent"), "userAgent should be set"
+    assert isinstance(body.get("viewport"), list) and len(body["viewport"]) == 2
+
+
+def test_textarea_enter_submits_via_addeventlistener(page: Page):
+    """Pressing Enter (no shift, no IME composition) in the chat textarea
+    must trigger sendAtlasChat. Pressing Shift+Enter must NOT.
+
+    Regression test for the inline-onkeydown → addEventListener migration.
+    The behavior must be preserved when the inline handler is extracted.
+    """
+    result = page.evaluate("""async () => {
+        if (!atlasChatOpen) toggleAtlasChat();
+        await new Promise(r => setTimeout(r, 100));
+        const ta = document.getElementById('atlasChatInput');
+        ta.value = 'test query';
+
+        // Stub sendAtlasChat to count calls without actually firing the API
+        let calls = 0;
+        const original = window.sendAtlasChat;
+        window.sendAtlasChat = function () { calls++; };
+
+        // Simulate Enter without shift and without composition
+        ta.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'Enter', shiftKey: false, bubbles: true, cancelable: true
+        }));
+        const afterEnter = calls;
+
+        // Simulate Shift+Enter — should NOT submit
+        ta.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'Enter', shiftKey: true, bubbles: true, cancelable: true
+        }));
+        const afterShiftEnter = calls;
+
+        window.sendAtlasChat = original;
+        return { afterEnter, afterShiftEnter };
+    }""")
+    assert result["afterEnter"] == 1, f"Enter should call sendAtlasChat exactly once; got {result}"
+    assert result["afterShiftEnter"] == 1, f"Shift+Enter should NOT submit; got {result}"
+
+
+def test_smoke_flow_no_console_errors(page: Page):
+    """End-to-end smoke flow: 7 user actions in sequence, asserting zero
+    JS console errors at any point.
+
+    This is the canonical "did anything blow up during a real session"
+    test. It catches errors that the per-feature state-assertion tests
+    would miss, like a deferred listener failing during a transition.
+
+    Steps:
+      1. Page already loaded (via autouse fixture)
+      2. Click a legend item to filter markers
+      3. Click another legend item to add to the filter set
+      4. Click a contractor marker → open detail panel
+      5. Open the Command Console
+      6. Type a query and press Enter (with /api/atlas-chat mocked)
+      7. Close the Command Console
+      8. Reset the map filters
+
+    The Console Errors set must remain empty across all 7 actions.
+    """
+    errors: list[str] = []
+    page.on("pageerror", lambda exc: errors.append("pageerror: " + str(exc)))
+
+    # Capture console.error messages too (some bugs only log, don't throw)
+    def on_console(msg):
+        if msg.type == "error":
+            errors.append(f"console.error: {msg.text}")
+    page.on("console", on_console)
+
+    # Mock the LLM endpoint with a minimal SSE response so step 6 doesn't
+    # depend on a real GLM/Ollama backend.
+    def mock_atlas_chat(route):
+        sse_body = (
+            "data: {\"phase\": \"text\", \"chunk\": \"OK\"}\n\n"
+            "data: {\"phase\": \"done\"}\n\n"
+        )
+        route.fulfill(
+            status=200,
+            headers={"Content-Type": "text/event-stream"},
+            body=sse_body,
+        )
+    page.route("**/api/atlas-chat", mock_atlas_chat)
+
+    # 2. Click a legend item
+    page.evaluate("""() => {
+        const item = document.querySelector('#legendItems .legend-item[data-category="Manufacturing"]');
+        if (item) item.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true}));
+    }""")
+    page.wait_for_timeout(150)
+
+    # 3. Click another legend item
+    page.evaluate("""() => {
+        const item = document.querySelector('#legendItems .legend-item[data-category="IT & Cyber"]');
+        if (item) item.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true}));
+    }""")
+    page.wait_for_timeout(150)
+
+    # 4. Open detail panel
+    page.evaluate("() => openDetailPanel(0)")
+    page.wait_for_timeout(150)
+
+    # 5. Open command console
+    page.evaluate("() => { if (!atlasChatOpen) toggleAtlasChat(); }")
+    page.wait_for_timeout(150)
+
+    # 6. Type a query and press Enter
+    page.evaluate("""() => {
+        const ta = document.getElementById('atlasChatInput');
+        ta.value = 'show me critical contractors in colorado';
+        ta.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'Enter', shiftKey: false, bubbles: true, cancelable: true
+        }));
+    }""")
+    page.wait_for_timeout(400)  # let the SSE mock finish
+
+    # 7. Close command console
+    page.evaluate("() => { if (atlasChatOpen) toggleAtlasChat(); }")
+    page.wait_for_timeout(150)
+
+    # 8. Reset map
+    page.evaluate("() => { if (typeof resetMap === 'function') resetMap(); }")
+    page.wait_for_timeout(150)
+
+    assert errors == [], f"Console errors during smoke flow: {errors}"

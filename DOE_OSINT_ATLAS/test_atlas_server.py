@@ -1,0 +1,1190 @@
+"""OSINT Atlas web server — runs in production AND for tests.
+
+⚠ NAME WARNING: this file is named ``test_atlas_server.py`` for historical
+reasons (it began as a lightweight test harness with no ChromaDB dependency)
+but it IS the production entry point. Verify by checking:
+
+  - Procfile:     ``web: python test_atlas_server.py``
+  - railway.toml: ``startCommand = "python test_atlas_server.py"``
+  - Dockerfile:   ``CMD ["python", "test_atlas_server.py"]``
+
+There is NO separate production server. The cross-browser test suite at
+``tests/test_atlas_browser_compat.py`` runs against this exact file, so
+test/prod parity is by construction — there is no drift to worry about.
+
+If you ever decide to rename this file, update Procfile, railway.toml,
+Dockerfile, .github/workflows/browser-compat.yml, and the QA doc at
+``docs/cross-platform-qa.md`` together in the same commit.
+"""
+import asyncio
+import hashlib
+import json
+import os
+import pathlib
+import secrets
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request, Response, Cookie
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from starlette.responses import StreamingResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+
+load_dotenv()
+
+app = FastAPI()
+
+# ── Simple password protection ──
+SITE_PASSWORD = os.environ.get("SITE_PASSWORD", "")
+AUTH_COOKIE = "osint_atlas_auth"
+AUTH_TOKEN = hashlib.sha256(SITE_PASSWORD.encode()).hexdigest()[:32] if SITE_PASSWORD else ""
+
+LOGIN_PAGE = """<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>OSINT Atlas — Access Required</title>
+<style>
+  body { background: #0a0e1a; color: #c8d6e5; font-family: 'JetBrains Mono', monospace;
+         display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+  .login { text-align: center; }
+  .login h1 { color: #00e5ff; font-size: 14px; letter-spacing: 6px; text-transform: uppercase; }
+  .login h2 { color: #e0e6ed; font-size: 24px; margin: 8px 0 24px; }
+  input { background: #111827; border: 1px solid #1e3a5f; color: #00e5ff; padding: 12px 20px;
+          font-size: 16px; font-family: inherit; width: 260px; text-align: center; outline: none; }
+  input:focus { border-color: #00e5ff; }
+  button { background: #00e5ff; color: #0a0e1a; border: none; padding: 12px 32px; font-size: 14px;
+           font-family: inherit; font-weight: 700; cursor: pointer; margin-top: 12px; letter-spacing: 2px; }
+  button:hover { background: #00b8d4; }
+  .error { color: #ff1744; font-size: 12px; margin-top: 8px; }
+  .class { color: #8899aa; font-size: 10px; margin-top: 24px; letter-spacing: 2px; }
+</style></head><body>
+<div class="login">
+  <h1>OSINT ATLAS</h1>
+  <h2>Access Required</h2>
+  <form method="POST" action="/auth">
+    <input type="password" name="password" placeholder="Enter access code" autofocus><br>
+    <button type="submit">AUTHENTICATE</button>
+  </form>
+  <div class="class">UNCLASSIFIED // FOR OFFICIAL USE ONLY</div>
+</div></body></html>"""
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if not SITE_PASSWORD:
+            return await call_next(request)
+
+        # Allow health check and auth endpoint without auth
+        if request.url.path in ("/health", "/auth"):
+            return await call_next(request)
+
+        # Check auth cookie
+        token = request.cookies.get(AUTH_COOKIE)
+        if token == AUTH_TOKEN:
+            return await call_next(request)
+
+        # Show login page
+        return HTMLResponse(LOGIN_PAGE, status_code=401)
+
+
+app.add_middleware(AuthMiddleware)
+BASE = pathlib.Path(__file__).parent
+
+# Try to import LLM clients
+# ── Root redirect ──
+@app.get("/")
+async def root():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse("/atlas")
+
+
+# ── Health check (bypasses auth for Railway) ──
+@app.get("/health")
+async def health():
+    return JSONResponse({"status": "ok"})
+
+
+# ── Auth endpoint ──
+@app.post("/auth")
+async def authenticate(request: Request):
+    form = await request.form()
+    password = form.get("password", "")
+    if password == SITE_PASSWORD:
+        response = HTMLResponse('<script>window.location="/atlas"</script>')
+        response.set_cookie(AUTH_COOKIE, AUTH_TOKEN, httponly=True, max_age=86400 * 7)
+        return response
+    return HTMLResponse(LOGIN_PAGE.replace("</form>", '<div class="error">Invalid access code</div></form>'), status_code=401)
+
+
+from backend.glm_client import GLMClient
+from backend.ollama_client import OllamaClient
+
+llm = GLMClient()
+ollama = OllamaClient()
+
+# ── Hybrid retriever (lazy singleton) ──
+# The 4-lane RAG (vector + FTS5 + graph + relationship + RRF) lives in
+# backend/hybrid_retriever.py. We initialize it lazily so import-time failures
+# (missing chroma_db/, missing graph pickle, etc.) don't take down the server.
+_retriever_singleton = None
+_retriever_init_attempted = False
+
+
+def get_retriever():
+    """Return the HybridRetriever singleton, or None if init failed.
+
+    Initialization is attempted ONCE per process. If it fails (chromadb
+    missing, chroma_db/ missing, graph pickle missing, etc.) we log and
+    return None — chat falls back to the legacy substring path.
+    """
+    global _retriever_singleton, _retriever_init_attempted
+    if _retriever_init_attempted:
+        return _retriever_singleton
+
+    _retriever_init_attempted = True
+    try:
+        from backend.hybrid_retriever import HybridRetriever
+        graph = None
+        graph_path = os.environ.get("GRAPH_PATH", str(BASE / "graph.pkl"))
+        if graph_path and os.path.exists(graph_path):
+            try:
+                from backend.graph_engine import GraphEngine
+                # No embed_fn: encoding every node label runs on the request
+                # path and can blow the 90s frontend timeout. search_nodes
+                # falls back to substring match without embeddings.
+                graph = GraphEngine(graph_path)
+            except Exception as e:
+                print(f"[atlas-chat] graph engine unavailable, continuing without graph lane: {e}")
+        else:
+            print(f"[atlas-chat] graph pickle not found at {graph_path}, continuing without graph lane")
+        retriever = HybridRetriever(
+            db_path=str(BASE / "doe_contracts.db"),
+            graph_engine=graph,
+            chroma_path=str(BASE / "chroma_db"),
+            ollama=ollama,
+        )
+        if retriever.chroma_collection is None and graph is None:
+            print("[atlas-chat] retriever has no chroma + no graph; falling back to legacy substring")
+            return None
+        _retriever_singleton = retriever
+        print(f"[atlas-chat] HybridRetriever initialized (chroma={retriever.chroma_collection is not None}, graph={graph is not None})")
+        return _retriever_singleton
+    except Exception as e:
+        print(f"[atlas-chat] retriever init failed, falling back to legacy substring: {e}")
+        return None
+
+# ── Conversation state (Task 6) ──
+# In-memory, session-keyed server-side conversation store. Replaces the
+# stateless "frontend sends full history every turn" pattern. Foundation for
+# rolling summaries + entity tracking in Task 7.
+from backend.conversation_state import ConversationStore
+_conversation_store = ConversationStore(max_sessions=200, ttl_seconds=3600.0)
+
+_ATLAS_SYSTEM_PROMPT = """\
+You are the OSINT Atlas Intelligence Analyst for DOE contractor security. You have access to \
+intelligence data on 2,214 DOE contractors including their network exposure, vulnerabilities, and infrastructure.
+
+You answer questions about the contractor data AND emit map commands to visualize your answers.
+
+CONTRACTOR DATA SCHEMA (each contractor has these fields):
+- name, city, state, zip, lat, lon, category
+- obligation (federal dollars), contract_count
+- shodan.total_hosts, shodan.top_ports[{port,count}], shodan.vulns[{cve,count}], shodan.sample_hosts[{ip,port,product}]
+- osint.dns.dmarc_policy (reject|quarantine|none|not_set), osint.dns.mail_provider, osint.dns.dns_provider
+- osint.ct.subdomains[], osint.ct.infrastructure_hints.vpn[], osint.ct.infrastructure_hints.auth[]
+- osint.web.security_score (0-100), osint.web.server, osint.web.cms
+- osint.service_risk.max_danger (critical|high|medium|none), osint.service_risk.dangerous_services[{port,name,danger,reason}]
+- osint.nvd_cvss.max_score, osint.nvd_cvss.max_severity, osint.nvd_cvss.summary.{critical,high,medium,low}
+- osint.onprem_network.on_prem_count, osint.onprem_network.cloud_count, osint.onprem_network.on_prem_percentage
+
+CATEGORIES: Research & Labs, IT & Cyber, Construction & Facilities, Engineering, Environmental, \
+Security & Defense, Manufacturing, Management & Consulting, Energy & Utilities, Transportation & Logistics, Other Services
+
+KEY STATS:
+- 483 contractors with internet-exposed hosts
+- 237 with critical CVEs, 1,456 with no DMARC policy
+- 22 with CRITICAL dangerous services (RDP, SMB, databases exposed)
+- 1,585 with on-premises IPs identified (49,463 on-prem IPs total)
+
+MAP COMMANDS — emit these as JSON on a line by itself, prefixed with MAP_CMD:
+The frontend will execute these to manipulate the map in real-time.
+
+Available commands:
+- MAP_CMD:{"action":"fly_to","lat":39.5,"lon":-105.0,"zoom":8}
+- MAP_CMD:{"action":"filter","field":"state","value":"CO","op":"eq"}
+- MAP_CMD:{"action":"filter","field":"osint.service_risk.max_danger","value":"critical","op":"eq"}
+- MAP_CMD:{"action":"filter","field":"shodan.total_hosts","value":0,"op":"gt"}
+- MAP_CMD:{"action":"filter","field":"category","value":"Manufacturing","op":"eq"}
+- MAP_CMD:{"action":"filter","field":"name","value":"battery","op":"contains"}
+- MAP_CMD:{"action":"reset"}
+- MAP_CMD:{"action":"open_panel","contractor_index":42}
+
+Filter operators: eq, contains, gt, gte, lt, exists
+Field paths use dot notation into the contractor JSON.
+
+CRITICAL ANTI-HALLUCINATION RULES:
+- You will receive a CONTRACTOR DATA block with real contractor records. ONLY cite contractors, IPs, CVEs, ports, and risk scores that appear in this data block.
+- NEVER invent, fabricate, or guess contractor names, IP addresses, CVE numbers, port numbers, or vulnerability details.
+- If the user asks about something not in the provided data, say "I don't have data on that" rather than guessing.
+- Every factual claim you make must trace to a specific field in the CONTRACTOR DATA block.
+
+MAP COMMAND RULES:
+1. Always emit MAP_CMD commands BEFORE your text explanation so the map updates first
+2. Use fly_to when discussing a geographic area or specific contractor location
+3. Use filter when the user wants to see a subset of contractors
+4. Use reset before applying new filters to clear previous state
+5. When mentioning a specific contractor, ALWAYS emit open_panel with their [index] number from the data
+6. ALWAYS fly_to the contractor's lat/lon AND open_panel so the user sees both map position and details
+
+ACTION COMMANDS — use when the user asks you to DO something (research, analyze, compare, export):
+- MAP_CMD:{"action":"research","contractor_index":42} — Run AI research (web search + LLM analysis) on a contractor
+- MAP_CMD:{"action":"kill_chain","contractor_index":42} — Generate MITRE ATT&CK kill chain for a contractor
+- MAP_CMD:{"action":"assess","contractor_index":42} — Run full threat assessment (kill chain + all step details)
+- MAP_CMD:{"action":"compare","contractor_indices":[0,5,12]} — Side-by-side security comparison (2-5 contractors)
+- MAP_CMD:{"action":"export_csv"} — Export currently visible/filtered contractors as downloadable CSV
+- MAP_CMD:{"action":"radius","lat":36.01,"lon":-84.27,"miles":50} — Show contractors within radius, draw circle
+
+INTENT INFERENCE — users will NOT use exact command names. Infer the right action:
+- "tell me about X" / "dig into X" / "what do we know about X" → research + open_panel
+- "how would you attack X" / "attack path" / "vulnerabilities for X" → kill_chain
+- "full report on X" / "assess X" / "deep dive on X" → assess (full assessment)
+- "compare X and Y" / "how do they stack up" / "which is riskier" → compare
+- "export" / "get me a list" / "download" / "CSV" → export_csv
+- "anything near X" / "within 50 miles" / "contractors around X" → radius using the contractor's lat/lon
+- "those ones" / "narrow it down" / "just the critical ones" → filter on current visible set
+
+LONG-RUNNING ACTIONS: For research, kill_chain, and assess, ALWAYS announce what you're doing before emitting the command:
+"I'll run a kill chain analysis on ORNL — generating now..."
+MAP_CMD:{"action":"kill_chain","contractor_index":5}
+This gives the user context before a 10-30 second operation starts.
+
+SESSION CONTEXT — the frontend sends these with each query:
+- active_filter: what filter is currently applied (field, op, value)
+- visible_count: how many contractors are currently visible on the map
+- selected_contractor: index of the currently open detail panel (or -1)
+- recent_indices: contractor indices referenced in the last few messages
+Use this context for follow-up queries: "those", "that contractor", "the filtered set".
+
+MULTI-STEP ANALYSIS — for complex queries requiring multiple steps:
+1. Explain your analysis plan briefly
+2. Execute one command at a time, observing results
+3. Use the session context to track what's visible after each step
+4. Conclude with a synthesis of findings
+Example: "Find contractors sharing IPs with critical-CVE companies" requires:
+  Step 1: filter to critical CVE → report count
+  Step 2: note their shared infrastructure from the data context
+  Step 3: present the supply chain risk
+
+RESPONSE RULES:
+7. Be specific with numbers — cite actual counts from the data
+8. Keep answers concise but impactful — this is a security briefing tool
+9. When asked about "highest risk" or "most dangerous", sort by the risk= field in the data
+10. Cite the specific data fields: risk score, danger level, DMARC policy, exposed services, CVE count
+11. For action commands, always identify the contractor by [index] from the data block
+12. When the user references a contractor by name, find its [index] and use that in commands
+"""
+
+
+class AtlasChatRequest(BaseModel):
+    query: str
+    messages: list[dict] = []
+    contractor_count: int = 0
+    data_context: str = ""
+    session_id: str = ""  # client-generated UUID; reused from telemetry IIFE
+
+
+class ClientErrorReport(BaseModel):
+    """Schema for the POST /api/client-error endpoint.
+
+    Fields are intentionally lenient: we want to capture whatever the
+    client managed to send, even if some fields are missing. The validator
+    enforces upper bounds on string lengths so a malicious or buggy client
+    can't dump megabytes of data into the log.
+    """
+    session: str = ""
+    kind: str = "error"
+    url: str = ""
+    userAgent: str = ""
+    viewport: list[int] = []
+    timestamp: str = ""
+    message: str = ""
+    source: str = ""
+    lineno: int = 0
+    colno: int = 0
+    stack: str = ""
+    reason: str = ""
+
+
+@app.get("/atlas")
+async def atlas():
+    return FileResponse(BASE / "frontend" / "static" / "contractor-map.html")
+
+
+@app.get("/contractors.json")
+async def contractors():
+    return FileResponse(BASE / "frontend" / "static" / "contractors.json")
+
+
+# Serve static assets (vendor JS, CSS, images) from frontend/static/
+# under the /static URL prefix. The /atlas, /contractors.json, and other
+# explicit routes still take precedence because they're registered first.
+app.mount("/static", StaticFiles(directory=BASE / "frontend" / "static"), name="static")
+
+
+class KillChainRequest(BaseModel):
+    contractor_index: int
+
+
+@app.post("/api/summarize-role")
+async def summarize_role_endpoint(req: KillChainRequest):
+    """Generate an enhanced description using web search + LLM synthesis. Streams SSE progress."""
+    import json as _json
+    from backend.brave_search import BraveSearchClient
+
+    with open(BASE / "frontend" / "static" / "contractors.json") as f:
+        data = _json.load(f)
+
+    contractors = data.get("contractors", [])
+    if req.contractor_index < 0 or req.contractor_index >= len(contractors):
+        return JSONResponse({"error": "Invalid index"}, status_code=400)
+
+    c = contractors[req.contractor_index]
+    name = c.get("name", "")
+    contract_ids = c.get("contract_ids", [])
+
+    async def stream():
+        brave = BraveSearchClient()
+        web_context = ""
+        unique = []
+
+        if brave.is_available():
+            # Search 1: contractor name + DOE
+            query1 = f'"{name}" Department of Energy'
+            yield f"data: {_json.dumps({'phase': 'search', 'query': query1[:60]})}\n\n"
+            results1 = await brave.search(query1, count=5)
+
+            # Search 2: contractor name + what they do
+            dba = c.get('dba', '')
+            search_name = dba if dba and dba != name else name
+            query2 = f'"{search_name}" site:energy.gov OR site:doe.gov'
+            yield f"data: {_json.dumps({'phase': 'search', 'query': query2[:60]})}\n\n"
+            results1b = await brave.search(query2, count=3)
+            results1.extend(results1b)
+
+            yield f"data: {_json.dumps({'phase': 'search_complete', 'results': len(results1)})}\n\n"
+
+            # Search 3: specific contract IDs
+            results2 = []
+            for cid in contract_ids[:3]:
+                yield f"data: {_json.dumps({'phase': 'contract_search', 'contract_id': cid})}\n\n"
+                r = await brave.search(f'"{cid}" DOE', count=3)
+                results2.extend(r)
+
+            # Search 4: company website directly
+            query4 = f'{search_name} official website'
+            yield f"data: {_json.dumps({'phase': 'search', 'query': 'company website'})}\n\n"
+            results4 = await brave.search(query4, count=2)
+            results2.extend(results4)
+
+            all_results = results1 + results2
+            seen_urls = set()
+            for r in all_results:
+                if r["url"] not in seen_urls:
+                    seen_urls.add(r["url"])
+                    unique.append(r)
+
+            if unique:
+                web_lines = []
+                for r in unique[:8]:
+                    web_lines.append(f"Source: {r['title']}")
+                    web_lines.append(f"URL: {r['url']}")
+                    if r.get("description"):
+                        web_lines.append(f"Content: {r['description']}")
+                    web_lines.append("")
+                web_context = "\n".join(web_lines)
+
+        yield f"data: {_json.dumps({'phase': 'synthesizing', 'sources': len(unique)})}\n\n"
+
+        osint_domain = c.get('osint', {}).get('domain_verify', {}).get('domain', '') or c.get('osint', {}).get('domain_discovery', {}).get('domain', '')
+        contract_context = (
+            f"Contractor: {name}\nDBA: {c.get('dba', '')}\nParent: {c.get('parent', '')}\n"
+            f"Category: {c.get('category', '')}\nCity: {c.get('city', '')}, {c.get('state', '')}\n"
+            f"NAICS: {c.get('naics_desc', '') or c.get('naics', '')}\n"
+            f"Product/Service: {c.get('product_service', '')}\n"
+            f"Federal Obligation: ${c.get('obligation', 0):,.0f}\n"
+            f"Max Potential: ${c.get('max_potential', 0):,.0f}\n"
+            f"Contract IDs ({len(contract_ids)}): {', '.join(contract_ids)}\n"
+            f"Fiscal Years: {c.get('fiscal_years', '')}\n"
+            f"Start: {c.get('start_date', '')} End: {c.get('end_date', '')}\n"
+            f"Funding: {', '.join(c.get('funding_agencies', []))}\n"
+            f"Role: {c.get('role', '')}\n"
+            f"OSINT Domain (may be incorrect): {osint_domain}\n"
+            f"Personnel: {', '.join(c.get('personnel', [])[:10]) if c.get('personnel') else 'none'}\n"
+            f"Size: {c.get('size_determination', '')}\n"
+            f"Business Designations: {', '.join(c.get('business_designations', []))}"
+        )
+
+        user_content = f"CONTRACT RECORD:\n{contract_context}"
+        if web_context:
+            user_content += f"\n\nWEB SEARCH RESULTS (cite these sources):\n{web_context}"
+
+        messages = [
+            {"role": "system", "content": (
+                "You are a DOE contractor intelligence analyst creating an enhanced description. "
+                "You have (1) the official contract record and (2) web search results. "
+                "Write 2-3 paragraphs: what they do for DOE, scope of work from web findings, "
+                "key contract facts including all contract IDs and their purposes if known. "
+                "If the web search reveals the company's real website URL, include it. "
+                "Note if the OSINT domain appears incorrect based on web findings. "
+                "ONLY use provided data/web results. No training knowledge. "
+                "Professional intelligence briefing style."
+            )},
+            {"role": "user", "content": user_content},
+        ]
+
+        if llm.is_available():
+            try:
+                summary = await llm.chat(messages, max_tokens=700)
+                yield f"data: {_json.dumps({'phase': 'complete', 'summary': summary.strip(), 'sources': len(unique)})}\n\n"
+            except Exception as e:
+                yield f"data: {_json.dumps({'phase': 'complete', 'summary': f'Failed: {e}', 'sources': 0})}\n\n"
+        else:
+            yield f"data: {_json.dumps({'phase': 'complete', 'summary': 'GLM-5.3 not available.', 'sources': 0})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@app.post("/api/ai-research")
+async def ai_research_endpoint(req: KillChainRequest):
+    """AI-powered contractor research with SSE streaming.
+
+    Uses the core research_contractor() function with an on_status callback
+    to emit SSE progress events.
+    """
+    import json as _json
+    from backend.brave_search import BraveSearchClient
+    from osint.ai_research import research_contractor, apply_domain_cascade
+
+    with open(BASE / "frontend" / "static" / "contractors.json") as f:
+        data = _json.load(f)
+
+    contractors = data.get("contractors", [])
+    if req.contractor_index < 0 or req.contractor_index >= len(contractors):
+        return JSONResponse({"error": "Invalid index"}, status_code=400)
+
+    c = contractors[req.contractor_index]
+
+    async def stream():
+        brave = BraveSearchClient()
+
+        # Collect progress events from the callback
+        progress_events = []
+
+        async def on_status(msg):
+            progress_events.append(msg)
+
+        # Run the core research function
+        result = await research_contractor(c, llm, brave, on_status=on_status)
+
+        # Emit collected progress events
+        for msg in progress_events:
+            # Map status messages to SSE phase events
+            if 'Searching' in msg:
+                yield f"data: {_json.dumps({'phase': 'search', 'detail': msg[:60]})}\n\n"
+            elif 'Analyzing' in msg:
+                yield f"data: {_json.dumps({'phase': 'synthesizing', 'sources': result.get('raw_search_results', 0)})}\n\n"
+            elif 'Validating' in msg:
+                yield f"data: {_json.dumps({'phase': 'validating', 'domain': result.get('current_domain', '')})}\n\n"
+
+        # Save to contractor data
+        c.setdefault('osint', {})['ai_research'] = result
+        dd = c.get('osint', {}).get('domain_discovery', {})
+
+        if not result.get('error') and result.get('current_domain') and result.get('domain_validated'):
+            old = dd.get('domain', '')
+            if result['current_domain'] != old:
+                apply_domain_cascade(c, result['current_domain'], 'ai_research')
+
+        # Persist to file
+        with open(BASE / "frontend" / "static" / "contractors.json", "w") as f:
+            _json.dump(data, f, separators=(',', ':'))
+
+        yield f"data: {_json.dumps({'phase': 'complete', **result})}\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@app.post("/api/full-assessment")
+async def full_assessment_endpoint(req: KillChainRequest):
+    """Generate a complete assessment: kill chain + detailed analysis of every step.
+
+    Returns SSE stream with progress events:
+      {"phase": "kill_chain", "status": "generating"}
+      {"phase": "kill_chain", "status": "complete", "data": {...}}
+      {"phase": "step_detail", "step": 1, "total": 6, "status": "generating"}
+      {"phase": "step_detail", "step": 1, "total": 6, "status": "complete", "data": {...}}
+      ...
+      {"phase": "complete", "summary": {...}}
+    """
+    import json as _json
+    import re as _re2
+    from backend.kill_chain import assemble_contractor_intel, generate_kill_chain, generate_step_detail
+
+    with open(BASE / "frontend" / "static" / "contractors.json") as f:
+        data = _json.load(f)
+
+    contractors = data.get("contractors", [])
+    if req.contractor_index < 0 or req.contractor_index >= len(contractors):
+        return JSONResponse({"error": "Invalid contractor index"}, status_code=400)
+
+    contractor = contractors[req.contractor_index]
+    intel = assemble_contractor_intel(contractor)
+
+    async def stream():
+        # Phase 1: Generate kill chain
+        yield f"data: {_json.dumps({'phase': 'kill_chain', 'status': 'generating'})}\n\n"
+
+        if llm.is_available():
+            kill_chain = await generate_kill_chain(llm, intel)
+        else:
+            steps = []
+            for i, v in enumerate(intel["vectors"][:8], 1):
+                steps.append({
+                    "step": i, "tactic": v.get("tactic", ""),
+                    "technique_id": v.get("technique", ""),
+                    "technique_name": v.get("name", ""),
+                    "description": v.get("detail", ""),
+                    "evidence": v.get("evidence", f"Port {v.get('port', '')}"),
+                    "impact": "Enables further attack progression",
+                })
+            kill_chain = {
+                "summary": f"{intel['name']} has {len(intel['vectors'])} attack vectors.",
+                "risk_level": "high" if len(intel["vectors"]) > 2 else "medium",
+                "steps": steps, "remediation": [],
+            }
+
+        yield f"data: {_json.dumps({'phase': 'kill_chain', 'status': 'complete', 'data': kill_chain})}\n\n"
+
+        # Phase 2: Detailed analysis for each step
+        steps = kill_chain.get("steps", [])
+        step_details = []
+
+        for idx, step in enumerate(steps):
+            yield f"data: {_json.dumps({'phase': 'step_detail', 'step': idx + 1, 'total': len(steps), 'status': 'generating', 'tactic': step.get('tactic', '')})}\n\n"
+
+            detail = await generate_step_detail(llm, intel, step)
+
+            step_details.append(detail)
+            yield f"data: {_json.dumps({'phase': 'step_detail', 'step': idx + 1, 'total': len(steps), 'status': 'complete', 'data': detail})}\n\n"
+
+        # Final summary
+        yield f"data: {_json.dumps({'phase': 'complete', 'total_steps': len(steps), 'total_details': len(step_details)})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+class StepDetailRequest(BaseModel):
+    contractor_index: int
+    step: dict  # The kill chain step object
+
+
+
+
+@app.post("/api/step-detail")
+async def step_detail_endpoint(req: StepDetailRequest):
+    """Generate detailed analysis for a specific kill chain step."""
+    import json as _json
+    from backend.kill_chain import assemble_contractor_intel, generate_step_detail
+
+    with open(BASE / "frontend" / "static" / "contractors.json") as f:
+        data = _json.load(f)
+
+    contractors = data.get("contractors", [])
+    if req.contractor_index < 0 or req.contractor_index >= len(contractors):
+        return JSONResponse({"error": "Invalid contractor index"}, status_code=400)
+
+    contractor = contractors[req.contractor_index]
+    intel = assemble_contractor_intel(contractor)
+    step = req.step
+
+    result = await generate_step_detail(llm, intel, step)
+    return JSONResponse(result)
+
+
+@app.post("/api/kill-chain")
+async def kill_chain_endpoint(req: KillChainRequest):
+    """Generate a MITRE ATT&CK kill chain for a specific contractor."""
+    import json as _json
+    from backend.kill_chain import assemble_contractor_intel, generate_kill_chain
+
+    # Load contractor data
+    with open(BASE / "frontend" / "static" / "contractors.json") as f:
+        data = _json.load(f)
+
+    contractors = data.get("contractors", [])
+    if req.contractor_index < 0 or req.contractor_index >= len(contractors):
+        return JSONResponse({"error": "Invalid contractor index"}, status_code=400)
+
+    contractor = contractors[req.contractor_index]
+    intel = assemble_contractor_intel(contractor)
+
+    if llm.is_available():
+        result = await generate_kill_chain(llm, intel)
+    else:
+        # Fallback: generate a basic kill chain from vectors alone (no LLM)
+        steps = []
+        for i, v in enumerate(intel["vectors"][:8], 1):
+            steps.append({
+                "step": i,
+                "tactic": v.get("tactic", ""),
+                "technique_id": v.get("technique", ""),
+                "technique_name": v.get("name", ""),
+                "description": v.get("detail", ""),
+                "evidence": v.get("evidence", f"Port {v.get('port', '')} {v.get('product', '')}".strip()),
+                "impact": "Enables further attack progression",
+            })
+        result = {
+            "summary": f"{intel['name']} has {len(intel['vectors'])} identified attack vectors.",
+            "risk_level": "critical" if len(intel["vectors"]) > 5 else "high" if len(intel["vectors"]) > 2 else "medium",
+            "steps": steps,
+            "remediation": [{"priority": 1, "action": "Address critical exposures first", "impact": "Reduces attack surface"}],
+            "note": "Generated without AI reasoning — GLM-5.3 not available",
+        }
+
+    return JSONResponse(result)
+
+
+# ────────────────────────────────────────────────────────────────────
+# Map action parser — extracts commands from LLM stream text
+# ────────────────────────────────────────────────────────────────────
+# The LLM is instructed to emit map commands as `MAP_CMD:{...}` on a line
+# by itself. In practice, it sometimes deviates:
+#   - Pretty-prints JSON across multiple lines
+#   - Wraps commands in markdown ```json ... ``` code fences
+# This parser handles all three shapes and returns a cleaned text with
+# the commands extracted as dicts.
+#
+# `final=False` during streaming holds back text that may contain a
+# partial command (an unclosed fence, or an incomplete MAP_CMD: line).
+# `final=True` at stream-end forces extraction of anything remaining.
+
+_MAP_PREFIX = "MAP_CMD:"
+_PARTIAL_MAP_PREFIXES = tuple(_MAP_PREFIX[:i] for i in range(1, len(_MAP_PREFIX) + 1))
+
+
+def _find_balanced_json_end(text: str, start: int) -> int:
+    """Given text and the index of an opening '{', find the index of the
+    matching '}' using brace depth counting. Returns -1 if unbalanced."""
+    if start >= len(text) or text[start] != "{":
+        return -1
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(start, len(text)):
+        c = text[i]
+        if escape:
+            escape = False
+            continue
+        if in_string:
+            if c == "\\":
+                escape = True
+            elif c == '"':
+                in_string = False
+            continue
+        if c == '"':
+            in_string = True
+        elif c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                return i
+    return -1  # unbalanced
+
+
+def _ends_with_partial_map_prefix(text: str) -> bool:
+    """True if text ends with a partial 'MAP_CMD:' prefix (e.g. 'MAP_')."""
+    for p in _PARTIAL_MAP_PREFIXES:
+        if text.endswith(p) or text.endswith("\n" + p):
+            return True
+    return False
+
+
+def _has_unclosed_code_fence(text: str) -> bool:
+    """True if text contains an opening ``` without a matching close."""
+    return text.count("```") % 2 == 1
+
+
+def _ends_with_partial_fence(text: str) -> bool:
+    """True if text ends with 1 or 2 backticks (could be opening fence)."""
+    return text.endswith("`") or text.endswith("``")
+
+
+def _try_extract_map_cmd(text: str, idx: int, *, final: bool):
+    """Try to extract a MAP_CMD: command starting at `idx` in text.
+
+    Returns a tuple (cmd_or_None, consume_start, consume_end, incomplete).
+      cmd_or_None: the parsed command dict, or None if parse failed / incomplete
+      consume_start, consume_end: slice of text to remove (only used if not incomplete)
+      incomplete: True if more tokens needed (and not final)
+    """
+    # idx points at 'MAP_CMD:' (or '\nMAP_CMD:' — but we've already normalized)
+    prefix = "MAP_CMD:"
+    json_start = idx + len(prefix)
+
+    # First try: single-line JSON terminated by \n
+    line_end = text.find("\n", json_start)
+    if line_end != -1:
+        json_str = text[json_start:line_end].strip()
+        if json_str:
+            try:
+                cmd = json.loads(json_str)
+                return cmd, idx, line_end + 1, False
+            except json.JSONDecodeError:
+                pass  # fall through to multi-line
+
+    # Multi-line attempt: find opening '{' then matching '}'
+    brace_start = text.find("{", json_start)
+    if brace_start == -1:
+        # No JSON object in what we've seen yet
+        if not final:
+            return None, 0, 0, True
+        end = line_end if line_end != -1 else len(text)
+        return None, idx, end, False
+
+    brace_end = _find_balanced_json_end(text, brace_start)
+    if brace_end == -1:
+        if not final:
+            return None, 0, 0, True
+        end = line_end if line_end != -1 else len(text)
+        return None, idx, end, False
+
+    json_str = text[brace_start:brace_end + 1]
+    try:
+        cmd = json.loads(json_str)
+    except json.JSONDecodeError:
+        cmd = None
+
+    end = brace_end + 1
+    if end < len(text) and text[end] == "\n":
+        end += 1
+    return cmd, idx, end, False
+
+
+def _try_extract_code_block(text: str, idx: int, *, final: bool):
+    """Try to extract a ```json``` fenced code block at `idx`.
+
+    Returns (cmd_or_None, consume_start, consume_end, incomplete, is_non_action).
+      is_non_action: True if the block parsed but wasn't a map command —
+                     caller should leave it in text and advance past it.
+    """
+    content_start = idx + 3
+    # Skip optional language tag
+    while content_start < len(text) and text[content_start].isalpha():
+        content_start += 1
+    if content_start < len(text) and text[content_start] == "\n":
+        content_start += 1
+
+    close_idx = text.find("```", content_start)
+    if close_idx == -1:
+        # Unclosed fence
+        if not final:
+            return None, 0, 0, True, False
+        # At end: strip the dangling fence
+        return None, idx, len(text), False, False
+
+    block_content = text[content_start:close_idx].strip()
+
+    try:
+        parsed = json.loads(block_content)
+    except json.JSONDecodeError:
+        parsed = None
+
+    block_end = close_idx + 3
+
+    if isinstance(parsed, dict) and "action" in parsed:
+        # Consume the block, including optional trailing newline and leading newline
+        if block_end < len(text) and text[block_end] == "\n":
+            block_end += 1
+        start_strip = idx
+        if start_strip > 0 and text[start_strip - 1] == "\n":
+            start_strip -= 1
+        return parsed, start_strip, block_end, False, False
+
+    # Non-action block — leave in place, just advance past it
+    return None, idx, block_end, False, True
+
+
+def extract_map_actions(text: str, *, final: bool = False):
+    """Extract map commands from streamed LLM text in document order.
+
+    Recognizes:
+      1. `MAP_CMD:{...}` on a single line
+      2. `MAP_CMD:{multi-line pretty-printed JSON}` terminated by matching brace
+      3. ```json\n{"action": "..."}\n``` markdown fenced code blocks
+      4. ```\n{"action": "..."}\n``` markdown fenced code blocks without lang tag
+
+    Commands are returned in the order they appear in the source text so
+    the frontend executes them in the LLM's intended sequence.
+
+    Args:
+        text: the accumulated LLM response text so far
+        final: if True, force extraction of anything that looks partial (end of stream)
+
+    Returns:
+        (cleaned_text, commands)
+    """
+    cmds = []
+    cursor = 0  # position to start searching from (for skipping non-action blocks)
+
+    while True:
+        # Find the next MAP_CMD: and the next ``` starting from cursor
+        map_idx = text.find("MAP_CMD:", cursor)
+        fence_idx = text.find("```", cursor)
+
+        # Pick whichever comes first
+        candidates = [i for i in (map_idx, fence_idx) if i >= 0]
+        if not candidates:
+            break
+        next_idx = min(candidates)
+
+        if next_idx == map_idx:
+            cmd, start, end, incomplete = _try_extract_map_cmd(text, next_idx, final=final)
+            if incomplete:
+                break
+            if cmd is not None:
+                cmds.append(cmd)
+            # Remove the consumed region (whether parsed or dropped)
+            text = text[:start] + text[end:]
+            cursor = start  # re-scan from here (text shifted)
+        else:  # fence
+            cmd, start, end, incomplete, is_non_action = _try_extract_code_block(text, next_idx, final=final)
+            if incomplete:
+                break
+            if is_non_action:
+                # Leave the block alone and skip past it
+                cursor = end
+                continue
+            if cmd is not None:
+                cmds.append(cmd)
+            text = text[:start] + text[end:]
+            cursor = start  # re-scan from here
+
+    return text, cmds
+
+
+@app.post("/api/atlas-chat")
+async def atlas_chat(req: AtlasChatRequest):
+    # Import inside the function so tests can monkeypatch
+    # backend.intent_router.classify_intent on the source module without aliasing.
+    from backend.intent_router import classify_intent
+
+    # Inject live data context into system prompt
+    system_content = _ATLAS_SYSTEM_PROMPT
+    if req.data_context:
+        system_content += req.data_context
+
+    # ── Intent classification (Task 3) ──
+    intent = await classify_intent(req.query, llm, recent_history=req.messages)
+
+    # ── Retrieval (Task 2, gated by intent in Task 3, aggregated in Task 4) ──
+    retriever = get_retriever()
+    retrieval_path = "legacy_substring"
+    retrieval_results_count = 0
+    retrieval_results_preview: list[str] = []
+
+    if intent.intent == "aggregate" and intent.search_terms:
+        try:
+            import backend.sql_aggregator as _sql_agg
+            rollups = await asyncio.to_thread(
+                _sql_agg.aggregate_contracts,
+                str(BASE / "doe_contracts.db"),
+                intent.search_terms,
+                intent.filters or {},
+                20,
+            )
+            if rollups:
+                rollup_lines = []
+                for r in rollups:
+                    years_str = ",".join(str(y) for y in r.fiscal_years[:5])
+                    rollup_lines.append(
+                        f"- {r.recipient_name}: {r.contract_count} contracts, "
+                        f"${r.total_obligation:,.0f} total (FY {years_str}) | "
+                        f"PSC: {'; '.join(r.top_psc[:2])}"
+                    )
+                system_content += (
+                    "\n\nCONTRACTOR ROLLUPS (matching your aggregate query — "
+                    "sorted by total obligation):\n"
+                    + "\n".join(rollup_lines)
+                    + "\n\nWhen presenting these to the user, list them as a "
+                      "ranked table or bullet list. Cite the dollar amounts and "
+                      "contract counts directly from this data."
+                )
+                retrieval_path = "sql_aggregate"
+                retrieval_results_count = len(rollups)
+                retrieval_results_preview = [
+                    f"{r.recipient_name}: {r.contract_count} contracts, ${r.total_obligation:,.0f}"
+                    for r in rollups[:3]
+                ]
+        except Exception as e:
+            print(f"[atlas-chat] SQL aggregation failed: {e}")
+
+    elif retriever is not None and intent.intent in ("entity_narrative",):
+        try:
+            # Use the LLM-extracted search terms if available, else the raw query
+            search_query = " ".join(intent.search_terms) if intent.search_terms else req.query
+            results = await asyncio.to_thread(retriever.search, search_query, 15, True)
+            if results.contracts:
+                contract_context = "\n".join(
+                    f"- {c.recipient}: {c.description[:200]} (${c.obligation:,.0f})"
+                    for c in results.contracts[:15]
+                )
+                system_content += (
+                    "\n\nRELEVANT CONTRACT DATA (from 4-lane retrieval):\n"
+                    + contract_context
+                )
+                retrieval_path = "hybrid_4lane"
+                retrieval_results_count = len(results.contracts)
+                retrieval_results_preview = [
+                    f"{c.recipient}: {c.description[:80]}"
+                    for c in results.contracts[:3]
+                ]
+        except Exception as e:
+            print(f"[atlas-chat] retrieval failed mid-request, using legacy: {e}")
+
+    # Build the message list with history BEFORE the current query so the
+    # LLM has conversational context. The frontend sends `req.messages` as
+    # prior history only (the current query lives in `req.query` and is NOT
+    # appended to the frontend's local history until the response completes),
+    # but we defensively exclude any trailing user message that matches
+    # req.query to stay robust to old frontends during rollout.
+    # ── Token-budgeted history (Task 5) sourced from ConversationStore (Task 6) ──
+    from backend.history_budget import budget_history
+
+    # Prefer server-side state when session_id is provided; fall back to client-supplied
+    # messages on first request after a server restart (state would be empty).
+    if req.session_id:
+        state = _conversation_store.get_or_create(req.session_id)
+
+        # ── Memory layer (Task 7) ──
+        # Update entity tracker with the user's query (assistant response is added after stream)
+        from backend.conversation_state import _load_contractor_names
+        contractor_names = _load_contractor_names()
+        _conversation_store.update_entities(
+            req.session_id, "user", req.query, contractor_names
+        )
+
+        # Maybe summarize older turns (only fires if budget exceeded)
+        await _conversation_store.maybe_summarize(
+            req.session_id, llm, target_tokens=8000
+        )
+
+        # Re-read state after potential summarization/trimming
+        state = _conversation_store.get_or_create(req.session_id)
+        if state.rolling_summary:
+            system_content += (
+                f"\n\nPRIOR DISCUSSION SUMMARY:\n{state.rolling_summary}"
+            )
+        if state.entity_tracker:
+            system_content += (
+                "\n\nUSER IS CURRENTLY INVESTIGATING: "
+                + ", ".join(state.entity_tracker[-10:])
+            )
+
+        if state.verbatim_turns:
+            source_messages = state.verbatim_turns
+        else:
+            source_messages = req.messages
+    else:
+        source_messages = req.messages
+
+    history_msgs = budget_history(source_messages, target_tokens=8000)
+    if history_msgs and history_msgs[-1].get("role") == "user" and history_msgs[-1].get("content") == req.query:
+        history_msgs = history_msgs[:-1]
+
+    messages = [{"role": "system", "content": system_content}]
+    for msg in history_msgs:
+        if msg.get("role") in ("user", "assistant"):
+            messages.append({"role": msg["role"], "content": msg.get("content") or ""})
+    messages.append({"role": "user", "content": req.query})
+
+    start_time = time.time()
+    accumulated_response: list[str] = []
+
+    async def stream():
+        use_llm = llm.is_available()
+        response_parts = []
+        last_emitted = ""
+        error_message: str | None = None
+
+        try:
+            if not use_llm:
+                error_message = "GLM-5.3 is not configured. Set OPENROUTER_API_KEY."
+                yield f"data: {json.dumps({'type': 'error', 'message': error_message})}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+            gen = llm.chat_stream(messages, max_tokens=8192, reasoning_effort="low")
+            async for token in gen:
+                response_parts.append(token)
+                text_so_far = "".join(response_parts)
+
+                text_so_far, cmds = extract_map_actions(text_so_far, final=False)
+                response_parts = [text_so_far]
+
+                for cmd in cmds:
+                    yield f"data: {json.dumps({'type': 'map_command', 'command': cmd})}\n\n"
+
+                if (
+                    "MAP_CMD:" in text_so_far
+                    or _ends_with_partial_map_prefix(text_so_far)
+                    or _has_unclosed_code_fence(text_so_far)
+                    or _ends_with_partial_fence(text_so_far)
+                ):
+                    continue
+
+                if len(text_so_far) > len(last_emitted):
+                    diff = text_so_far[len(last_emitted):]
+                    yield f"data: {json.dumps({'type': 'token', 'content': diff})}\n\n"
+                    last_emitted = text_so_far
+
+            final_text = "".join(response_parts)
+            final_text, cmds = extract_map_actions(final_text, final=True)
+            for cmd in cmds:
+                yield f"data: {json.dumps({'type': 'map_command', 'command': cmd})}\n\n"
+            if len(final_text) > len(last_emitted):
+                diff = final_text[len(last_emitted):]
+                if diff.strip():
+                    yield f"data: {json.dumps({'type': 'token', 'content': diff})}\n\n"
+            accumulated_response.append(final_text)
+
+            # Persist to ConversationStore (Task 6) so the next turn has full state
+            if req.session_id:
+                _conversation_store.append_turn(req.session_id, "user", req.query)
+                _conversation_store.append_turn(req.session_id, "assistant", final_text)
+                # Update entities from the assistant's response too (Task 7)
+                from backend.conversation_state import _load_contractor_names
+                _conversation_store.update_entities(
+                    req.session_id, "assistant", final_text, _load_contractor_names()
+                )
+
+        except Exception as e:
+            error_message = str(e)
+            yield f"data: {json.dumps({'type': 'error', 'message': error_message})}\n\n"
+
+        yield "data: [DONE]\n\n"
+
+        # Log the turn (after the stream is fully drained)
+        _log_chat_turn({
+            "session_id": req.session_id,
+            "query": req.query,
+            "intent_classification": intent.model_dump(),
+            "retrieval_path": retrieval_path,
+            "retrieval_results_count": retrieval_results_count,
+            "retrieval_results_preview": retrieval_results_preview,
+            "prompt_tokens_estimate": sum(len(m.get("content", "")) for m in messages) // 4,
+            "history_tokens_estimate": sum(
+                len(m.get("content", "")) for m in messages if m.get("role") != "system"
+            ) // 4,
+            "full_messages": messages,
+            "response_text": "".join(accumulated_response),
+            "response_time_ms": int((time.time() - start_time) * 1000),
+            "error": error_message,
+        })
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+# ── Client-side error telemetry ──
+# Captures window.onerror, unhandledrejection, and console errors from real
+# user sessions. Append-only JSONL log at logs/client_errors.jsonl. The
+# AuthMiddleware already gates this behind the SITE_PASSWORD cookie, so it
+# is not publicly writable in production.
+
+_CLIENT_ERROR_LOG = BASE / "logs" / "client_errors.jsonl"
+_CLIENT_ERROR_LOG.parent.mkdir(parents=True, exist_ok=True)
+
+# ── Chat conversation logging ──
+# Captures every chat turn with the full prompt + response so we can diagnose
+# retrieval / memory failures from real usage. Append-only JSONL.
+# Behind AuthMiddleware (same as /api/client-error).
+_ATLAS_CHAT_LOG = BASE / "logs" / "atlas_chat.jsonl"
+_ATLAS_CHAT_LOG.parent.mkdir(parents=True, exist_ok=True)
+
+_CHAT_LOG_MAX_RESPONSE_CHARS = 16384
+# 16384 chars ≈ 4k tokens: big enough to hold the full system prompt + a
+# 4-lane retrieval context block (~15 contracts) without truncation, so the
+# log is actually useful for diagnosing retrieval/memory failures.
+_CHAT_LOG_MAX_FIELD_CHARS = 16384
+
+
+def _log_chat_turn(record: dict) -> None:
+    """Append one chat turn to logs/atlas_chat.jsonl with size caps."""
+    safe = dict(record)
+    if "response_text" in safe and isinstance(safe["response_text"], str):
+        safe["response_text"] = safe["response_text"][:_CHAT_LOG_MAX_RESPONSE_CHARS]
+    if "full_messages" in safe and isinstance(safe["full_messages"], list):
+        safe["full_messages"] = [
+            {
+                "role": m.get("role", ""),
+                "content": (m.get("content", "") or "")[:_CHAT_LOG_MAX_FIELD_CHARS],
+            }
+            for m in safe["full_messages"]
+        ]
+    safe["server_timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    try:
+        with open(_ATLAS_CHAT_LOG, "a") as f:
+            f.write(json.dumps(safe) + "\n")
+    except Exception:
+        pass  # logging must never break chat
+
+
+# In-process rate limit per session: 60 requests / 60 seconds.
+# Backed by a tiny in-memory deque per session — fine for a single-process
+# Railway dyno. If we ever scale horizontally, swap to redis.
+import collections
+import time
+_client_error_buckets: dict[str, collections.deque] = collections.defaultdict(collections.deque)
+_RATE_WINDOW_SEC = 60
+_RATE_MAX = 60
+_BODY_MAX_BYTES = 8192
+
+
+@app.post("/api/client-error")
+async def client_error(report: ClientErrorReport, request: Request):
+    """Append a client error report to logs/client_errors.jsonl."""
+    # Body size guard (FastAPI/Starlette parses the body before this runs,
+    # so this is belt-and-suspenders against very large fields).
+    raw_size = sum(len(str(v)) for v in report.model_dump().values())
+    if raw_size > _BODY_MAX_BYTES:
+        return Response(status_code=413)  # Payload Too Large
+
+    # Per-session rate limit: drop reports beyond 60/min
+    bucket_key = report.session or (request.client.host if request.client else "anon")
+    bucket = _client_error_buckets[bucket_key]
+    now = time.time()
+    while bucket and bucket[0] < now - _RATE_WINDOW_SEC:
+        bucket.popleft()
+    if len(bucket) >= _RATE_MAX:
+        return Response(status_code=429)  # Too Many Requests
+    bucket.append(now)
+
+    # Truncate stack/message to safe lengths before writing
+    record = report.model_dump()
+    for field in ("message", "source", "stack", "reason", "userAgent", "url"):
+        if field in record and isinstance(record[field], str):
+            record[field] = record[field][:2000]
+    record["server_timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now))
+    record["client_ip"] = request.client.host if request.client else ""
+
+    with open(_CLIENT_ERROR_LOG, "a") as f:
+        f.write(json.dumps(record) + "\n")
+
+    return Response(status_code=204)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    host = os.environ.get("HOST", "0.0.0.0")
+    uvicorn.run(app, host=host, port=port)

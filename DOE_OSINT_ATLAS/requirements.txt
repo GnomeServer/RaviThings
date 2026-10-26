@@ -1,0 +1,34 @@
+# Core web framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+python-multipart>=0.0.6
+
+# HTTP clients
+httpx>=0.25.0
+requests>=2.31.0
+
+# Data & graph
+numpy>=1.24.0
+python-igraph>=0.11.0
+leidenalg>=0.10.0
+
+# APIs
+shodan>=1.28.0
+
+# DNS
+dnspython>=2.4.0
+
+# SSE streaming
+sse-starlette>=1.6.0
+
+# Starlette (FastAPI dependency)
+starlette>=0.27.0
+
+# Vector store for RAG (4-lane HybridRetriever in backend/hybrid_retriever.py).
+# The on-disk chroma_db/ collection (247,819 embeddings) was written by
+# chromadb 1.5.x — pinning <1.0.0 would force pip to install 0.6.3 in
+# production and the persistent collection format would fail to open.
+chromadb>=1.5.0,<2.0.0
+typesafe-sdk>=0.1.0
