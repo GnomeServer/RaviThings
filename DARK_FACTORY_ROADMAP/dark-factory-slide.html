@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Dark Factory — DISA × DCDC × Starzl Enterprises</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Starzl (verified from starzl.com/site.css) */
+    --night:#0D0906; --coal:#17120D; --amber:#C8A96A; --amber-dim:#C8B78A;
+    --sand:#EDE3C8; --paper:#F8F2DE; --signal:#D33A2C;
+    /* DCDC (defensive cyber) */
+    --cy:#0E9AA7; --cy-bright:#9FE8EF; --cy-dim:#7FC6CE;
+    /* DISA (DoD joint) */
+    --steel:#2D3030; --khaki:#655337;
+    --mono:'Space Mono',ui-monospace,monospace;
+    --grotesk:'Space Grotesk','Inter',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--night)}
+  body{font-family:var(--grotesk);color:var(--sand);display:flex;align-items:center;justify-content:center;min-height:100vh}
+  .slide{position:relative;width:1280px;height:720px;overflow:hidden;
+    background:
+      radial-gradient(900px 500px at 82% 8%, rgba(200,169,106,.14), transparent 60%),
+      linear-gradient(135deg, var(--night) 0%, var(--coal) 55%, var(--night) 100%)}
+  .slide::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(rgba(14,154,167,.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(14,154,167,.09) 1px, transparent 1px);
+    background-size:107px 120px}
+  .band{position:absolute;top:0;left:0;right:0;height:14px}
+  .band .red{height:10px;background:var(--signal)}
+  .band .gold{height:4px;background:linear-gradient(90deg,var(--amber),var(--signal))}
+  .footband{position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--amber),var(--signal))}
+  .wrap{position:relative;padding:34px 64px 0;height:100%;display:flex;flex-direction:column}
+  .kicker{font-family:var(--mono);font-size:13px;letter-spacing:4px;color:var(--amber)}
+  h1{font-size:46px;font-weight:800;color:var(--paper);letter-spacing:1px;margin-top:6px}
+  .sub{font-size:17px;color:var(--amber-dim);margin-top:4px}
+  .lockup{margin-top:14px;display:inline-block;align-self:flex-start;font-family:var(--mono);font-size:13px;
+    color:var(--sand);background:rgba(200,169,106,.08);border:1px solid rgba(200,169,106,.4);
+    border-radius:4px;padding:7px 16px}
+  .lockup b{color:var(--paper)}
+  .pipeline{display:grid;grid-template-columns:250px 56px 1fr 56px 252px;align-items:center;margin-top:26px}
+  .node{border-radius:6px;padding:16px 20px;height:124px}
+  .node .t{font-family:var(--mono);font-size:13px;letter-spacing:2px;margin-bottom:10px}
+  .node p{font-family:var(--mono);font-size:12px;line-height:1.5;margin:0}
+  .in{background:rgba(14,154,167,.08);border:1px solid rgba(14,154,167,.6)}
+  .in .t{color:var(--cy)} .in p{color:var(--cy-dim)}
+  .factory{background:rgba(200,169,106,.07);border:2px solid rgba(200,169,106,.8);height:148px}
+  .factory .t{color:var(--amber);font-size:15px;letter-spacing:3px}
+  .factory p{color:var(--sand)} .factory .out{color:var(--signal)}
+  .outn{background:rgba(211,58,44,.10);border:1px solid rgba(211,58,44,.7)}
+  .outn .t{color:var(--signal)} .outn p{color:var(--sand)}
+  .arrow{font-family:var(--mono);color:var(--amber);font-size:20px;text-align:center}
+  .partners{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:24px}
+  .card{border-radius:6px;padding:16px 20px;height:196px;position:relative}
+  .card .head{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+  .glyph{width:36px;height:36px;flex:0 0 36px}
+  .card h2{font-size:16px;color:var(--paper)}
+  .card .org{font-family:var(--mono);font-size:11px;margin-top:2px}
+  .card ul{list-style:none;font-family:var(--mono);font-size:12.5px;line-height:1.6}
+  .card li{padding-left:14px;position:relative}
+  .card li::before{content:"»";position:absolute;left:0}
+  .disa{background:rgba(45,48,48,.5);border:1px solid var(--khaki)}
+  .disa .org{color:var(--amber-dim)} .disa li{color:var(--amber-dim)}
+  .dcdc{background:rgba(14,154,167,.05);border:1px solid rgba(14,154,167,.5)}
+  .dcdc .org{color:var(--cy)} .dcdc li{color:var(--cy-dim)}
+  .starzl{background:rgba(200,169,106,.06);border:1px solid rgba(211,58,44,.6)}
+  .starzl .org{color:var(--amber)} .starzl li{color:var(--sand)}
+  .why{position:absolute;left:64px;right:64px;bottom:22px;font-family:var(--mono);font-size:13px}
+  .why .t{color:var(--amber);letter-spacing:2px}
+  .why p{color:#9C8F73;margin-top:4px}
+  .why .mark{position:absolute;right:0;bottom:0;color:var(--signal)}
+</style>
+</head>
+<body>
+<div class="slide">
+  <div class="band"><div class="red"></div><div class="gold"></div></div>
+  <div class="footband"></div>
+  <div class="wrap">
+    <div class="kicker">JOINT CAPABILITY INITIATIVE · UNCLASSIFIED // REL TO PARTNERS</div>
+    <h1>THE DARK FACTORY</h1>
+    <div class="sub">Cyber operations capabilities, generated on demand — ready for immediate tactical use.</div>
+    <div class="lockup"><b>DISA × DCDC × STARZL ENTERPRISES</b></div>
+
+    <div class="pipeline">
+      <div class="node in">
+        <div class="t">01 · MISSION CONTEXT IN</div>
+        <p>Specific effect to create, or information need to fill.</p>
+      </div>
+      <div class="arrow">━━▶</div>
+      <div class="node factory">
+        <div class="t">02 · DARK FACTORY — GENERATE · ASSEMBLE · VALIDATE</div>
+        <p>Mission-tailored software and effects generated at the point of need.</p>
+        <p>Offensive and defensive. Self-contained. No long-pole dependencies.</p>
+        <p class="out">Output: decisive information and decision advantage.</p>
+      </div>
+      <div class="arrow">━━▶</div>
+      <div class="node outn">
+        <div class="t">03 · CAPABILITY OUT</div>
+        <p>Immediately usable, tactically employable.</p>
+      </div>
+    </div>
+
+    <div class="partners">
+      <div class="card disa">
+        <div class="head">
+          <svg class="glyph" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" fill="#0D0906" stroke="#C8A96A" stroke-width="2"/><path d="M18 8c4 1 6 3 6 3l-2 3 1 4-4 2-3 3-1-4-4-2 3-3-1-4z" fill="#C8A96A"/></svg>
+          <div><h2>DISA</h2><div class="org">DEFENSE INFORMATION SYSTEMS AGENCY</div></div>
+        </div>
+        <ul>
+          <li>Mission transport, hosting, and DoDNet backbone</li>
+          <li>Factory runs on DISA infrastructure</li>
+          <li>Authoritative integration path</li>
+        </ul>
+      </div>
+      <div class="card dcdc">
+        <div class="head">
+          <svg class="glyph" viewBox="0 0 36 36"><path d="M18 4l11 5v9c0 7-5 12-11 14C11 30 6 25 6 18V9z" fill="none" stroke="#0E9AA7" stroke-width="2.5"/><path d="M12 18l4 4 8-9" fill="none" stroke="#0E9AA7" stroke-width="2.5"/></svg>
+          <div><h2>DCDC</h2><div class="org">DoD CYBER DEFENSE COMMAND</div></div>
+        </div>
+        <ul>
+          <li>Defensive requirements and threat pulse: what must hold</li>
+          <li>Hunt, detect, and harden missions</li>
+          <li>Operational employment doctrine</li>
+        </ul>
+      </div>
+      <div class="card starzl">
+        <div class="head">
+          <svg class="glyph" viewBox="0 0 36 36"><path d="M18 3l3.6 12.4H34l-10 7.7 3.8 12.4L18 27.8 8.2 35.5 12 23.1l-10-7.7h12.4z" fill="none" stroke="#D33A2C" stroke-width="2"/></svg>
+          <div><h2>STARZL ENTERPRISES</h2><div class="org">starzl.com</div></div>
+        </div>
+        <ul>
+          <li>Adversarial AI, EW, and GPS-free PNT</li>
+          <li>Operator training that survives the next tool change</li>
+          <li>Edge manufacturing and delivery bench</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="why">
+      <div class="t">WHY IT MATTERS</div>
+      <p>Adversaries iterate in hours. The factory collapses capability delivery from months to on demand — at the edge, in context.</p>
+      <div class="mark">DARK FACTORY · DISA / DCDC / STARZL</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

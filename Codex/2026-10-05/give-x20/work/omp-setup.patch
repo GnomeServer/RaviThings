@@ -1,0 +1,1025 @@
+--- AI_Harness_Bootcamp_2/module-00-setup/README.md
++++ AI_Harness_Bootcamp_2/module-00-setup/README.md
+@@ -28,7 +28,7 @@
+ - Before Module 2, install local Obsidian. A **vault** is a folder of linked Markdown notes on your laptop. For a fresh install, use release **1.13.7**; if it's already installed, keep it and record its version.
+ - Before Module 7, install local n8n **2.41.5** with the full official Docker stack and a working modern `docker compose` plugin. Follow your platform guide's n8n path.
+ 
+-The platform guide keeps **PATH**, the saved list of folders your shell searches for commands. Check it in a new terminal after installation, not just the install window.
++**Restart your terminal after installing OMP so PATH changes take effect.** Close the installation window and open a new terminal before starting OMP or entering your API key. **PATH** is the list of folders your shell searches for commands.
+ 
+ Get GitHub read access to `TheHolofex/AIHB_OCT_2026`; the hosted-course password doesn't grant it. Your guide checks approved Git credentials first. Use GitHub CLI (`gh`) for browser login only if that fails; you don't need it to run the AI.
+ 
+@@ -57,6 +57,31 @@
+ - Keep at least 15 GB free; WSL should have 25 GB.
+ - Get administrator approval for operating-system packages.
+ 
++
++## Start OMP with your OpenRouter key
++
++After restarting your terminal, run the commands for your shell. Replace the placeholder with your complete API key.
++
++**Terminal: Bash or zsh on macOS, Linux, or WSL, ordinary user.**
++
++```bash
++export OPENROUTER_API_KEY='YOUR_COMPLETE_API_KEY'
++omp
++```
++
++**Terminal: PowerShell on Windows, ordinary user.**
++
++```powershell
++$env:OPENROUTER_API_KEY = 'YOUR_COMPLETE_API_KEY'
++omp
++```
++
++1. Press **Esc** to skip provider setup.
++2. Select the OpenRouter model **`openrouter/anthropic/claude-sonnet-4.6`**.
++3. Choose your font, style, and other preferences.
++4. Send `hello` and confirm the model replies, then start chatting.
++
++**No sign-in or YAML configuration is required.** Keep using the same terminal; enter the key again if you open a new one. For hidden key entry, use the [credential guide](shared/CREDENTIALS.md#enter-the-key-through-a-hidden-prompt).
+ 
+ ## When a step fails
+ 
+--- AI_Harness_Bootcamp_2/module-00-setup/shared/CREDENTIALS.md
++++ AI_Harness_Bootcamp_2/module-00-setup/shared/CREDENTIALS.md
+@@ -2,7 +2,7 @@
+ 
+ For the course exercises, use the OpenRouter key you were given for `openrouter/anthropic/claude-sonnet-4.6`. A newly installed OMP can use an API key directly: no `omp login`, `/login`, or model-vendor account is needed. The key must belong to the gateway you select, and that account must have access and credit for the model.
+ 
+-Keep the key in your approved password manager. Don't put it in a prompt, command argument, file, shell profile, Git setting, screenshot, chat, ticket, or evidence record. The launcher reads it from this process's environment and gives OMP an isolated configuration; you don't need another provider login.
++Keep the key in your approved password manager. Don't put it in a prompt, file, shell profile, Git setting, screenshot, chat, ticket, or evidence record. Supply it through `OPENROUTER_API_KEY` rather than an OMP command-line argument. The launcher reads it from this process's environment and gives OMP an isolated configuration; you don't need another provider login.
+ 
+ ## Keep repository access separate from model access
+ 
+@@ -19,6 +19,8 @@
+ [GitHub CLI prefers an operating-system credential store but can fall back to a plaintext file](https://cli.github.com/manual/gh_auth_login). Check which storage `gh auth status --hostname github.com` shows. Don't add `--show-token` or put authentication output in shared evidence. If device policy forbids that storage, stop and ask the device owner for approved storage or Git credentials. Don't use insecure storage. Only if fallback storage is needed and approved, follow the platform steps to set up `gh` as the Git credential helper for `github.com` alone.
+ 
+ ## Enter the key through a hidden prompt
++
++**Restart your terminal after installing OMP so PATH changes take effect.** Enter the key in the new terminal, then start OMP in that same window.
+ 
+ Choose your terminal's command. Paste only that command and press Enter. At the hidden prompt, type your OpenRouter key, which you enter in the terminal rather than save in a file, then press Enter. Don't paste the export or conversion commands while the prompt waits.
+ 
+@@ -74,21 +76,28 @@
+ 
+ ## Start OMP directly with OpenRouter
+ 
+-After the hidden input and export above, run this in the same terminal from the folder where you want to work. No config file or provider sign-in is required.
+-
+-**Terminal: Bash or zsh, ordinary user, same window.**
+-
+-```bash
+-omp --model openrouter/anthropic/claude-sonnet-4.6
+-```
+-
+-**Terminal: PowerShell, ordinary user, same window.**
+-
+-```powershell
+-omp --model openrouter/anthropic/claude-sonnet-4.6
+-```
+-
+-**Expected:** OMP opens with the selected model. Send a short message to check actual access; opening OMP alone does not validate the key. A model request can incur charges.
++After entering and exporting the key above, run `omp` in the same terminal from the folder where you want to work.
++
++**Terminal: Bash or zsh, ordinary user, same window.**
++
++```bash
++omp
++```
++
++**Terminal: PowerShell, ordinary user, same window.**
++
++```powershell
++omp
++```
++
++1. Press **Esc** to skip provider setup.
++2. Select the OpenRouter model **`openrouter/anthropic/claude-sonnet-4.6`**.
++3. Choose your font, style, and other preferences.
++4. Send `hello` and confirm the model replies, then start chatting.
++
++**No sign-in or YAML configuration is required.**
++
++**Expected:** OMP opens with the selected model and replies to your message. Opening OMP alone does not validate the key. A model request can incur charges.
+ 
+ **Stop:** Missing credentials, HTTP 401, or a model-access or credit error.
+ 
+--- AI_Harness_Bootcamp_2/module-00-setup/platforms/arch-linux.md
++++ AI_Harness_Bootcamp_2/module-00-setup/platforms/arch-linux.md
+@@ -94,118 +94,21 @@
+ 
+ ## 3. Install Oh My Pi
+ 
+-Download the latest stable release's x86_64 binary and `SHA256SUMS.txt` into a fresh folder. The commands save the selected release's details in `release.json`, verify the binary's checksum, and install it at `~/.local/bin/omp`. A different existing `omp` is left unchanged. The startup files gain a PATH entry so new terminals find the verified binary. Never run an unverified download.
+-
+-**Terminal: Arch Linux, Bash or Zsh, ordinary user, same window.**
+-
+-```bash
+-course_install_omp() {
+-  local arch asset attempt download sums expected actual dest version line startup login_file zdir tag base py candidate
+-  unset OMP_ASSET OMP_DOWNLOAD_DIR
+-  arch="$(uname -m)" || return 1
+-  case "$arch" in x86_64) asset="omp-linux-x64" ;; *) printf 'STOP: unsupported architecture\n' >&2; return 1 ;; esac
+-  if [ -L "$HOME/course-evidence" ] || [ -L "$HOME/course-evidence/reformation-qa" ]; then
+-    printf 'STOP: evidence parent is linked\n' >&2; return 1
+-  fi
+-  attempt="omp-download-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+-  download="$HOME/course-evidence/reformation-qa/$attempt"
+-  if [ -e "$download" ] || [ -L "$download" ]; then printf 'STOP: download dir already exists\n' >&2; return 1; fi
+-  mkdir -p -- "$download" || return 1
+-  py="$(for candidate in python3.12 python3 python; do "$candidate" -c 'import sys; from pathlib import Path; sys.exit(1) if sys.version_info < (3, 12) else print(Path(sys.executable).resolve())' 2>/dev/null && break; done)"
+-  case "$py" in /*) ;; *) printf 'STOP: Python 3.12+ is required to read release metadata\n' >&2; return 1 ;; esac
+-  curl -fL --output "$download/release.json" 'https://api.github.com/repos/can1357/oh-my-pi/releases/latest' ||
+-    { printf 'STOP: latest release metadata unavailable\n' >&2; return 1; }
+-  tag="$("$py" - "$download/release.json" "$asset" <<'PYRELEASE'
+-import json, re, sys
+-from pathlib import Path
+-try:
+-    release = json.loads(Path(sys.argv[1]).read_text())
+-    tag = release["tag_name"]
+-    if not isinstance(tag, str) or not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag):
+-        raise ValueError("invalid release tag")
+-    if release.get("draft") is not False or release.get("prerelease") is not False:
+-        raise ValueError("release is not stable")
+-    base = "https://github.com/can1357/oh-my-pi/releases/download/%s/" % tag
+-    for name in (sys.argv[2], "SHA256SUMS.txt"):
+-        matches = [item for item in release.get("assets", []) if item.get("name") == name]
+-        if len(matches) != 1 or matches[0].get("browser_download_url") != base + name:
+-            raise ValueError("required release asset is missing or inconsistent")
+-    print(tag)
+-except (AttributeError, KeyError, TypeError, ValueError):
+-    sys.exit("STOP: latest release metadata or required assets are invalid")
+-PYRELEASE
+-  )" || return 1
+-  base="https://github.com/can1357/oh-my-pi/releases/download/$tag"
+-  printf 'RELEASE %s (%s)\n' "$tag" "$download/release.json"
+-  curl -fL --output "$download/$asset" "$base/$asset" || { printf 'STOP: binary download failed\n' >&2; return 1; }
+-  curl -fL --output "$download/SHA256SUMS.txt" "$base/SHA256SUMS.txt" || { printf 'STOP: checksum download failed\n' >&2; return 1; }
+-  sums="$download/SHA256SUMS.txt"
+-  expected="$(awk -v asset="$asset" '
+-    BEGIN { count=0; hash="" }
+-    { gsub(/\r/,""); if ($2==asset) { count++; hash=$1; if (NF!=2) bad=1 } }
+-    END { if (count!=1 || bad) exit 2; if (hash !~ /^[0-9a-fA-F]{64}$/) exit 3; print hash }
+-  ' "$sums")" || { printf 'STOP: checksum entry absent or ambiguous\n' >&2; return 1; }
+-  [ -f "$download/$asset" ] && [ ! -L "$download/$asset" ] || { printf 'STOP: downloaded file missing or link\n' >&2; return 1; }
+-  actual="$(sha256sum -- "$download/$asset" | awk '{print $1}')" || return 1
+-  [ "$actual" = "$expected" ] || { printf 'STOP: checksum mismatch\n' >&2; return 1; }
+-  chmod +x -- "$download/$asset" || return 1
+-  if [ -L "$HOME/.local" ] || [ -L "$HOME/.local/bin" ]; then printf 'STOP: .local is a link\n' >&2; return 1; fi
+-  mkdir -p -- "$HOME/.local/bin" || return 1
+-  dest="$HOME/.local/bin/omp"
+-  if [ -L "$dest" ]; then printf 'STOP: destination is a link\n' >&2; return 1; fi
+-  if [ -e "$dest" ]; then
+-    if [ ! -f "$dest" ] || ! cmp -s -- "$download/$asset" "$dest"; then printf 'STOP: destination differs\n' >&2; return 1; fi
+-    printf 'KEEP: destination already matches\n'
+-  else
+-    cp -- "$download/$asset" "$dest" || return 1
+-    cmp -s -- "$download/$asset" "$dest" || { printf 'STOP: copy mismatch\n' >&2; return 1; }
+-    printf 'INSTALLED %s\n' "$dest"
+-  fi
+-  chmod +x -- "$dest" || return 1
+-  version="$("$dest" --version 2>/dev/null)" || { printf 'STOP: installed OMP would not run\n' >&2; return 1; }
+-  printf 'OMP_VERSION %s\n' "${version:-missing}"
+-  [ "$version" = "omp/${tag#v}" ] || { printf 'STOP: installed version differs from selected %s\n' "$tag" >&2; return 1; }
+-  # persist PATH for Bash and Zsh
+-  line='case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin${PATH:+:$PATH}" ;; esac'
+-  if [ -L "$HOME/.local" ] || [ -L "$HOME/.local/bin" ]; then printf 'STOP: user bin is link\n' >&2; return 1; fi
+-  mkdir -p -- "$HOME/.local/bin" || return 1
+-  if [ -n "${BASH_VERSION:-}" ]; then
+-    login_file=""
+-    for startup in "$HOME/.bash_profile" "$HOME/.bash_login" "$HOME/.profile"; do
+-      if [ -L "$startup" ] || { [ -e "$startup" ] && [ ! -f "$startup" ]; }; then printf 'STOP: bad startup file\n' >&2; return 1; fi
+-      if [ -z "$login_file" ] && [ -f "$startup" ]; then login_file="$startup"; fi
+-    done
+-    set -- "$HOME/.bashrc" "${login_file:-$HOME/.profile}"
+-  elif [ -n "${ZSH_VERSION:-}" ]; then
+-    zdir="${ZDOTDIR-$HOME}"
+-    [ -d "$zdir" ] && [ ! -L "$zdir" ] || { printf 'STOP: bad ZDOTDIR\n' >&2; return 1; }
+-    set -- "$zdir/.zshrc" "$zdir/.zprofile"
+-  else
+-    printf 'STOP: use Bash or Zsh\n' >&2; return 1
+-  fi
+-  for startup in "$@"; do
+-    if [ -L "$startup" ] || { [ -e "$startup" ] && [ ! -f "$startup" ]; } || { [ -f "$startup" ] && { [ ! -r "$startup" ] || [ ! -w "$startup" ]; }; }; then
+-      printf 'STOP: bad startup file\n' >&2; return 1
+-    fi
+-  done
+-  for startup in "$@"; do
+-    if [ -f "$startup" ] && grep -Fqx -- "$line" "$startup"; then
+-      printf 'PATH_LINE already present in %s\n' "$startup"
+-    else
+-      if [ -s "$startup" ] && [ -n "$(tail -c 1 -- "$startup")" ]; then printf '\n' >> "$startup" || return 1; fi
+-      printf '%s\n' "$line" >> "$startup" || return 1
+-      printf 'PATH_LINE added to %s\n' "$startup"
+-    fi
+-  done
+-}
+-course_install_omp
+-```
+-
+-**Expected:** `RELEASE <tag>`, `KEEP:` or `INSTALLED`, `OMP_VERSION omp/<semver>` (observed from resolved release), and `PATH_LINE` messages for the startup files (added or already present).
+-
+-**Stop:** Any STOP, checksum mismatch, unavailable/malformed release metadata or assets, wrong version vs selected tag, or write error.
+-
+-**Recovery:** Keep the download folder and any existing `omp` in place. For a checksum or download error, keep the attempt and ask the owner. If the destination conflicts, ask the owner before you change anything. Do not switch assets or disable checks.
++Run the one-line installer from [omp.sh](https://omp.sh/).
++
++**Terminal: Bash or zsh, ordinary user.**
++
++```bash
++curl -fsSL https://omp.sh/install | sh
++```
++
++**Restart your terminal after installing OMP so PATH changes take effect.** Follow any PATH instructions the installer prints, then close and reopen your terminal before starting OMP or entering your API key.
++
++**Expected:** The installer finishes successfully. In the new terminal, `omp --version` prints the installed version.
++
++**Stop:** The installer reports an error or `omp` is not found.
++
++**Recovery:** Check the installer's error or PATH instructions, then reopen the terminal and try `omp --version` again.
+ 
+ ## 4. Get the course files
+ 
+@@ -354,8 +257,8 @@
+   printf 'R %s\nM %s\nPY %s\n' "$R" "$M" "$PY"
+   resolved="$(command -v omp 2>/dev/null || true)"
+   printf 'OMP_PATH %s\n' "${resolved:-missing}"
+-  if [ "$resolved" != "$HOME/.local/bin/omp" ]; then printf 'STOP: omp is not the user binary\n' >&2; return 1; fi
+-  version="$("$HOME/.local/bin/omp" --version 2>/dev/null)" || { printf 'STOP: installed OMP could not run\n' >&2; return 1; }
++  case "$resolved" in /*) ;; *) printf 'STOP: omp is not on PATH\n' >&2; return 1 ;; esac
++  version="$("$resolved" --version 2>/dev/null)" || { printf 'STOP: installed OMP could not run\n' >&2; return 1; }
+   printf 'OMP_VERSION %s\n' "${version:-missing}"
+   [[ "$version" =~ ^omp/[0-9]+\.[0-9]+\.[0-9]+$ ]] || { printf 'STOP: installed OMP did not report a version number\n' >&2; return 1; }
+   if [ -n "${OPENROUTER_API_KEY:-}" ]; then printf 'SET\nSTOP: this window already has the key\n' >&2; return 1; fi
+@@ -990,7 +893,7 @@
+ 
+ - Computer check or Python below 3.12: free space or ask owner for a supported Arch x86_64 desktop with ordinary account and current python package.
+ - Package transaction refused or conflicting: keep the exact pacman output; only the owner can approve the full `-Syu`.
+-- OMP checksum or install stop: keep the download folder; ask owner to resolve source or transfer. Do not replace or switch assets.
++- OMP install error: keep the installer’s message and check [omp.sh](https://omp.sh/). If `omp` is missing, follow the installer’s PATH instructions and restart the terminal.
+ - GitHub ls-remote or clone stop: keep the error. Network: owner. Credentials: use the gh subsection exactly once per failure mode. Invitation must come from the repository owner.
+ - New terminal shows `SET` or wrong paths: close it and open the next from the desktop menu. Never export in the diagnostic window.
+ - Key read or export fails to produce `SET`: re-paste the read box, then export. Treat any visible key as exposed per CREDENTIALS.md.
+--- AI_Harness_Bootcamp_2/module-00-setup/platforms/macos.md
++++ AI_Harness_Bootcamp_2/module-00-setup/platforms/macos.md
+@@ -149,6 +149,8 @@
+ 
+ **Recovery:** Keep the first error and don't install anything else by hand. If you don't have an administrator account, ask the device owner to finish this step; see [Tools and Homebrew](#tools-and-homebrew).
+ 
++If you installed Homebrew, follow its **Next steps** to add `brew shellenv` to your shell startup file. This keeps Homebrew and its Python available after you restart Terminal.
++
+ ### Confirm Git works
+ 
+ This box shows which Git your Terminal window finds and asks it for its version. Run it even if you skipped the install box.
+@@ -167,126 +169,21 @@
+ 
+ ## 3. Install Oh My Pi
+ 
+-Download the latest stable OMP release for your Mac's processor into a new folder under `~/course-evidence`. The commands save the selected release's details in `release.json` and download its binary and `SHA256SUMS.txt` together. A **checksum** is a file's fingerprint. The box computes the downloaded file's SHA-256 fingerprint with macOS's `shasum -a 256` and compares it with the one line in `SHA256SUMS.txt` that names your Mac's file. Only a match gets installed. The box copies the verified file to `~/.local/bin/omp`. If a matching copy is already there, it keeps it. If a different file is there, it stops without replacing it.
+-
+-Next, the box updates your shell's startup files so new terminal windows can find `omp` and Homebrew. `PATH` is the list of folders your shell searches for commands, in order. Your login file gets the Homebrew line. Both files get a line that puts `~/.local/bin` first, so the verified `omp` wins over any other copy. For [zsh](https://zsh.sourceforge.io/Doc/Release/Files.html), the files are `.zprofile` (login) and `.zshrc`. For [Bash](https://www.gnu.org/software/bash/manual/html_node/Bash-Startup-Files.html), they're your login file and `.bashrc`. The box keeps your existing lines and adds each new line only once.
+-
+-**Terminal: macOS Terminal, zsh or Bash, ordinary user, same window.**
+-
+-```bash
+-course_add_line() {
+-  if [ -f "$1" ] && grep -qxF -e "$2" "$1"; then
+-    return 0
+-  fi
+-  if [ -s "$1" ] && [ -n "$(tail -c 1 "$1")" ]; then
+-    printf '\n' >> "$1" || return 1
+-  fi
+-  printf '%s\n' "$2" >> "$1"
+-}
+-course_install_omp() {
+-  local download expected actual dest version profile login candidate py tag base
+-  case "${ASSET:-}" in
+-    omp-darwin-arm64|omp-darwin-x64) ;;
+-    *) printf 'STOP: paste the step 1 box in this window first\n' >&2; return 1 ;;
+-  esac
+-  if [ -L "$HOME/course-evidence" ] || [ -L "$HOME/.local" ] || [ -L "$HOME/.local/bin" ]; then
+-    printf 'STOP: a course folder is a symlink; nothing was changed\n' >&2
+-    return 1
+-  fi
+-  mkdir -p "$HOME/course-evidence" || return 1
+-  download="$HOME/course-evidence/omp-download-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+-  mkdir "$download" || { printf 'STOP: could not create a fresh download folder\n' >&2; return 1; }
+-  py="$(for candidate in python3.12 python3 python; do "$candidate" -c 'import sys; from pathlib import Path; sys.exit(1) if sys.version_info < (3, 12) else print(Path(sys.executable).resolve())' 2>/dev/null && break; done)"
+-  case "$py" in /*) ;; *) printf 'STOP: Python 3.12+ is required to read release metadata\n' >&2; return 1 ;; esac
+-  curl --fail --location --output "$download/release.json" 'https://api.github.com/repos/can1357/oh-my-pi/releases/latest' || return 1
+-  tag="$("$py" - "$download/release.json" "$ASSET" <<'PYRELEASE'
+-import json, re, sys
+-from pathlib import Path
+-try:
+-    release = json.loads(Path(sys.argv[1]).read_text())
+-    tag = release["tag_name"]
+-    if not isinstance(tag, str) or not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag):
+-        raise ValueError("invalid release tag")
+-    if release.get("draft") is not False or release.get("prerelease") is not False:
+-        raise ValueError("release is not stable")
+-    base = "https://github.com/can1357/oh-my-pi/releases/download/%s/" % tag
+-    for name in (sys.argv[2], "SHA256SUMS.txt"):
+-        matches = [item for item in release.get("assets", []) if item.get("name") == name]
+-        if len(matches) != 1 or matches[0].get("browser_download_url") != base + name:
+-            raise ValueError("required release asset is missing or inconsistent")
+-    print(tag)
+-except (AttributeError, KeyError, TypeError, ValueError):
+-    sys.exit("STOP: latest release metadata or required assets are invalid")
+-PYRELEASE
+-  )" || return 1
+-  base="https://github.com/can1357/oh-my-pi/releases/download/$tag"
+-  printf 'RELEASE %s (%s)\n' "$tag" "$download/release.json"
+-  curl --fail --location --output "$download/$ASSET" "$base/$ASSET" || return 1
+-  curl --fail --location --output "$download/SHA256SUMS.txt" "$base/SHA256SUMS.txt" || return 1
+-  expected="$(awk -v asset="$ASSET" '$2 == asset { count++; hash = $1; fields = NF } END { if (count == 1 && fields == 2 && length(hash) == 64 && hash ~ /^[0-9a-f]+$/) print hash; else exit 1 }' "$download/SHA256SUMS.txt")" || {
+-    printf 'STOP: SHA256SUMS.txt has no single valid entry for %s\n' "$ASSET" >&2
+-    return 1
+-  }
+-  actual="$(shasum -a 256 "$download/$ASSET" | awk '{ print $1 }')"
+-  if [ "$actual" != "$expected" ]; then
+-    printf 'STOP: checksum mismatch; the file was not installed or run\n' >&2
+-    return 1
+-  fi
+-  printf 'SHA256 VERIFIED %s %s\n' "$ASSET" "$actual"
+-  mkdir -p "$HOME/.local/bin" || return 1
+-  dest="$HOME/.local/bin/omp"
+-  if [ -L "$dest" ]; then
+-    printf 'STOP: %s is a symlink; it was not replaced\n' "$dest" >&2
+-    return 1
+-  elif [ -e "$dest" ]; then
+-    if [ ! -f "$dest" ] || ! cmp -s "$download/$ASSET" "$dest"; then
+-      printf 'STOP: a different %s already exists; it was not replaced\n' "$dest" >&2
+-      return 1
+-    fi
+-    printf 'KEEP: %s already matches the verified download\n' "$dest"
+-  else
+-    cp "$download/$ASSET" "$dest" && cmp -s "$download/$ASSET" "$dest" || {
+-      printf 'STOP: the copy does not match the verified download\n' >&2
+-      return 1
+-    }
+-    printf 'INSTALLED %s\n' "$dest"
+-  fi
+-  chmod u+x "$dest" || return 1
+-  if [ "$SETUP_SHELL" = zsh ]; then
+-    set -- "${ZDOTDIR:-$HOME}/.zprofile" "${ZDOTDIR:-$HOME}/.zshrc"
+-  else
+-    login="$HOME/.bash_profile"
+-    for candidate in "$HOME/.bash_profile" "$HOME/.bash_login" "$HOME/.profile"; do
+-      if [ -e "$candidate" ] || [ -L "$candidate" ]; then
+-        login="$candidate"
+-        break
+-      fi
+-    done
+-    set -- "$login" "$HOME/.bashrc"
+-  fi
+-  for profile in "$@"; do
+-    if [ -L "$profile" ] || { [ -e "$profile" ] && [ ! -f "$profile" ]; } || [ -e "$profile.zwc" ]; then
+-      printf 'STOP: %s is linked, compiled, or not a file; it was not changed\n' "$profile" >&2
+-      return 1
+-    fi
+-    if [ -x "$BREW" ] && [ "$profile" = "$1" ]; then
+-      course_add_line "$profile" "eval \"\$($BREW shellenv $SETUP_SHELL)\"" || return 1
+-    fi
+-    course_add_line "$profile" 'case ":$PATH:" in ":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin${PATH:+:$PATH}" ;; esac' || return 1
+-    printf 'PROFILE READY %s\n' "$profile"
+-  done
+-  case ":$PATH:" in ":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin${PATH:+:$PATH}" ;; esac
+-  version="$("$dest" --version 2>/dev/null)" || { printf 'STOP: the installed omp did not run\n' >&2; return 1; }
+-  printf 'OMP_VERSION %s\n' "$version"
+-  [ "$version" = "omp/${tag#v}" ] || { printf 'STOP: installed version differs from selected %s\n' "$tag" >&2; return 1; }
+-}
+-course_install_omp
+-```
+-
+-**Expected:** `RELEASE <tag>`, `SHA256 VERIFIED` with your file name and its digest, then `INSTALLED` or `KEEP:`, two `PROFILE READY` lines, and `OMP_VERSION omp/<semver>`.
+-
+-**Stop:** Any `STOP` line, including checksum mismatch, unavailable or malformed release metadata/assets, or a different existing `omp`.
+-**Recovery:** Keep the download folder and any existing `omp`, and don't delete or replace them to get past this step. Fix the cause, then paste the box again; it uses a new folder each time. See [Oh My Pi install](#oh-my-pi-install).
++Run the one-line installer from [omp.sh](https://omp.sh/).
++
++**Terminal: Bash or zsh, ordinary user.**
++
++```bash
++curl -fsSL https://omp.sh/install | sh
++```
++
++**Restart your terminal after installing OMP so PATH changes take effect.** Follow any PATH instructions the installer prints, then close and reopen your terminal before starting OMP or entering your API key.
++
++**Expected:** The installer finishes successfully. In the new terminal, `omp --version` prints the installed version.
++
++**Stop:** The installer reports an error or `omp` is not found.
++
++**Recovery:** Check the installer's error or PATH instructions, then reopen the terminal and try `omp --version` again.
+ 
+ ## 4. Get the course files
+ 
+@@ -419,15 +316,8 @@
+   git --version || return 1
+   omp_path="$(command -v omp)"
+   printf 'OMP_PATH %s\n' "${omp_path:-missing}"
+-  if [ "$omp_path" != "$HOME/.local/bin/omp" ]; then
+-    printf 'STOP: omp is not found at %s\n' "$HOME/.local/bin/omp" >&2
+-    return 1
+-  fi
+-  case ":$PATH:" in
+-    ":$HOME/.local/bin:"*) printf 'PATH_FIRST %s\n' "$HOME/.local/bin" ;;
+-    *) printf 'STOP: %s is not first on PATH\n' "$HOME/.local/bin" >&2; return 1 ;;
+-  esac
+-  version="$(omp --version 2>/dev/null)"
++  case "$omp_path" in /*) ;; *) printf 'STOP: omp is not on PATH\n' >&2; return 1 ;; esac
++  version="$("$omp_path" --version 2>/dev/null)"
+   printf 'OMP_VERSION %s\n' "${version:-missing}"
+   [[ "$version" =~ ^omp/[0-9]+\.[0-9]+\.[0-9]+$ ]] || { printf 'STOP: installed OMP did not report a version number\n' >&2; return 1; }
+   if [ ! -f "$R/shared/run_omp.py" ] || [ ! -f "$M/shared/case/verify_tool_proof.py" ] || [ ! -f "$M/scripts/verify-setup.sh" ]; then
+@@ -445,7 +335,7 @@
+ course_confirm_new_terminal
+ ```
+ 
+-**Expected:** `PYTHON` with an absolute path and version 3.12 or newer, a Git path and version, `OMP_PATH` ending in `/.local/bin/omp`, `PATH_FIRST`, `OMP_VERSION omp/<semver>`, `CHECKOUT`, and `MISSING` as the last line.
++**Expected:** `PYTHON` with an absolute path and version 3.12 or newer, a Git path and version, `OMP_PATH` with the installed command path, `OMP_VERSION omp/<semver>`, `CHECKOUT`, and `MISSING` as the last line.
+ 
+ **Stop:** Any `STOP` line, or `SET`.
+ 
+@@ -905,13 +795,13 @@
+ Intel Python: download the current macOS installer from https://www.python.org/downloads/macos/, open the .pkg, follow the installer, then open a new terminal window and re-run step 1.
+ 
+ ### Oh My Pi install
+-Checksum mismatch or conflicting destination: keep the prior file and start a fresh download attempt (the box uses a new RUN each time). Linked startup file or .zwc: ask the owner to add the two lines by hand (you can copy them from your other startup file after the box adds them there). macOS blocks the binary: follow Apple's Gatekeeper guidance at https://support.apple.com/en-us/102445 with the owner; do not disable Gatekeeper or remove quarantine attributes.
++If the installer fails, keep its error and check [omp.sh](https://omp.sh/) for the current installation instructions. If macOS blocks OMP from starting, follow Apple’s Gatekeeper guidance at https://support.apple.com/en-us/102445 with the device owner.
+ 
+ ### GitHub access and the checkout
+ Occupied Documents/AIHB_OCT_2026 that is not a checkout of the course repository: ask its owner to move the work elsewhere; do not overwrite it. gh plaintext storage not approved by device policy: ask the device owner to set up approved credential storage before continuing.
+ 
+ ### New terminal and key
+-Tools not found after reopening: re-add the exact lines from step 3 in the first window (Homebrew shellenv only in the login file, PATH case forcing ~/.local/bin first), then open another new window from the Shell menu and re-run step 5. SET in a new window: close that window and open a fresh one directly from the Shell menu; do not add an export here.
++Tools not found after reopening: follow the OMP installer’s PATH instructions or Homebrew’s **Next steps**, then open another new window from the Shell menu and repeat step 5. If `SET` appears before key entry, open a fresh window directly from the Shell menu.
+ 
+ ### Readiness check and report
+ LAUNCH_EXIT 2: the key is missing in this window; repeat steps 6 and 7 in this same window, then paste step 8 again. LAUNCH_EXIT 1 or READINESS CHECK HOLD or SETUP CHECK HOLD: keep the attempt folder and all receipts, read the first named failure, correct only that item, then create a new attempt with step 8. Do not edit from-omp.txt by hand or reuse an old result file.
+--- AI_Harness_Bootcamp_2/module-00-setup/platforms/ubuntu.md
++++ AI_Harness_Bootcamp_2/module-00-setup/platforms/ubuntu.md
+@@ -82,114 +82,21 @@
+ 
+ ## 3. Install Oh My Pi
+ 
+-This box resolves the latest stable release metadata from the official GitHub endpoint once, downloads the matching platform binary and SHA256SUMS.txt for that exact tag into a fresh folder. A **checksum** is a file's fingerprint. The box installs the file to `~/.local/bin/omp` only if its SHA-256 matches the listed entry for your processor from the same release. It won't overwrite a different `omp`. It also adds `~/.local/bin` to PATH in your shell's startup files.
+-
+-**Terminal: Ubuntu, Bash or Zsh, ordinary user, same window.**
+-
+-```bash
+-course_install_omp() {
+-  local asset dir expected actual dest version line startup login_file zdir tag base candidate
+-  case "$(uname -m)" in
+-    aarch64|arm64) asset=omp-linux-arm64 ;;
+-    x86_64) asset=omp-linux-x64 ;;
+-    *) printf 'STOP: unsupported architecture\n' >&2; return 1 ;;
+-  esac
+-  if [ -L "$HOME/course-evidence" ] || [ -L "$HOME/course-evidence/reformation-qa" ]; then
+-    printf 'STOP: evidence parent is linked\n' >&2; return 1
+-  fi
+-  dir="$HOME/course-evidence/reformation-qa/omp-download-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+-  if [ -e "$dir" ] || [ -L "$dir" ]; then printf 'STOP: %s already exists\n' "$dir" >&2; return 1; fi
+-  mkdir -p -- "$dir" || return 1
+-  PY="$(for candidate in python3.12 python3 python; do "$candidate" -c 'import sys; from pathlib import Path; sys.exit(1) if sys.version_info < (3, 12) else print(Path(sys.executable).resolve())' 2>/dev/null && break; done)"
+-  case "$PY" in /*) ;; *) printf 'STOP: Python 3.12+ is required to read release metadata\n' >&2; return 1 ;; esac
+-  curl -fL --output "$dir/release.json" 'https://api.github.com/repos/can1357/oh-my-pi/releases/latest' ||
+-    { printf 'STOP: latest release metadata unavailable\n' >&2; return 1; }
+-  tag="$("$PY" - "$dir/release.json" "$asset" <<'PYRELEASE'
+-import json, re, sys
+-from pathlib import Path
+-try:
+-    release = json.loads(Path(sys.argv[1]).read_text())
+-    tag = release["tag_name"]
+-    if not isinstance(tag, str) or not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag):
+-        raise ValueError("invalid release tag")
+-    if release.get("draft") is not False or release.get("prerelease") is not False:
+-        raise ValueError("release is not stable")
+-    base = f"https://github.com/can1357/oh-my-pi/releases/download/{tag}/"
+-    for name in (sys.argv[2], "SHA256SUMS.txt"):
+-        matches = [item for item in release["assets"] if item["name"] == name]
+-        if len(matches) != 1 or matches[0]["browser_download_url"] != base + name:
+-            raise ValueError("required release asset is missing or inconsistent")
+-    print(tag)
+-except (AttributeError, KeyError, TypeError, ValueError):
+-    sys.exit("STOP: latest release metadata or required assets are invalid")
+-PYRELEASE
+-  )" || return 1
+-  base="https://github.com/can1357/oh-my-pi/releases/download/$tag"
+-  printf 'RELEASE %s (%s)\n' "$tag" "$dir/release.json"
+-  curl -fL --output "$dir/$asset" "$base/$asset" ||
+-    { printf 'STOP: binary download failed; nothing was installed\n' >&2; return 1; }
+-  curl -fL --output "$dir/SHA256SUMS.txt" "$base/SHA256SUMS.txt" ||
+-    { printf 'STOP: checksum download failed; nothing was installed\n' >&2; return 1; }
+-  printf 'DOWNLOADED %s\n' "$dir/$asset"
+-  expected="$(awk -v asset="$asset" '
+-    { gsub(/\r/, "") }
+-    $2 == asset { count++; hash = $1; if (NF != 2) bad = 1 }
+-    END { if (count != 1 || bad || hash !~ /^[0-9a-fA-F]{64}$/) exit 2; print hash }
+-  ' "$dir/SHA256SUMS.txt")" || { printf 'STOP: checksum entry for %s is absent, ambiguous, or malformed\n' "$asset" >&2; return 1; }
+-  actual="$(sha256sum -- "$dir/$asset" | awk '{ print $1 }')" || return 1
+-  [ "$actual" = "$expected" ] || { printf 'STOP: checksum mismatch; nothing was installed\n' >&2; return 1; }
+-  if [ -L "$HOME/.local" ] || [ -L "$HOME/.local/bin" ]; then printf 'STOP: ~/.local/bin is a symlink\n' >&2; return 1; fi
+-  mkdir -p -- "$HOME/.local/bin" || return 1
+-  dest="$HOME/.local/bin/omp"
+-  if [ -L "$dest" ]; then printf 'STOP: %s is a symlink; it was not replaced\n' "$dest" >&2; return 1; fi
+-  if [ -e "$dest" ]; then
+-    { [ -f "$dest" ] && cmp -s -- "$dir/$asset" "$dest"; } || { printf 'STOP: a different omp exists; it was not overwritten\n' >&2; return 1; }
+-    printf 'KEEP: destination already matches the verified download\n'
+-  else
+-    { cp -- "$dir/$asset" "$dest" && cmp -s -- "$dir/$asset" "$dest"; } || { printf 'STOP: copy does not match the verified download\n' >&2; return 1; }
+-    printf 'INSTALLED %s\n' "$dest"
+-  fi
+-  chmod +x -- "$dest" || return 1
+-  version="$("$dest" --version 2>/dev/null)" || { printf 'STOP: installed OMP could not run\n' >&2; return 1; }
+-  printf 'OMP_VERSION %s\n' "${version:-missing}"
+-  [ "$version" = "omp/${tag#v}" ] || { printf 'STOP: installed version differs from selected %s\n' "$tag" >&2; return 1; }
+-  line='case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin${PATH:+:$PATH}" ;; esac'
+-  if [ -n "${BASH_VERSION:-}" ]; then
+-    login_file=""
+-    for startup in "$HOME/.bash_profile" "$HOME/.bash_login" "$HOME/.profile"; do
+-      if [ -z "$login_file" ] && { [ -e "$startup" ] || [ -L "$startup" ]; }; then login_file="$startup"; fi
+-    done
+-    set -- "$HOME/.bashrc" "${login_file:-$HOME/.profile}"
+-  elif [ -n "${ZSH_VERSION:-}" ]; then
+-    zdir="${ZDOTDIR-$HOME}"
+-    { [ -d "$zdir" ] && [ ! -L "$zdir" ]; } || { printf 'STOP: Zsh startup folder is missing or linked\n' >&2; return 1; }
+-    set -- "$zdir/.zshrc" "$zdir/.zprofile"
+-  else
+-    printf 'STOP: use Bash or Zsh\n' >&2; return 1
+-  fi
+-  for startup in "$@"; do
+-    if [ -L "$startup" ] || { [ -e "$startup" ] && { [ ! -f "$startup" ] || [ ! -r "$startup" ] || [ ! -w "$startup" ]; }; }; then
+-      printf 'STOP: %s is not a readable, writable ordinary file\n' "$startup" >&2; return 1
+-    fi
+-  done
+-  for startup in "$@"; do
+-    if [ -f "$startup" ] && grep -Fqx -- "$line" "$startup"; then
+-      printf 'PATH_LINE already present in %s\n' "$startup"
+-    else
+-      if [ -s "$startup" ] && [ -n "$(tail -c 1 -- "$startup")" ]; then printf '\n' >> "$startup" || return 1; fi
+-      printf '%s\n' "$line" >> "$startup" || return 1
+-      printf 'PATH_LINE added to %s\n' "$startup"
+-    fi
+-  done
+-}
+-course_install_omp
+-```
+-
+-**Expected:** `RELEASE <tag>`, `DOWNLOADED`, then `KEEP:` or `INSTALLED`, then `OMP_VERSION` with the observed `omp/<semver>` from the resolved tag, then two `PATH_LINE` lines.
+-
+-**Stop:** Any STOP line, including checksum mismatch, unavailable or invalid release metadata/assets, or a different existing `omp`.
+-
+-**Recovery:** Keep the download folder and any existing `omp`, then see [If a step stops](#if-a-step-stops).
++Run the one-line installer from [omp.sh](https://omp.sh/).
++
++**Terminal: Bash or zsh, ordinary user.**
++
++```bash
++curl -fsSL https://omp.sh/install | sh
++```
++
++**Restart your terminal after installing OMP so PATH changes take effect.** Follow any PATH instructions the installer prints, then close and reopen your terminal before starting OMP or entering your API key.
++
++**Expected:** The installer finishes successfully. In the new terminal, `omp --version` prints the installed version.
++
++**Stop:** The installer reports an error or `omp` is not found.
++
++**Recovery:** Check the installer's error or PATH instructions, then reopen the terminal and try `omp --version` again.
+ 
+ ## 4. Get the course files
+ 
+@@ -327,7 +234,7 @@
+   printf 'R %s\nM %s\nPY %s\n' "$R" "$M" "$PY"
+   resolved="$(command -v omp 2>/dev/null || true)"
+   printf 'OMP_PATH %s\n' "${resolved:-missing}"
+-  [ "$resolved" = "$HOME/.local/bin/omp" ] || { printf 'STOP: omp is not the user binary\n' >&2; return 1; }
++  case "$resolved" in /*) ;; *) printf 'STOP: omp is not on PATH\n' >&2; return 1 ;; esac
+   version="$("$resolved" --version 2>/dev/null)" || { printf 'STOP: installed OMP could not run\n' >&2; return 1; }
+   printf 'OMP_VERSION %s\n' "${version:-missing}"
+   [[ "$version" =~ ^omp/[0-9]+\.[0-9]+\.[0-9]+$ ]] || { printf 'STOP: installed OMP did not report a version number\n' >&2; return 1; }
+@@ -337,7 +244,7 @@
+ course_confirm_new_terminal
+ ```
+ 
+-**Expected:** `R`, `M`, `PY`, `GIT_PATH`, `OMP_PATH` ending in `/.local/bin/omp`, `OMP_VERSION omp/<semver>`, and last `MISSING`.
++**Expected:** `R`, `M`, `PY`, `GIT_PATH`, `OMP_PATH` with the installed command path, `OMP_VERSION omp/<semver>`, and last `MISSING`.
+ 
+ **Stop:** Any STOP line, or `SET`.
+ 
+@@ -990,9 +897,8 @@
+ 
+ - Unsupported OS, shell, or account: ask the device owner for a supported Ubuntu 24.04 or 26.04 account. Don't choose another processor's binary.
+ - Package install refused: save the error and ask the device owner. Don't add a PPA, download Git or Python, or use pip.
+-- Download or certificate error: keep the failed folder. Install `ca-certificates` through step 2 if it is missing; ask the owner about a proxy. Then paste step 3 again; it uses a new folder.
+-- Checksum mismatch: keep the files and ask the course owner. Don't switch to a musl file.
+-- A different `omp`, or a symlinked `~/.local/bin` or startup file: leave it and ask the device owner before anything is replaced.
++- Download or certificate error: keep the installer’s error. Install `ca-certificates` through step 2 if it is missing, or ask about the approved proxy settings, then retry the official installer.
++- An existing `omp` reports an unexpected version: check `command -v omp` and `omp --version`, then confirm you are using the installation you intended.
+ 
+ ### Step 4
+ 
+@@ -1003,7 +909,7 @@
+ 
+ ### Step 5
+ 
+-- `omp` missing or not `~/.local/bin/omp`: paste step 3 again in a window that can edit startup files, then open a new desktop terminal.
++- `omp` missing: follow the installer’s PATH instructions, close the terminal, and open a new one from the desktop menu before retrying `omp --version`.
+ - `SET` in a new window: close it. If you opened it from an old terminal, open the next one from the desktop menu. If a desktop terminal still prints `SET`, follow [credentials](../shared/CREDENTIALS.md).
+ 
+ ### Steps 6 and 7
+--- AI_Harness_Bootcamp_2/module-00-setup/platforms/windows-powershell.md
++++ AI_Harness_Bootcamp_2/module-00-setup/platforms/windows-powershell.md
+@@ -127,79 +127,21 @@
+ 
+ ## 3. Install Oh My Pi
+ 
+-This block resolves the latest stable release from the official GitHub endpoint once. It downloads the program and its published checksum file for that release into a new folder. A **checksum** is a file's fingerprint. The program runs only after its fingerprint matches the published one exactly. The block then copies it to `omp\omp.exe` under your local app data folder. If a different `omp.exe` is already there, it stops without replacing it. Finally, it saves that folder on your user **PATH**, the list of folders Windows searches when you type a command name. New terminals can then find `omp`. The fingerprint comes from Get-FileHash.
+-
+-**Terminal: Windows PowerShell 5.1, ordinary user, same window as Step 1.**
+-
+-```powershell
+-. {
+-  if (-not $asset) { throw 'STOP: run Step 1 in this window first.' }
+-  [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+-  $destDir = Join-Path $env:LOCALAPPDATA 'omp'
+-  $dest = Join-Path $destDir 'omp.exe'
+-  foreach ($probe in @($destDir, $dest)) {
+-    if ((Test-Path -LiteralPath $probe) -and ((Get-Item -LiteralPath $probe -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw ('STOP: ' + $probe + ' is a link. It was not followed.') }
+-  }
+-  $other = Get-Command omp -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+-  if ($other -and $other.Source -ine $dest) { throw ('STOP: another omp is already on PATH at ' + $other.Source + '. It was not replaced.') }
+-  $download = Join-Path $env:LOCALAPPDATA ('omp-downloads\' + [guid]::NewGuid().ToString('n'))
+-  New-Item -ItemType Directory -Path $download -ErrorAction Stop | Out-Null
+-  $rel = & {
+-    $ProgressPreference = 'SilentlyContinue'
+-    Invoke-WebRequest -Uri 'https://api.github.com/repos/can1357/oh-my-pi/releases/latest' -UseBasicParsing -ErrorAction Stop | ConvertFrom-Json
+-  }
+-  if ($rel.draft -isnot [bool] -or $rel.draft -or $rel.prerelease -isnot [bool] -or $rel.prerelease) { throw 'STOP: latest release metadata is not a stable release' }
+-  $tag = [string]$rel.tag_name
+-  if ($tag -cnotmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { throw 'STOP: tag is not a stable release number' }
+-  $base = "https://github.com/can1357/oh-my-pi/releases/download/$tag"
+-  foreach ($name in @($asset, 'SHA256SUMS.txt')) {
+-    $matches = @($rel.assets | Where-Object { $_.name -ceq $name })
+-    if ($matches.Count -ne 1 -or $matches[0].browser_download_url -cne "$base/$name") { throw 'STOP: required release asset is missing or inconsistent' }
+-  }
+-  $rel | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $download 'release.json') -ErrorAction Stop
+-  Write-Output "RELEASE $tag"
+-  $sumsPath = Join-Path $download 'SHA256SUMS.txt'
+-  $binaryPath = Join-Path $download $asset
+-  & {
+-    $ProgressPreference = 'SilentlyContinue'
+-    Invoke-WebRequest -Uri ($base + '/SHA256SUMS.txt') -OutFile $sumsPath -UseBasicParsing -ErrorAction Stop
+-    Invoke-WebRequest -Uri ($base + '/' + $asset) -OutFile $binaryPath -UseBasicParsing -ErrorAction Stop
+-  }
+-  $lines = @(Get-Content -LiteralPath $sumsPath | Where-Object { ($_ -split '  ', 2)[1] -ceq $asset })
+-  if ($lines.Count -ne 1) { throw 'STOP: SHA256SUMS.txt has no single line for this file. Nothing was installed.' }
+-  $expected = ($lines[0] -split '  ', 2)[0]
+-  $actual = (Get-FileHash -LiteralPath $binaryPath -Algorithm SHA256).Hash.ToLowerInvariant()
+-  if ($expected -cnotmatch '^[0-9a-f]{64}$' -or $actual -cne $expected) { throw 'STOP: checksum did not match. Nothing was installed.' }
+-  Write-Output 'CHECKSUM OK'
+-  if (Test-Path -LiteralPath $dest) {
+-    $existing = Get-FileHash -LiteralPath $dest -Algorithm SHA256 -ErrorAction SilentlyContinue
+-    if (-not $existing -or $existing.Hash.ToLowerInvariant() -cne $actual) { throw 'STOP: a different omp.exe is already installed. It was not replaced.' }
+-    Write-Output 'KEPT the identical omp.exe already installed'
+-  } else {
+-    New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+-    Copy-Item -LiteralPath $binaryPath -Destination $dest -ErrorAction Stop
+-  }
+-  $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+-  $entries = @($userPath -split ';' | Where-Object { $_ })
+-  if ($entries -notcontains $destDir) {
+-    [Environment]::SetEnvironmentVariable('Path', ((@($destDir) + $entries) -join ';'), 'User')
+-    Write-Output 'PATH saved for new windows'
+-  }
+-  $env:Path = (@($destDir) + @($env:Path -split ';' | Where-Object { $_ -and $_ -ne $destDir })) -join ';'
+-  $found = (Get-Command omp -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1).Source
+-  if ($found -ine $dest) { throw 'STOP: omp resolves to a different or missing program.' }
+-  $expectedVer = 'omp/' + ($tag -replace '^v','')
+-  $version = @(& $dest --version)
+-  if ($LASTEXITCODE -ne 0 -or $version.Count -ne 1 -or ([string]$version[0]).Trim() -ne $expectedVer) { throw "STOP: omp --version did not print $expectedVer." }
+-  Write-Output ('OMP_VERSION ' + ([string]$version[0]).Trim())
+-}
+-```
+-
+-**Expected:** `RELEASE <tag>`, `CHECKSUM OK`, then `OMP_VERSION omp/<semver>`. The version command is the first time the program runs, and it runs only after the fingerprint matched the selected release.
+-
+-**Stop:** any `STOP:` line. A download, checksum, link, or existing-file stop changes nothing. A stop at the final path or version check comes after `omp.exe` was copied and your PATH was saved, and a rerun reports `KEPT the identical omp.exe already installed`.
+-
+-**Recovery:** leave the download folder in place; running the block again uses a new folder. For a different existing `omp`, a link, or a blocked download, see [If a step stops](#step-3-oh-my-pi).
++Run the one-line installer from [omp.sh](https://omp.sh/).
++
++**Terminal: Windows PowerShell, ordinary user.**
++
++```powershell
++irm https://omp.sh/install.ps1 | iex
++```
++
++**Restart your terminal after installing OMP so PATH changes take effect.** Follow any PATH instructions the installer prints, then close and reopen your terminal before starting OMP or entering your API key.
++
++**Expected:** The installer finishes successfully. In the new terminal, `omp --version` prints the installed version.
++
++**Stop:** The installer reports an error or `omp` is not found.
++
++**Recovery:** Check the installer's error or PATH instructions, then reopen the terminal and try `omp --version` again.
+ 
+ ## 4. Get the course files
+ 
+@@ -289,10 +231,10 @@
+   }
+   if (-not $PY) { throw 'STOP: Python 3.12+ was not found in this window.' }
+   if (-not (Test-Path -LiteralPath (Join-Path $M 'shared\MODULE_00_LAB.md'))) { throw 'STOP: the course checkout was not found. Run Step 4 first.' }
+-  $dest = Join-Path $env:LOCALAPPDATA 'omp\omp.exe'
+   $found = (Get-Command omp -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1).Source
+-  if ($found -ine $dest) { throw 'STOP: omp is missing from PATH or points to a different program.' }
+-  $version = @(& $dest --version)
++  if (-not $found) { throw 'STOP: omp is not on PATH. Restart PowerShell after installation.' }
++  Write-Output ('OMP_PATH ' + $found)
++  $version = @(& $found --version)
+   $v = if ($version.Count -ge 1) { ([string]$version[0]).Trim() } else { '' }
+   if ($LASTEXITCODE -ne 0 -or $version.Count -ne 1 -or ($v -notmatch '^omp/[0-9]+\.[0-9]+\.[0-9]+$')) { throw 'STOP: omp --version did not print a usable omp/<semver>.' }
+   Write-Output ('OMP_VERSION ' + $v)
+@@ -302,7 +244,7 @@
+ }
+ ```
+ 
+-**Expected:** `OMP_VERSION omp/<semver>`, the Python and course paths, and `MISSING` as the last line.
++**Expected:** `OMP_PATH`, `OMP_VERSION omp/<semver>`, the Python and course paths, and `MISSING` as the last line.
+ 
+ **Stop:** a `STOP:` line, or `SET` before you've typed a key in this window.
+ 
+@@ -805,10 +747,9 @@
+ 
+ ### Step 3: Oh My Pi
+ 
+-- **Download failed or checksum mismatch:** nothing was installed. A proxy or network inspection tool can change downloads, so ask the device owner about it rather than turning off a check. Running Step 3 again uses a new folder.
+-- **A different `omp.exe` is already installed, or another `omp` is on PATH:** keep it. Save the printed path and ask whoever installed it how to proceed. Don't overwrite, delete, or hide it.
+-- **A destination is a link:** your local app data may be redirected. Ask the owner for a local, unredirected location.
+-- **Windows blocks the verified program from starting:** save the message and ask the owner. Don't turn off a security control.
++- **The installer reports an error:** keep the error and check [omp.sh](https://omp.sh/) for the current installation instructions.
++- **`omp` is not found:** follow any PATH instructions the installer printed, close every terminal window, and reopen PowerShell from Start.
++- **Windows blocks OMP from starting:** save the message and ask the device owner.
+ 
+ ### Step 4: GitHub access and the checkout
+ 
+@@ -866,7 +807,7 @@
+ 
+ ### Step 5: a new window
+ 
+-- **`omp` missing or a different program:** confirm you closed every window and opened PowerShell from Start. If it still fails, run Step 1 and Step 3 again; Step 3 keeps an identical `omp.exe` and saves PATH only if it's missing.
++- **`omp` missing or a different program:** follow the installer’s PATH instructions, close every terminal window, and reopen PowerShell from Start. Use `Get-Command omp` and `omp --version` to check what runs.
+ - **`SET` before you typed a key:** something supplies the key to new windows. This check looks for it in your saved environment and PowerShell profiles without printing the value.
+ 
+ **Terminal: Windows PowerShell 5.1, ordinary user, same window.**
+--- AI_Harness_Bootcamp_2/module-00-setup/platforms/windows-wsl.md
++++ AI_Harness_Bootcamp_2/module-00-setup/platforms/windows-wsl.md
+@@ -159,103 +159,21 @@
+ 
+ ## 3. Install Oh My Pi
+ 
+-This box resolves the latest stable release once, downloads the matching Linux build and its `SHA256SUMS.txt` into a new folder. A SHA-256 checksum identifies the file's exact contents. The box installs the binary at `~/.local/bin/omp` only if the checksum matches; it never replaces a different `omp` already there. PATH is the list of folders Bash searches for commands. The box adds `~/.local/bin` to the startup files that new Ubuntu windows read.
+-
+-**Terminal: Ubuntu Bash, ordinary Linux user, same window.**
+-
+-```bash
+-course_install_omp() {
+-  local asset download version course_exit tag base
+-  if [ -z "${PY:-}" ] || [ ! -x "$PY" ]; then
+-    printf 'STOP: PY is not set; run the step 1 box in this window first\n'; return 1
+-  fi
+-  case "$(uname -m)" in
+-    x86_64) asset=omp-linux-x64 ;;
+-    aarch64) asset=omp-linux-arm64 ;;
+-    *) printf 'STOP: this processor is not supported\n'; return 1 ;;
+-  esac
+-  download="$HOME/course-evidence/omp-download-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+-  mkdir -p -- "$HOME/course-evidence" && mkdir -- "$download" || return 1
+-  curl --fail --location --show-error --output "$download/release.json" 'https://api.github.com/repos/can1357/oh-my-pi/releases/latest' || return 1
+-  tag="$("$PY" - "$download/release.json" "$asset" <<'PYREL'
+-import json, re, sys
+-from pathlib import Path
+-try:
+-    release = json.loads(Path(sys.argv[1]).read_text())
+-    tag = release["tag_name"]
+-    if not isinstance(tag, str) or not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag):
+-        raise ValueError("invalid release tag")
+-    if release.get("draft") is not False or release.get("prerelease") is not False:
+-        raise ValueError("release is not stable")
+-    base = "https://github.com/can1357/oh-my-pi/releases/download/%s/" % tag
+-    for name in (sys.argv[2], "SHA256SUMS.txt"):
+-        matches = [item for item in release.get("assets", []) if item.get("name") == name]
+-        if len(matches) != 1 or matches[0].get("browser_download_url") != base + name:
+-            raise ValueError("required release asset is missing or inconsistent")
+-    print(tag)
+-except (AttributeError, KeyError, TypeError, ValueError):
+-    sys.exit("STOP: latest release metadata or required assets are invalid")
+-PYREL
+-  )" || return 1
+-  base="https://github.com/can1357/oh-my-pi/releases/download/$tag"
+-  printf 'RELEASE %s (%s)\n' "$tag" "$download/release.json"
+-  curl --fail --location --show-error --output "$download/$asset" "$base/$asset" || return 1
+-  curl --fail --location --show-error --output "$download/SHA256SUMS.txt" "$base/SHA256SUMS.txt" || return 1
+-  "$PY" - "$download" "$asset" <<'PY'
+-from pathlib import Path
+-import hashlib, sys
+-folder, asset = Path(sys.argv[1]), sys.argv[2]
+-home = Path.home()
+-target = home / '.local/bin/omp'
+-rows = [line.split() for line in (folder / 'SHA256SUMS.txt').read_text().splitlines()]
+-listed = [row[0].lower() for row in rows if len(row) == 2 and row[1].removeprefix('*') == asset]
+-data = (folder / asset).read_bytes()
+-digest = hashlib.sha256(data).hexdigest()
+-if len(listed) != 1 or listed[0] != digest:
+-    raise SystemExit('HOLD: checksum does not match SHA256SUMS.txt; nothing was installed')
+-print('SHA256 VERIFIED', asset, digest)
+-for path in (home / '.local', home / '.local/bin'):
+-    if path.is_symlink() or (path.exists() and not path.is_dir()):
+-        raise SystemExit('HOLD: ' + str(path) + ' is a link or not a folder; nothing was installed')
+-if target.is_symlink() or (target.exists() and (not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest() != digest)):
+-    raise SystemExit('HOLD: a different omp already exists at ' + str(target) + '; it was kept')
+-target.parent.mkdir(parents=True, exist_ok=True)
+-if not target.exists():
+-    with target.open('xb') as output:
+-        output.write(data)
+-target.chmod(target.stat().st_mode | 0o111)
+-files = [home / '.profile', home / '.bashrc']
+-for name in ('.bash_profile', '.bash_login'):
+-    if (home / name).exists() or (home / name).is_symlink():
+-        files.append(home / name)
+-        break
+-line = b'export PATH="$HOME/.local/bin:$PATH"'
+-for file in files:
+-    if file.is_symlink() or (file.exists() and not file.is_file()):
+-        raise SystemExit('HOLD: startup file is a link or not a regular file: ' + str(file))
+-    raw = file.read_bytes() if file.exists() else b''
+-    if line in raw.split(b'\n'):
+-        print('PATH_LINE already present in', file)
+-        continue
+-    with file.open('ab') as output:
+-        output.write((b'\n' if raw and not raw.endswith(b'\n') else b'') + line + b'\n')
+-    print('PATH_LINE added to', file)
+-PY
+-  course_exit=$?
+-  [ "$course_exit" -eq 0 ] || return "$course_exit"
+-  case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac
+-  version="$("$HOME/.local/bin/omp" --version)" || return 1
+-  printf 'OMP_VERSION %s\n' "$version"
+-  [ "$version" = "omp/${tag#v}" ] || { printf 'HOLD: installed version differs from selected %s\n' "$tag"; return 1; }
+-}
+-course_install_omp
+-```
+-
+-**Expected:** `RELEASE <tag>`, `SHA256 VERIFIED` with the file name, a `PATH_LINE` line for each startup file, then `OMP_VERSION omp/<semver>`.
+-
+-**Stop:** a `HOLD:` line, a download error, unavailable/malformed release metadata/assets, or a version other than the resolved tag's.
+-
+-**Recovery:** Keep the download folder under `~/course-evidence`; running the box again uses a new folder. For an existing `omp`, a linked folder, or a download error, see [Oh My Pi install problems](#oh-my-pi-install-problems).
++Run the one-line installer from [omp.sh](https://omp.sh/).
++
++**Terminal: Ubuntu Bash inside WSL, ordinary user.**
++
++```bash
++curl -fsSL https://omp.sh/install | sh
++```
++
++**Restart your terminal after installing OMP so PATH changes take effect.** Follow any PATH instructions the installer prints, then close and reopen your terminal before starting OMP or entering your API key. On WSL, reopen Ubuntu.
++
++**Expected:** The installer finishes successfully. In the new terminal, `omp --version` prints the installed version.
++
++**Stop:** The installer reports an error or `omp` is not found.
++
++**Recovery:** Check the installer's error or PATH instructions, then reopen the terminal and try `omp --version` again.
+ 
+ ## 4. Get the course files
+ 
+@@ -376,8 +294,8 @@
+   printf 'R %s\nM %s\nPY %s\n' "$R" "$M" "$PY"
+   found="$(command -v omp || true)"
+   printf 'OMP_PATH %s\n' "${found:-missing}"
+-  [ "$found" = "$HOME/.local/bin/omp" ] || { printf 'STOP: this window did not find omp on its own\n'; return 1; }
+-  version="$(omp --version)" || return 1
++  case "$found" in /mnt/*|*.exe|'') printf 'STOP: Linux omp is not on PATH\n'; return 1 ;; /*) ;; *) printf 'STOP: omp is not an executable path\n'; return 1 ;; esac
++  version="$("$found" --version)" || return 1
+   printf 'OMP_VERSION %s\n' "$version"
+   [[ "$version" =~ ^omp/[0-9]+\.[0-9]+\.[0-9]+$ ]] || { printf 'STOP: installed OMP did not report a version number\n' >&2; return 1; }
+   if [ -n "${OPENROUTER_API_KEY:-}" ]; then
+@@ -388,7 +306,7 @@
+ course_confirm_window
+ ```
+ 
+-**Expected:** `R`, `M`, and `PY` paths, `OMP_PATH` ending in `/.local/bin/omp`, `OMP_VERSION omp/<semver>`, and `MISSING` as the last line.
++**Expected:** `R`, `M`, and `PY` paths, `OMP_PATH` with the installed Linux command path, `OMP_VERSION omp/<semver>`, and `MISSING` as the last line.
+ 
+ **Stop:** a `STOP:` line, or `SET` before you've entered a key.
+ 
+@@ -938,13 +856,7 @@
+ 
+ ### Oh My Pi install problems
+ 
+-**`HOLD: a different omp already exists`.** Another copy of Oh My Pi is at `~/.local/bin/omp`. Keep it, and ask the owner whether the latest stable release can replace it; the box never overwrites it.
+-
+-**`HOLD: ... is a link or not a folder` or `startup file is a link`.** A folder or startup file in your home is redirected. Ask the owner to fix that path; don't replace a linked file.
+-
+-**`HOLD: checksum does not match`.** The download was damaged or changed on the way. Don't run that file; check your network or proxy, then run the box again for a fresh folder.
+-
+-**curl reports a certificate or proxy error.** Ask the owner for the approved proxy and certificate settings. Never turn off certificate checks.
++If the installer reports an error, check its message and the current instructions at [omp.sh](https://omp.sh/). Run the Linux installer inside Ubuntu. For a certificate or proxy error, ask for the approved network settings.
+ 
+ ### Course file problems
+ 
+@@ -958,36 +870,7 @@
+ 
+ ### New window problems
+ 
+-**`OMP_PATH missing` or a different path.** This window didn't read a startup file with the PATH line. The box adds the line to the file this kind of window reads, without changing anything else.
+-
+-**Terminal: Ubuntu Bash, ordinary Linux user, the new window where step 5 stopped.**
+-
+-```bash
+-course_fix_path_line() {
+-  local line='export PATH="$HOME/.local/bin:$PATH"' file="$HOME/.bashrc" candidate
+-  if shopt -q login_shell; then
+-    file="$HOME/.profile"
+-    for candidate in "$HOME/.bash_profile" "$HOME/.bash_login"; do
+-      if [ -e "$candidate" ] || [ -L "$candidate" ]; then file="$candidate"; break; fi
+-    done
+-  fi
+-  printf 'STARTUP_FILE %s\n' "$file"
+-  if [ -L "$file" ] || { [ -e "$file" ] && [ ! -f "$file" ]; }; then
+-    printf 'HOLD: that file is a link or not a regular file; it was not changed\n'; return 1
+-  fi
+-  if [ -f "$file" ] && grep -Fxq -- "$line" "$file"; then
+-    printf 'HOLD: the line is already there; keep this output for the owner\n'; return 1
+-  fi
+-  printf '\n%s\n' "$line" >> "$file" && printf 'PATH_LINE added to %s\n' "$file"
+-}
+-course_fix_path_line
+-```
+-
+-**Expected:** `STARTUP_FILE` and `PATH_LINE added`. Close this window, open a new one with the open box, and run step 5 again.
+-
+-**Stop:** a `HOLD:` line.
+-
+-**Recovery:** Keep the file as it is and show the output to the owner. Don't export PATH by hand to get past step 5.
++**`OMP_PATH missing`.** Follow the installer’s PATH instructions, then close Ubuntu and reopen it from a new Windows PowerShell window using the [open box](#choose-and-open-ubuntu). Run `command -v omp` and `omp --version` inside Ubuntu to confirm the Linux installation is available.
+ 
+ **`SET` in a new window before you entered a key.** Something passes the key into new windows. The box lists which startup files mention the variable name and which Windows variables WSL forwards (the `WSLENV` setting), without printing any value.
+ 
+--- AI_Harness_Bootcamp_2/module-00-setup/shared/VERSIONS.md
++++ AI_Harness_Bootcamp_2/module-00-setup/shared/VERSIONS.md
+@@ -1,10 +1,10 @@
+ # Required tool identities
+ 
+-Use the latest stable Oh My Pi release and the exact provider/model pair in your run policy. Verify the selected release's checksum before executing it and retain its reported version with the run evidence. A similarly named model is not a substitute.
++Use the latest stable Oh My Pi release and the exact provider/model pair in your run policy. Install OMP with the official one-line command from [omp.sh](https://omp.sh/) and retain its reported version with the run evidence. A similarly named model is not a substitute.
+ 
+ | Component | Required value | Check |
+ |---|---|---|
+-| Oh My Pi | latest stable release (resolved once per install) | The verified executable reports `omp/<semver>` matching the tag from the selected release; checksums are from the same tag's SHA256SUMS.txt. |
++| Oh My Pi | latest stable release from the official installer | In a restarted terminal, `omp --version` reports `omp/<semver>`; record the resolved command path and actual version. |
+ | Provider/model | `openrouter/anthropic/claude-sonnet-4.6` | The launcher and actual run receipts agree on OpenRouter and Sonnet 4.6. |
+ | Judge model for Module 6 | `openrouter/typesafe/jev-1.13` | `run_omp.py --list-judges` shows it offered, and each judge run records the dated build that answered. |
+ | Credential | `OPENROUTER_API_KEY` | A presence-only check reports `SET` in the process that launches OMP. |
+@@ -17,15 +17,7 @@
+ 
+ You need read access to the private course repository on GitHub. If your existing approved Git credentials work, you don't need another login tool. Otherwise, follow the platform steps to log in through your browser with [GitHub CLI (`gh`)](https://cli.github.com/manual/gh_auth_login). The package is `GitHub.cli` in WinGet, `gh` in Homebrew and Ubuntu Universe, and `github-cli` in Arch's official repositories. GitHub CLI helps you reach the repository; you don't need it to run the AI tools.
+ 
+-Download the OMP binary and `SHA256SUMS.txt` from the latest stable release selected once by the platform resolver (the tag and assets are recorded with the download). Select the asset for the operating system in which it will run:
+-
+-| Runtime | ARM64 asset | x86-64 asset |
+-|---|---|---|
+-| macOS | `omp-darwin-arm64` | `omp-darwin-x64` |
+-| Linux, including Ubuntu in WSL | `omp-linux-arm64` | `omp-linux-x64` |
+-| Native Windows | `omp-windows-arm64.exe` | `omp-windows-x64.exe` |
+-
+-Check the selected file's checksum before installing or first running it. Install it at `~/.local/bin/omp` on Unix or `%LOCALAPPDATA%\omp\omp.exe` on native Windows. If you already have a different installation, keep it rather than quietly overwriting it.
++Use the macOS/Linux installer inside macOS, Linux, or WSL Ubuntu. Use the PowerShell installer for native Windows. Follow any PATH instructions the installer prints, then restart your terminal before running OMP or entering the API key. The installer chooses its installation location; confirm `omp` is available in the new terminal.
+ 
+ ## Match the package route to the operating system
+ 
+--- AI_Harness_Bootcamp_2/module-00-setup/shared/TROUBLESHOOTING.md
++++ AI_Harness_Bootcamp_2/module-00-setup/shared/TROUBLESHOOTING.md
+@@ -11,9 +11,9 @@
+ | Git or Python is missing | Return to step 2 of your platform guide; for Git, finish with its **Confirm Git works** box. On a managed device, stop when policy blocks installation and send the support packet below. |
+ | `git --version` fails right after Git installs | Open a new terminal window and run it again; a window opened before the install can miss the new Git. On Windows, close every terminal window and open Windows PowerShell from Start. On a Mac, a dialog that offers the command line developer tools is Apple's Git installer; approve it only if the device owner allows you to install software. |
+ | A download fails | Keep the HTTP, proxy, or certificate error. Use the official release URLs. Do not disable TLS verification or execute an incomplete download. |
+-| The checksum fails or the selected asset has no unique checksum entry | Do not install or execute the binary. Keep the failed download separate. Check the filename, release, and source before downloading into a new directory. |
+-| `omp` is not found | Check the resolved command path below. Add only the user-bin directory named by your platform guide, then check again in the intended terminal. |
+-| `omp` reports a different version | Note the path and version you found. Do not silently overwrite a different installation. Use the verified course binary and confirm that PATH resolves to it. |
++| The OMP installer reports an error | Keep the error and check the current installation instructions at [omp.sh](https://omp.sh/). |
++| `omp` is not found | Follow the installer’s PATH instructions, then close and reopen the terminal. Check the resolved command path below and run `omp --version`. |
++| `omp` reports a different version | Note the path and version you found, then confirm PATH selects the intended installation. The official installer supplies the latest stable release; record the actual version used. |
+ | A course directory already exists | Confirm that it is the intended checkout. Use it without reset, pull, or clean when it is valid; otherwise leave it untouched and resolve the path conflict. |
+ | Git cannot read the private course repository | A website password is not GitHub access. Follow the platform's read check with prompts disabled, then use the browser-login steps if needed. Login does not grant permission. Ask the repository owner about the invitation or organization approval, and keep any existing checkout. |
+ | GitHub CLI reports unapproved credential storage | Stop before configuring the Git helper or cloning. Ask the device owner to set up approved credential storage or approved Git credentials. Do not request plaintext storage or share authentication output. |
+--- README.md
++++ README.md
+@@ -117,7 +117,7 @@
+ 
+ ## Runtime and publication
+ 
+-Participants need Git, Python 3.12+, the **latest stable Oh My Pi release**, a browser, and an ordinary text editor. Setup resolves [the official latest release](https://github.com/can1357/oh-my-pi/releases/latest) once and verifies the binary against that release's checksum list. Each run records the actual `omp --version` output; there is no course-specific OMP version number. Live cloud-model OMP runs still select **`openrouter/anthropic/claude-sonnet-4.6`** as the main chat model, with `OPENROUTER_API_KEY` supplied to the current process. Module 05 uses its native-task orchestration launcher; other OMP exercises use `shared/run_omp.py`. The launchers create fresh runtime state, bound the model's tools, disable retries and model fallback, and keep evidence separate from work. These are OMP tool boundaries, not operating-system sandboxes.
++Participants need Git, Python 3.12+, the **latest stable Oh My Pi release**, a browser, and an ordinary text editor. Setup uses the official one-line installer from [omp.sh](https://omp.sh/), followed by a terminal restart and an `omp --version` check. Each run records the actual `omp --version` output; there is no course-specific OMP version number. Live cloud-model OMP runs still select **`openrouter/anthropic/claude-sonnet-4.6`** as the main chat model, with `OPENROUTER_API_KEY` supplied to the current process. Module 05 uses its native-task orchestration launcher; other OMP exercises use `shared/run_omp.py`. The launchers create fresh runtime state, bound the model's tools, disable retries and model fallback, and keep evidence separate from work. These are OMP tool boundaries, not operating-system sandboxes.
+ 
+ Resolve latest when installing or updating, not while auditing saved evidence. Checks compare each attempt's recorded runtime identities, so a later OMP release does not relabel an earlier run. Complete a dependent Module 05 chain with the same verified runtime; after an upgrade, start a fresh chain. Provider and model pins remain unchanged.
+ 

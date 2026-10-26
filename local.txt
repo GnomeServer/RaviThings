@@ -1,0 +1,47 @@
+The URL is:
+https://reformation-aihb-oct-2026.netlify.app/
+
+The password is:
+apintofsweat
+
+Github: TheHolofex/AIHB_OCT_2026
+
+
+
+
+
+Openrouter Key:
+
+export OPENROUTER_API_KEY=sk-kor-v1-b10631d50e1e28d6556b1cf602a133ad4b11bfe17df76c21cb14b5dd88287724
+
+DONT't USE THIS: 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
+USE THIS: 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
+
+N8N Openrouter Key: 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
+
+
+
+/home/dow_admin/.local/bin/omp --model openrouter/anthropic/claude-sonnet-5
+
+
+
+OpenAI:
+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
+
+scp dow_admin@10.1.10.83:~/Documents/local.txt . 
+
+scp dow_admin@10.1.10.83:/home/dow_admin/Downloads/chatgpt_amd64.deb .
+After downloaded: chmod +x chatgpt_amd64.deb
+
+
+
+
+
+
+
+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
+
+
+Typesafe/Jev:
+
+apikey_2118f8cd5481af9746ec9ff2491ffa5add96_03347718f4338658efcd4eaec43b82e336cb42f9f37aea3e0bec9b50e64ecf3d
